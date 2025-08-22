@@ -1,0 +1,31 @@
+{
+  "name": "campus-house",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sjaize/campus-house.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Sjaize/campus-house/issues"
+  },
+  "homepage": "https://github.com/Sjaize/campus-house#readme",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.5"
+  },
+  "lint-staged": {
+    "apps/mobile/**/*.{js,ts,tsx,json}": [
+      "cd apps/mobile && eslint --fix",
+      "cd apps/mobile && prettier --write"
+    ]
+  }
+}

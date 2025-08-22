@@ -1,0 +1,118 @@
+openapi: 3.0.0
+info:
+  title: Campus House API
+  version: 1.0.0
+  description: 캠퍼스 하우스 백엔드 API 명세서
+  contact:
+    name: Campus House Team
+    email: team@campushouse.com
+
+servers:
+  - url: http://localhost:8080
+    description: 로컬 개발 서버
+  - url: https://api.campushouse.com
+    description: 프로덕션 서버
+
+paths:
+  /api/health:
+    get:
+      summary: 서버 상태 확인
+      description: 백엔드 서버가 정상 작동하는지 확인
+      responses:
+        '200':
+          description: 서버 정상 작동
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "OK"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2024-01-01T00:00:00Z"
+
+  /api/users:
+    get:
+      summary: 사용자 목록 조회
+      description: 등록된 사용자들의 목록을 조회합니다
+      parameters:
+        - name: page
+          in: query
+          description: 페이지 번호
+          required: false
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          description: 페이지 크기
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: 사용자 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+        '400':
+          description: 잘못된 요청
+        '500':
+          description: 서버 내부 오류
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 사용자 고유 ID
+          example: 1
+        username:
+          type: string
+          description: 사용자명
+          example: "john_doe"
+        email:
+          type: string
+          format: email
+          description: 이메일 주소
+          example: "john@example.com"
+        createdAt:
+          type: string
+          format: date-time
+          description: 생성일시
+          example: "2024-01-01T00:00:00Z"
+      required:
+        - id
+        - username
+        - email
+
+    UserListResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        totalElements:
+          type: integer
+          description: 전체 사용자 수
+          example: 100
+        totalPages:
+          type: integer
+          description: 전체 페이지 수
+          example: 10
+        currentPage:
+          type: integer
+          description: 현재 페이지
+          example: 1
+        size:
+          type: integer
+          description: 페이지 크기
+          example: 10

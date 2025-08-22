@@ -1,0 +1,39 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# 모든 파일에 적용
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# 들여쓰기 설정
+indent_style = space
+indent_size = 2
+
+# JavaScript/TypeScript/React Native (프론트엔드)
+[*.{js,jsx,ts,tsx,json}]
+indent_size = 2
+
+# Java (백엔드)
+[*.{java,gradle,gradle.kts}]
+indent_size = 2
+
+# YAML/Properties (Spring Boot 설정)
+[*.{yml,yaml,properties}]
+indent_size = 2
+
+# Markdown (문서)
+[*.md]
+trim_trailing_whitespace = false
+
+# Package 파일들
+[{package.json,package-lock.json}]
+indent_size = 2
+
+# Git 관련
+[.gitignore]
+indent_size = 2
