@@ -1,13 +1,15 @@
 module.exports = {
   root: true,
   extends: [
+    '@eslint/js',
     'eslint:recommended',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
     'plugin:react-native/all',
     'prettier',
   ],
-  plugins: ['react', 'react-hooks', 'react-native', 'prettier'],
+  parser: '@typescript-eslint/parser',
+  plugins: ['react', 'react-hooks', 'react-native', 'prettier', '@typescript-eslint'],
   rules: {
     // Prettier 통합
     'prettier/prettier': 'error',
