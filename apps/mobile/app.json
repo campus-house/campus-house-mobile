@@ -15,11 +15,7 @@
     "ios": {
       "supportsTablet": true
     },
-    "platforms": [
-      "ios"
-    ],
-    "plugins": [
-      "expo-router"
-    ]
+    "platforms": ["ios"],
+    "plugins": ["expo-router"]
   }
 }

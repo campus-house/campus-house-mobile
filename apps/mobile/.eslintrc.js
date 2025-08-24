@@ -1,7 +1,6 @@
 module.exports = {
   root: true,
   extends: [
-    '@eslint/js',
     'eslint:recommended',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',

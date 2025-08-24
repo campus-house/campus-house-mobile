@@ -1,1 +1,16 @@
-import { Stack } from "expo-router"; import { StatusBar } from "expo-status-bar"; export default function RootLayout() { return (<> <StatusBar style="auto" /> <Stack> <Stack.Screen name="index" options={{ title: "홈" }} /> <Stack.Screen name="profile" options={{ title: "프로필" }} /> <Stack.Screen name="settings" options={{ title: "설정" }} /> </Stack> </> ); }
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+export default function RootLayout() {
+  return (
+    <>
+      {' '}
+      <StatusBar style="auto" />{' '}
+      <Stack>
+        {' '}
+        <Stack.Screen name="index" options={{ title: '홈' }} />{' '}
+        <Stack.Screen name="profile" options={{ title: '프로필' }} />{' '}
+        <Stack.Screen name="settings" options={{ title: '설정' }} />{' '}
+      </Stack>{' '}
+    </>
+  );
+}
