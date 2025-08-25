@@ -15,7 +15,26 @@
     "ios": {
       "supportsTablet": true
     },
-    "platforms": ["ios"],
-    "plugins": ["expo-router"]
+    "platforms": [
+      "ios"
+    ],
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "fonts": [
+      {
+        "asset": "./assets/fonts/Pretendard-Regular.otf",
+        "family": "Pretendard-Regular"
+      },
+      {
+        "asset": "./assets/fonts/Pretendard-SemiBold.otf", 
+        "family": "Pretendard-SemiBold"
+      },
+      {
+        "asset": "./assets/fonts/Pretendard-Bold.otf",
+        "family": "Pretendard-Bold"
+      }
+    ]
   }
 }

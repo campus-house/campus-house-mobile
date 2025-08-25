@@ -1,5 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Link } from 'expo-router';
+import { COLORS } from '../constants/colors';
+import { TYPOGRAPHY } from '../constants/typography';
 export default function HomeScreen() {
   return (
     <View style={styles.container}>
@@ -27,16 +29,36 @@ export default function HomeScreen() {
   );
 }
 const styles = StyleSheet.create({
-  button: { alignItems: 'center', backgroundColor: '#007AFF', borderRadius: 10, padding: 15 },
-  buttonContainer: { gap: 15, width: '100%' },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   container: {
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.background.primary,
     flex: 1,
     justifyContent: 'center',
     padding: 20,
   },
-  subtitle: { color: '#666', fontSize: 16, marginBottom: 40, textAlign: 'center' },
-  title: { color: '#333', fontSize: 28, fontWeight: 'bold', marginBottom: 10 },
+  title: { 
+    color: COLORS.text.primary, 
+    ...TYPOGRAPHY.headline1,
+    marginBottom: 10 
+  },
+  subtitle: { 
+    color: COLORS.text.secondary, 
+    ...TYPOGRAPHY.body2,
+    marginBottom: 40, 
+    textAlign: 'center' 
+  },
+  buttonContainer: { 
+    gap: 15, 
+    width: '100%' 
+  },
+  button: { 
+    alignItems: 'center', 
+    backgroundColor: COLORS.primary, 
+    borderRadius: 10, 
+    padding: 15 
+  },
+  buttonText: { 
+    color: COLORS.text.inverse, 
+    ...TYPOGRAPHY.body1
+  },
 });
