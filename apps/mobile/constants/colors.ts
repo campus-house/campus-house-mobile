@@ -26,24 +26,24 @@ export const COLORS = {
 
   // 시스템 색상들 (목적 전달 컬러)
   system: {
-    error: '#FF805F',    // Primary와 동일
-    success: '#86D382',  // Sub Green과 동일
+    error: '#FF805F', // Primary와 동일
+    success: '#86D382', // Sub Green과 동일
     selected: '#323232', // Black과 동일
   },
 
   // 텍스트 색상
   text: {
-    primary: '#323232',   // Black
+    primary: '#323232', // Black
     secondary: '#636363', // Grey5
-    disabled: '#AAAAAA',  // Grey4
-    inverse: '#FFFFFF',   // White
+    disabled: '#AAAAAA', // Grey4
+    inverse: '#FFFFFF', // White
   },
 
   // 배경 색상
   background: {
-    primary: '#FFFFFF',   // White
+    primary: '#FFFFFF', // White
     secondary: '#F9F9F9', // Grey1
-    tertiary: '#F2F2F2',  // Grey2
+    tertiary: '#F2F2F2', // Grey2
   },
 } as const;
 
