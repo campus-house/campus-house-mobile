@@ -1,14 +1,14 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
-import { COLORS } from '../constants/colors';
-import { NaverLogo } from './NaverLogo';
+import { COLORS } from '../../constants/colors';
+import { KakaoLogo } from './KakaoLogo';
 
-interface NaverLoginButtonProps {
+interface KakaoLoginButtonProps {
   onPress?: () => void;
   disabled?: boolean;
 }
 
-export const NaverLoginButton: React.FC<NaverLoginButtonProps> = ({
+export const KakaoLoginButton: React.FC<KakaoLoginButtonProps> = ({
   onPress,
   disabled = false,
 }) => {
@@ -20,8 +20,8 @@ export const NaverLoginButton: React.FC<NaverLoginButtonProps> = ({
       activeOpacity={0.8}
     >
       <View style={styles.content}>
-        <NaverLogo />
-        <Text style={styles.buttonText}>네이버로 로그인</Text>
+        <KakaoLogo />
+        <Text style={styles.buttonText}>카카오로 로그인</Text>
       </View>
     </TouchableOpacity>
   );
@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     width: 313,
     height: 57,
     flexShrink: 0,
-    backgroundColor: '#00C73C', // 네이버 초록색
+    backgroundColor: '#FFEB3B', // 카카오 노란색
     borderRadius: 800, // 매우 둥근 모양
     justifyContent: 'center',
     alignItems: 'center',
@@ -46,11 +46,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
+
   buttonText: {
-    width: 118,
-    height: 23,
+    width: 117,
+    height: 22.8,
     flexShrink: 0,
-    color: '#FFF',
+    color: COLORS.neutral.black,
     textAlign: 'center',
     fontFamily: 'Pretendard',
     fontSize: 17,

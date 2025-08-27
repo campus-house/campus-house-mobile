@@ -1,17 +1,17 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { COLORS } from '../constants/colors';
+import { COLORS } from '../../constants/colors';
 
-interface GrayButtonProps {
+interface SmallOrangeButtonProps {
   onPress?: () => void;
   disabled?: boolean;
   title?: string;
 }
 
-export const GrayButton: React.FC<GrayButtonProps> = ({
+export const SmallOrangeButton: React.FC<SmallOrangeButtonProps> = ({
   onPress,
   disabled = false,
-  title = '로그인',
+  title = '버튼',
 }) => {
   return (
     <TouchableOpacity
@@ -28,25 +28,25 @@ export const GrayButton: React.FC<GrayButtonProps> = ({
 const styles = StyleSheet.create({
   button: {
     display: 'flex',
-    width: 318,
-    height: 56,
+    width: 107,
+    height: 45,
     padding: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8.38,
+    gap: 8,
     flexShrink: 0,
-    borderRadius: 15,
-    backgroundColor: COLORS.neutral.grey4, // #AAA
+    borderRadius: 800,
+    backgroundColor: COLORS.primary, // #FF805F
   },
   buttonDisabled: {
-    backgroundColor: COLORS.neutral.grey3, // 더 어두운 회색
+    backgroundColor: COLORS.neutral.grey4, // #AAAAAA
   },
   buttonText: {
-    color: '#FFF',
+    color: COLORS.text.inverse,
     fontFamily: 'Pretendard',
-    fontSize: 16.5,
+    fontSize: 16,
     fontStyle: 'normal',
-    fontWeight: '700',
+    fontWeight: '600',
     lineHeight: undefined, // normal
     textAlign: 'center',
   },

@@ -1,17 +1,17 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { COLORS } from '../constants/colors';
+import { COLORS } from '../../constants/colors';
 
-interface SmallOrangeButtonProps {
+interface LoginButtonProps {
   onPress?: () => void;
   disabled?: boolean;
   title?: string;
 }
 
-export const SmallOrangeButton: React.FC<SmallOrangeButtonProps> = ({
+export const LoginButton: React.FC<LoginButtonProps> = ({
   onPress,
   disabled = false,
-  title = '버튼',
+  title = '로그인',
 }) => {
   return (
     <TouchableOpacity
@@ -28,25 +28,25 @@ export const SmallOrangeButton: React.FC<SmallOrangeButtonProps> = ({
 const styles = StyleSheet.create({
   button: {
     display: 'flex',
-    width: 107,
-    height: 45,
+    width: 318,
+    height: 56,
     padding: 8,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
     flexShrink: 0,
-    borderRadius: 800,
+    borderRadius: 800, // 매우 둥근 모양
     backgroundColor: COLORS.primary, // #FF805F
   },
   buttonDisabled: {
     backgroundColor: COLORS.neutral.grey4, // #AAAAAA
   },
   buttonText: {
-    color: '#FFF',
+    color: COLORS.text.inverse,
     fontFamily: 'Pretendard',
-    fontSize: 16,
+    fontSize: 16.5,
     fontStyle: 'normal',
-    fontWeight: '600',
+    fontWeight: '700',
     lineHeight: undefined, // normal
     textAlign: 'center',
   },

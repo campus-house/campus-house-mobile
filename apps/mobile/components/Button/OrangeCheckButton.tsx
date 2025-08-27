@@ -1,0 +1,38 @@
+import React from 'react';
+import { TouchableOpacity, StyleSheet } from 'react-native';
+import { COLORS } from '../../constants/colors';
+import { CheckIcon } from '../Icon/CheckIcon';
+
+interface OrangeCheckButtonProps {
+  onPress?: () => void;
+  isSelected?: boolean;
+}
+
+export const OrangeCheckButton: React.FC<OrangeCheckButtonProps> = ({
+  onPress,
+  isSelected = false,
+}) => {
+  return (
+    <TouchableOpacity
+      style={[styles.button, isSelected && styles.buttonSelected]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <CheckIcon color={isSelected ? COLORS.primary : COLORS.neutral.white} />
+    </TouchableOpacity>
+  );
+};
+
+const styles = StyleSheet.create({
+  button: {
+    width: 29.68,
+    height: 28.45,
+    borderRadius: 14.225, // height / 2 for perfect circle
+    backgroundColor: COLORS.neutral.grey3, // 기본 상태: 회색
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonSelected: {
+    backgroundColor: COLORS.primary, // 선택 상태: 주황색
+  },
+});

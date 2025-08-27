@@ -1,14 +1,14 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
-import { COLORS } from '../constants/colors';
-import { GoogleLogo } from './GoogleLogo';
+import { COLORS } from '../../constants/colors';
+import { NaverLogo } from './NaverLogo';
 
-interface GoogleLoginButtonProps {
+interface NaverLoginButtonProps {
   onPress?: () => void;
   disabled?: boolean;
 }
 
-export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
+export const NaverLoginButton: React.FC<NaverLoginButtonProps> = ({
   onPress,
   disabled = false,
 }) => {
@@ -20,8 +20,8 @@ export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
       activeOpacity={0.8}
     >
       <View style={styles.content}>
-        <GoogleLogo />
-        <Text style={styles.buttonText}>Google로 로그인</Text>
+        <NaverLogo />
+        <Text style={styles.buttonText}>네이버로 로그인</Text>
       </View>
     </TouchableOpacity>
   );
@@ -32,9 +32,7 @@ const styles = StyleSheet.create({
     width: 313,
     height: 57,
     flexShrink: 0,
-    backgroundColor: '#FFFFFF', // Color/화이트
-    borderWidth: 1,
-    borderColor: COLORS.neutral.grey2, // Color/그레이 2
+    backgroundColor: '#00C73C', // 네이버 초록색
     borderRadius: 800, // 매우 둥근 모양
     justifyContent: 'center',
     alignItems: 'center',
@@ -49,10 +47,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   buttonText: {
-    width: 127.519,
-    height: 22.8,
+    width: 118,
+    height: 23,
     flexShrink: 0,
-    color: '#323232', // Color/조사병단 블랙
+    color: COLORS.text.inverse,
     textAlign: 'center',
     fontFamily: 'Pretendard',
     fontSize: 17,

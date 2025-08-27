@@ -1,14 +1,14 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
-import { COLORS } from '../constants/colors';
-import { KakaoLogo } from './KakaoLogo';
+import { COLORS } from '../../constants/colors';
+import { GoogleLogo } from './GoogleLogo';
 
-interface KakaoLoginButtonProps {
+interface GoogleLoginButtonProps {
   onPress?: () => void;
   disabled?: boolean;
 }
 
-export const KakaoLoginButton: React.FC<KakaoLoginButtonProps> = ({
+export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
   onPress,
   disabled = false,
 }) => {
@@ -20,8 +20,8 @@ export const KakaoLoginButton: React.FC<KakaoLoginButtonProps> = ({
       activeOpacity={0.8}
     >
       <View style={styles.content}>
-        <KakaoLogo />
-        <Text style={styles.buttonText}>카카오로 로그인</Text>
+        <GoogleLogo />
+        <Text style={styles.buttonText}>Google로 로그인</Text>
       </View>
     </TouchableOpacity>
   );
@@ -32,7 +32,9 @@ const styles = StyleSheet.create({
     width: 313,
     height: 57,
     flexShrink: 0,
-    backgroundColor: '#FFEB3B', // 카카오 노란색
+    backgroundColor: COLORS.neutral.white, // Color/화이트
+    borderWidth: 1,
+    borderColor: COLORS.neutral.grey2, // Color/그레이 2
     borderRadius: 800, // 매우 둥근 모양
     justifyContent: 'center',
     alignItems: 'center',
@@ -46,12 +48,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
-
   buttonText: {
-    width: 117,
+    width: 127.519,
     height: 22.8,
     flexShrink: 0,
-    color: '#323232',
+    color: COLORS.neutral.black, // Color/조사병단 블랙
     textAlign: 'center',
     fontFamily: 'Pretendard',
     fontSize: 17,
