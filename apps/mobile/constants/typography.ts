@@ -17,7 +17,7 @@ export const TYPOGRAPHY = {
     lineHeight: 35,
     fontWeight: '700',
   },
-
+  
   // Body 스타일
   body1: {
     fontSize: 18,
@@ -43,7 +43,7 @@ export const TYPOGRAPHY = {
     lineHeight: 22,
     fontWeight: '700',
   },
-
+  
   // Caption 스타일
   caption1: {
     fontSize: 16,
