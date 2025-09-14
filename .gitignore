@@ -1,13 +1,99 @@
-### OS / 환경 공통 ###
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variable files
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# yarn v2
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
 .DS_Store
-Thumbs.db
-*.swp
-*.swo
-*.lock
-*.tmp
 .AppleDouble
 .LSOverride
-Icon?
+Icon
 ._*
 .DocumentRevisions-V100
 .fseventsd
@@ -16,115 +102,44 @@ Icon?
 .Trashes
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
 
-### Logs ###
-*.log
-logs/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
 
-### Node / React Native (Expo - apps/mobile) ###
-node_modules/
-.expo/
-.expo-shared/
-dist/
-build/
-coverage/
-*.expo-dev-client
-*.apk
-*.aab
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
 
-# Metro / Babel / TS 캐시
-*.tsbuildinfo
-*.cache
-.parcel-cache
-.rpt2_cache/
-.rts2_cache_cjs/
-.rts2_cache_es/
-.rts2_cache_umd/
-
-# React Native iOS / Android (만약 eject 시)
-ios/
-android/
-
-# Expo/React Native 특화
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-*.orig.*
-
-### Java / Spring Boot (apps/server) ###
-.gradle/
-build/
-out/
-target/
-!gradle/wrapper/gradle-wrapper.jar
-!gradle/wrapper/gradle-wrapper.properties
-*.class
-*.jar
-*.war
-*.ear
-gradle-app.setting
-
-### IDE ###
-.idea/
-*.iml
-*.ipr
-*.iws
+# IDE
 .vscode/
-.history/
-cursor.cache
-*.code-workspace
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+.idea/
+*.swp
+*.swo
 
-### CI / Git hooks ###
-.husky/_/
-.husky/*.sh
+# Logs
+logs
+*.log
 
-### Env / Secrets (보안 필수) ###
-.env
-.env.*.local
-.env.test
-.env.production
-.env.development.local
-.env.test.local
-.env.production.local
-*.keystore
-*.jks
-
-# Spring Boot 전용
-apps/server/src/main/resources/application-*.yml
-apps/server/src/main/resources/application-*.yaml
-apps/server/src/main/resources/application-*.properties
-
-# Mobile 전용
-apps/mobile/.env
-
-### 추가 개발 도구 ###
-# npm/yarn
-.npm
-.yarn-integrity
-*.tgz
-
-# ESLint
-.eslintcache
-
-# Coverage
-*.lcov
-.nyc_output
-
-# Temporary
+# Temporary folders
 tmp/
 temp/
-
-# Local configuration
-*.local

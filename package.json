@@ -1,31 +1,80 @@
 {
-  "name": "campus-house",
+  "name": "campus-house-mobile",
   "version": "1.0.0",
-  "private": true,
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "prepare": "husky"
-  },
+  "description": "캠퍼스하우스 모바일 앱 - React Native Expo 기반",
+  "main": "expo-router/entry",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Sjaize/campus-house.git"
+    "url": "git+https://github.com/campus-house/campus-house-mobile.git"
   },
-  "keywords": [],
+  "keywords": [
+    "react-native",
+    "expo",
+    "mobile",
+    "campus",
+    "housing",
+    "캠퍼스하우스"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Sjaize/campus-house/issues"
+    "url": "https://github.com/campus-house/campus-house-mobile/issues"
   },
-  "homepage": "https://github.com/Sjaize/campus-house#readme",
+  "homepage": "https://github.com/campus-house/campus-house-mobile#readme",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "npx eslint . --ext .js,.ts,.tsx",
+    "lint:fix": "npx eslint . --ext .js,.ts,.tsx --fix",
+    "format": "npx prettier --write .",
+    "format:check": "npx prettier --check .",
+    "check": "npm run lint && npm run format:check",
+    "type-check": "npx tsc --noEmit",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "expo": "~53.0.22",
+    "expo-constants": "~17.1.7",
+    "expo-font": "~13.3.2",
+    "expo-linking": "~7.1.7",
+    "expo-router": "~5.1.6",
+    "expo-status-bar": "~2.2.3",
+    "react": "19.0.0",
+    "react-native": "0.79.5",
+    "react-native-safe-area-context": "5.4.0",
+    "react-native-screens": "~4.11.1",
+    "react-native-svg": "15.11.2"
+  },
   "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@eslint/js": "^9.34.0",
+    "@types/react": "~19.0.10",
+    "@typescript-eslint/eslint-plugin": "^8.40.0",
+    "@typescript-eslint/parser": "^8.40.0",
+    "babel-plugin-module-resolver": "^5.0.2",
+    "eslint": "^9.0.0",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-native": "^5.0.0",
+    "glob": "^8.0.0",
     "husky": "^9.1.7",
-    "lint-staged": "^16.1.5"
+    "lint-staged": "^16.1.5",
+    "prettier": "^3.6.2",
+    "rimraf": "^5.0.0",
+    "typescript": "~5.8.3"
+  },
+  "overrides": {
+    "glob": "^8.0.0",
+    "rimraf": "^5.0.0"
   },
   "lint-staged": {
-    "apps/mobile/**/*.{js,ts,tsx,json}": [
-      "cd apps/mobile && eslint --fix",
-      "cd apps/mobile && prettier --write"
+    "**/*.{js,ts,tsx,json}": [
+      "eslint --fix",
+      "prettier --write"
     ]
-  }
+  },
+  "private": true
 }

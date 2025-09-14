@@ -14,24 +14,36 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
 
-# JavaScript/TypeScript/React Native (프론트엔드)
-[*.{js,jsx,ts,tsx,json}]
+# JavaScript/TypeScript/React Native
+[*.{js,jsx,ts,tsx}]
 indent_size = 2
 
-# Java (백엔드)
-[*.{java,gradle,gradle.kts}]
+# JSON 파일들
+[*.json]
 indent_size = 2
 
-# YAML/Properties (Spring Boot 설정)
-[*.{yml,yaml,properties}]
+# YAML
+[*.{yml,yaml}]
 indent_size = 2
 
 # Markdown (문서)
 [*.md]
 trim_trailing_whitespace = false
 
-# Package 파일들
-[{package.json,package-lock.json}]
+# XML (Android 관련)
+[*.xml]
+indent_size = 2
+
+# Gradle (Android 빌드)
+[*.gradle]
+indent_size = 2
+
+# Properties 파일
+[*.properties]
+indent_size = 2
+
+# Shell scripts
+[*.{sh,bash}]
 indent_size = 2
 
 # Git 관련
