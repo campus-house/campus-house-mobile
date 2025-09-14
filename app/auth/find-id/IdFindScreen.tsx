@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 
 type AuthMethod = 'phone' | 'email' | null;
@@ -28,7 +21,7 @@ export default function IdFindScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton}>
@@ -48,15 +41,12 @@ export default function IdFindScreen() {
       {/* Main Content */}
       <View style={styles.content}>
         <Text style={styles.title}>본인 확인을 위해 인증을 진행해 주세요</Text>
-        
+
         {/* Auth Options */}
         <View style={styles.authOptions}>
           {/* Phone Auth */}
           <TouchableOpacity
-            style={[
-              styles.authOption,
-              selectedAuth === 'phone' && styles.authOptionSelected
-            ]}
+            style={[styles.authOption, selectedAuth === 'phone' && styles.authOptionSelected]}
             onPress={() => handleAuthSelect('phone')}
           >
             <View style={styles.authOptionContent}>
@@ -84,24 +74,21 @@ export default function IdFindScreen() {
                   strokeWidth="0.999995"
                 />
               </Svg>
-              <Text style={[
-                styles.authOptionText,
-                selectedAuth === 'phone' && styles.authOptionTextSelected
-              ]}>
+              <Text
+                style={[
+                  styles.authOptionText,
+                  selectedAuth === 'phone' && styles.authOptionTextSelected,
+                ]}
+              >
                 휴대폰 인증
               </Text>
             </View>
-            <Text style={styles.authOptionDescription}>
-              본인 명의 휴대폰으로 인증할 수 있어요.
-            </Text>
+            <Text style={styles.authOptionDescription}>본인 명의 휴대폰으로 인증할 수 있어요.</Text>
           </TouchableOpacity>
 
           {/* Email Auth */}
           <TouchableOpacity
-            style={[
-              styles.authOption,
-              selectedAuth === 'email' && styles.authOptionSelected
-            ]}
+            style={[styles.authOption, selectedAuth === 'email' && styles.authOptionSelected]}
             onPress={() => handleAuthSelect('email')}
           >
             <View style={styles.authOptionContent}>
@@ -135,16 +122,16 @@ export default function IdFindScreen() {
                   strokeLinecap="round"
                 />
               </Svg>
-              <Text style={[
-                styles.authOptionText,
-                selectedAuth === 'email' && styles.authOptionTextSelected
-              ]}>
+              <Text
+                style={[
+                  styles.authOptionText,
+                  selectedAuth === 'email' && styles.authOptionTextSelected,
+                ]}
+              >
                 이메일 인증
               </Text>
             </View>
-            <Text style={styles.authOptionDescription}>
-              가입된 이메일로 인증할 수 있어요.
-            </Text>
+            <Text style={styles.authOptionDescription}>가입된 이메일로 인증할 수 있어요.</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -154,15 +141,17 @@ export default function IdFindScreen() {
         <TouchableOpacity
           style={[
             styles.nextButton,
-            selectedAuth ? styles.nextButtonActive : styles.nextButtonInactive
+            selectedAuth ? styles.nextButtonActive : styles.nextButtonInactive,
           ]}
           onPress={handleNext}
           disabled={!selectedAuth}
         >
-          <Text style={[
-            styles.nextButtonText,
-            selectedAuth ? styles.nextButtonTextActive : styles.nextButtonTextInactive
-          ]}>
+          <Text
+            style={[
+              styles.nextButtonText,
+              selectedAuth ? styles.nextButtonTextActive : styles.nextButtonTextInactive,
+            ]}
+          >
             다음
           </Text>
         </TouchableOpacity>
@@ -206,7 +195,6 @@ const styles = StyleSheet.create({
     color: '#323232',
     fontFamily: 'Pretendard',
     fontSize: 26,
-    fontStyle: 'normal',
     fontWeight: '700',
     lineHeight: 35,
     textAlign: 'center',
@@ -238,7 +226,6 @@ const styles = StyleSheet.create({
     color: '#323232',
     fontFamily: 'Pretendard',
     fontSize: 18,
-    fontStyle: 'normal',
     fontWeight: '600',
     lineHeight: 17,
     marginLeft: 12,
@@ -250,7 +237,6 @@ const styles = StyleSheet.create({
     color: '#636363',
     fontFamily: 'Pretendard',
     fontSize: 14,
-    fontStyle: 'normal',
     fontWeight: '400',
     lineHeight: 17,
     marginLeft: 36,
@@ -280,9 +266,7 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontFamily: 'Pretendard',
     fontSize: 16.5,
-    fontStyle: 'normal',
     fontWeight: '700',
-    lineHeight: 'normal',
   },
   nextButtonTextActive: {
     color: '#ffffff',

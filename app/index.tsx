@@ -13,7 +13,7 @@ const { height: fullScreenHeight } = Dimensions.get('screen'); // Status Bar 포
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
-  
+
   const handleKakaoLogin = () => {
     // 카카오 로그인 처리
     console.log('카카오 로그인');
@@ -30,8 +30,8 @@ export default function LoginScreen() {
   };
 
   const goToIdLogin = () => {
-    // 아이디 로그인 화면으로 (나중에 구현)
-    console.log('아이디 로그인');
+    // 아이디 로그인 화면으로 이동
+    router.push('/auth/login');
   };
 
   const goToSignup = () => {
@@ -42,32 +42,32 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.flexContainer}>
-        <Image 
-          source={require('@/assets/images/app_title.png')} 
+        <Image
+          source={require('@/assets/images/app_title.png')}
           style={styles.title}
           resizeMode="contain"
         />
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity style={styles.kakaoButton} onPress={handleKakaoLogin}>
-            <Image 
-              source={require('@/assets/images/kakao_logo.png')} 
+            <Image
+              source={require('@/assets/images/kakao_logo.png')}
               style={styles.kakaoLogo}
               resizeMode="contain"
             />
             <Text style={styles.buttonText}>카카오로 로그인</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.naverButton} onPress={handleNaverLogin}>
-            <Image 
-              source={require('@/assets/images/naver_logo.png')} 
+            <Image
+              source={require('@/assets/images/naver_logo.png')}
               style={styles.naverLogo}
               resizeMode="contain"
             />
             <Text style={styles.naverButtonText}>네이버로 로그인</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
-            <Image 
-              source={require('@/assets/images/google_logo.png')} 
+            <Image
+              source={require('@/assets/images/google_logo.png')}
               style={styles.googleLogo}
               resizeMode="contain"
             />
@@ -108,8 +108,8 @@ const styles = StyleSheet.create({
     height: 42.506, // Swift: 42.50573 (정확한 픽셀값)
     flexShrink: 0, // Swift: frame 고정
     alignSelf: 'center',
-    marginTop: screenHeight * ((232) / (852)), // 공식: (yFigma - statusBarHeight) / (figmaFullHeight - statusBarHeight)
-    marginHorizontal: screenWidth * (69.5/393), // 좌우 여백: 69.5px / 393px = 17.7%
+    marginTop: screenHeight * (232 / 852), // 공식: (yFigma - statusBarHeight) / (figmaFullHeight - statusBarHeight)
+    marginHorizontal: screenWidth * (69.5 / 393), // 좌우 여백: 69.5px / 393px = 17.7%
   },
   buttonContainer: {
     width: 313, // Layer properties: 313px
