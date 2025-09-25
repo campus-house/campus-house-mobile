@@ -3,13 +3,16 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'rea
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '@/constants/colors';
-import { TYPOGRAPHY } from '@/constants/typography';
 import { KakaoLoginButton } from '@/components/Button/KakaoLoginButton';
 import { NaverLoginButton } from '@/components/Button/NaverLoginButton';
 import { GoogleLoginButton } from '@/components/Button/GoogleLoginButton';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-const { height: fullScreenHeight } = Dimensions.get('screen'); // Status Bar 포함 전체 높이
+
+// 피그마 기준: 393 × 852 (전체 화면)
+// Dimensions.get('window')는 Status Bar/Home Indicator 제외된 실제 콘텐츠 영역
+const figmaWidth = 393;
+const figmaHeight = 852; // 피그마 전체 높이와 비교
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
@@ -48,46 +51,19 @@ export default function LoginScreen() {
           resizeMode="contain"
         />
 
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.kakaoButton} onPress={handleKakaoLogin}>
-            <Image
-              source={require('@/assets/images/kakao_logo.png')}
-              style={styles.kakaoLogo}
-              resizeMode="contain"
-            />
-            <Text style={styles.buttonText}>카카오로 로그인</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.naverButton} onPress={handleNaverLogin}>
-            <Image
-              source={require('@/assets/images/naver_logo.png')}
-              style={styles.naverLogo}
-              resizeMode="contain"
-            />
-            <Text style={styles.naverButtonText}>네이버로 로그인</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.googleButton} onPress={handleGoogleLogin}>
-            <Image
-              source={require('@/assets/images/google_logo.png')}
-              style={styles.googleLogo}
-              resizeMode="contain"
-            />
-            <Text style={styles.googleButtonText}>Google로 로그인</Text>
-          </TouchableOpacity>
-        </View>
+        <KakaoLoginButton style={styles.kakaoButton} onPress={handleKakaoLogin} />
+        <NaverLoginButton style={styles.naverButton} onPress={handleNaverLogin} />
+        <GoogleLoginButton style={styles.googleButton} onPress={handleGoogleLogin} />
       </View>
 
       <View style={styles.bottomLinks}>
-        <View style={styles.linkContainer}>
-          <TouchableOpacity onPress={goToIdLogin}>
-            <Text style={styles.linkText}>아이디 로그인</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={goToIdLogin} style={styles.idLoginLink}>
+          <Text style={styles.linkText}>아이디 로그인</Text>
+        </TouchableOpacity>
         <View style={styles.divider} />
-        <View style={styles.linkContainer}>
-          <TouchableOpacity onPress={goToSignup}>
-            <Text style={styles.linkText}>회원가입</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={goToSignup} style={styles.signupLink}>
+          <Text style={styles.linkText}>회원가입</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -97,110 +73,102 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background.primary,
-    paddingHorizontal: 40,
+    paddingHorizontal: 0, // Locofy: 패딩 제거하고 절대 위치 사용
   },
   flexContainer: {
     flex: 1,
     alignItems: 'center',
   },
   title: {
-    width: 254.09, // Swift: 254.08981 (정확한 픽셀값)
-    height: 42.506, // Swift: 42.50573 (정확한 픽셀값)
-    flexShrink: 0, // Swift: frame 고정
-    alignSelf: 'center',
-    marginTop: screenHeight * (232 / 852), // 공식: (yFigma - statusBarHeight) / (figmaFullHeight - statusBarHeight)
-    marginHorizontal: screenWidth * (69.5 / 393), // 좌우 여백: 69.5px / 393px = 17.7%
-  },
-  buttonContainer: {
-    width: 313, // Layer properties: 313px
+    width: screenWidth * (254 / figmaWidth), // 254/393 비율로 반응형
+    height: screenHeight * (43 / figmaHeight), // 43/852 비율로 반응형
     flexShrink: 0,
-    alignItems: 'center',
     alignSelf: 'center',
-    gap: screenHeight * (14 / 852), // 버튼 간 간격 비율: 14px / 852px = 1.64%
-    marginTop: screenHeight * (252.494 / 852), // 제목과 버튼 사이 거리: (527 - 232 - 42.506) / 852 = 252.494 / 852
+    marginTop: screenHeight * (232 / figmaHeight), // 232/852 비율로 반응형
+    marginHorizontal: screenWidth * (69.5 / figmaWidth), // 69.5/393 비율로 반응형
   },
   bottomLinks: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'absolute',
-    top: screenHeight * (761 / 852), // 이미지 위치 정보: 위에서 761px 위치
+    top: screenHeight * (761 / figmaHeight), // 761/852 비율로 반응형 - 측정값 기준 정확한 위치
     left: 0,
     right: 0,
+    width: '100%',
   },
-  linkContainer: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: screenWidth * (0 / 393), // Figma 기준: 30px / 393px = 7.6%
+  idLoginLink: {
+    position: 'absolute',
+    right: '50%', // 구분선 기준 오른쪽 절반
+    marginRight: screenWidth * (30 / figmaWidth), // 30/393 비율로 반응형
+  },
+  signupLink: {
+    position: 'absolute',
+    left: '50%', // 구분선 기준 왼쪽 절반
+    marginLeft: screenWidth * (30 / figmaWidth), // 30/393 비율로 반응형
   },
   linkText: {
-    color: 'rgba(99, 99, 99, 1)', // Swift: Color(red: 0.39, green: 0.39, blue: 0.39)
-    fontFamily: 'Pretendard', // Swift: Font.custom("Pretendard", size: 16)
-    fontSize: 16, // Swift: size: 16
+    color: '#636363', // Locofy: rgba(99, 99, 99, 1)
+    fontFamily: 'Pretendard',
+    fontSize: 16,
     fontWeight: '400',
-    textAlign: 'center', // Swift: .multilineTextAlignment(.center)
+    textAlign: 'center',
+    lineHeight: 22, // Locofy: lineHeight: 22
   },
   divider: {
-    width: 1,
-    height: 16,
-    backgroundColor: 'rgba(99, 99, 99, 1)', // 텍스트와 동일한 색상
-    marginHorizontal: 20, // 구분선 자체에는 여백 없음
+    width: screenWidth * (1 / figmaWidth), // 1/393 비율로 반응형
+    height: screenHeight * (16 / figmaHeight), // 16/852 비율로 반응형
+    backgroundColor: COLORS.neutral.grey4, // 구분선 색상: #AAAAAA
+    position: 'absolute',
+    left: '50%', // 화면 정중앙
+    marginLeft: screenWidth * (-0.5 / figmaWidth), // -0.5/393 비율로 반응형
   },
   kakaoButton: {
-    width: 313, // Layer properties: 313px
-    height: 57, // Layer properties: 57px
-    backgroundColor: '#FFEB3B', // 카카오 노란색 (#FFEB3B)
-    borderRadius: 28.5, // 높이의 절반으로 완전한 둥근 모양
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0, // Layer properties: flex-shrink: 0
-    position: 'relative', // 절대 위치 자식 요소를 위한 relative
+    position: 'absolute',
+    top: screenHeight * (527 / figmaHeight), // 527/852 비율로 반응형
+    left: screenWidth * (40 / figmaWidth), // 40/393 비율로 반응형
+    height: screenHeight * (57 / figmaHeight), // 57/852 비율로 반응형
+    width: screenWidth * (313 / figmaWidth), // 313/393 비율로 반응형
   },
   naverButton: {
-    width: 313, // Layer properties: 313px
-    height: 57, // Layer properties: 57px
-    backgroundColor: '#00C73C', // 네이버 초록색 (Layer properties 색상 반영)
-    borderRadius: 28.5, // 높이의 절반으로 완전한 둥근 모양
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0, // Layer properties: flex-shrink: 0
-    position: 'relative', // 절대 위치 자식 요소를 위한 relative
+    position: 'absolute',
+    top: screenHeight * (598 / figmaHeight), // 598/852 비율로 반응형
+    left: screenWidth * (40 / figmaWidth), // 40/393 비율로 반응형
+    height: screenHeight * (57 / figmaHeight), // 57/852 비율로 반응형
+    width: screenWidth * (313 / figmaWidth), // 313/393 비율로 반응형
   },
   googleButton: {
-    width: 313, // Layer properties: 313px
-    height: 57, // Layer properties: 57px
-    backgroundColor: '#FFFFFF', // 구글 흰색
-    borderRadius: 28.5, // 높이의 절반으로 완전한 둥근 모양
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0, // Layer properties: flex-shrink: 0
-    position: 'relative', // 절대 위치 자식 요소를 위한 relative
+    position: 'absolute',
+    top: screenHeight * (669 / figmaHeight), // 669/852 비율로 반응형
+    left: screenWidth * (40 / figmaWidth), // 40/393 비율로 반응형
+    height: screenHeight * (57 / figmaHeight), // 57/852 비율로 반응형
+    width: screenWidth * (313 / figmaWidth), // 313/393 비율로 반응형
   },
   buttonText: {
-    fontSize: 17, // Swift: size: 17
-    fontWeight: '600', // Swift: .weight(.semibold)
-    color: 'rgba(51, 51, 51, 1)', // Swift: Color(red: 0.2, green: 0.2, blue: 0.2) = rgb(51, 51, 51)
-    textAlign: 'center', // Swift: .multilineTextAlignment(.center)
-    width: 117, // Swift: width: 117
-    height: 22.8, // Swift: height: 22.8
+    fontSize: 17, // Locofy: fontSize: 17 (픽셀 고정)
+    fontWeight: '600', // Locofy: fontWeight: "600"
+    color: '#323232', // Locofy: #323232
+    textAlign: 'center',
+    width: 117, // Locofy: width: 117 (픽셀 고정)
+    height: 23, // Locofy: height: 23 (픽셀 고정)
     position: 'absolute',
-    left: 120, // 이미지 위치 정보: 로고 영역 다음부터
-    top: 17, // 이미지 위치 정보: 위쪽에서 17px
-    fontFamily: 'Pretendard', // Swift: Font.custom("Pretendard")
+    left: 120, // Locofy: left: 120 (픽셀 고정)
+    top: 17, // Locofy: top: 17 (픽셀 고정)
+    fontFamily: 'Pretendard',
+    lineHeight: 24, // Locofy: lineHeight: 24 (픽셀 고정)
   },
   naverButtonText: {
-    fontSize: 17, // Swift: size: 17
-    fontWeight: '600', // Swift: .weight(.semibold)
-    color: '#FFFFFF', // Swift: .foregroundColor(.white)
-    textAlign: 'center', // Swift: .multilineTextAlignment(.center)
-    width: 118, // Swift: width: 118
-    height: 23, // Swift: height: 23
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#FFFFFF', // Locofy: #fff
+    textAlign: 'center',
+    width: 118, // Locofy: width: 118 (픽셀 고정)
+    height: 23, // Locofy: height: 23 (픽셀 고정)
     position: 'absolute',
-    left: 120, // 카카오와 동일한 위치 기준
-    top: 17, // 카카오와 동일한 위치 기준
-    fontFamily: 'Pretendard', // Swift: Font.custom("Pretendard")
+    left: 120, // Locofy: left: 120 (픽셀 고정)
+    top: 17, // Locofy: top: 17 (픽셀 고정)
+    fontFamily: 'Pretendard',
+    lineHeight: 24, // Locofy: lineHeight: 24 (픽셀 고정)
   },
   googleButtonText: {
     fontSize: 17,
@@ -208,29 +176,30 @@ const styles = StyleSheet.create({
     color: '#000000',
     textAlign: 'center',
     position: 'absolute',
-    left: 120, // 카카오와 동일한 위치 기준
-    top: 17, // 카카오와 동일한 위치 기준
+    left: 120, // Locofy: left: 120 (픽셀 고정)
+    top: 17, // Locofy: top: 17 (픽셀 고정)
     fontFamily: 'Pretendard',
+    lineHeight: 24, // Locofy: lineHeight: 24 (픽셀 고정)
   },
   kakaoLogo: {
-    width: 42.533, // Swift: 42.53294 (정확한 크기)
-    height: 42.533, // Swift: 42.53294 (정확한 크기)
+    width: 42.533, // Locofy: 42.533 (픽셀 고정)
+    height: 43, // Locofy: height: 43 (픽셀 고정)
     position: 'absolute',
-    left: 21, // 이미지 위치 정보: 왼쪽에서 21px
-    top: 7, // 이미지 위치 정보: 위쪽에서 7px
+    left: '6.71%', // Locofy: left: "6.71%" (비율로 반응형)
+    top: 7, // Locofy: top: 7 (픽셀 고정)
   },
   naverLogo: {
-    width: 42.533, // 카카오와 동일한 크기
-    height: 42.533,
+    width: 42.533, // Locofy: 42.533 (픽셀 고정)
+    height: 43, // Locofy: height: 43 (픽셀 고정)
     position: 'absolute',
-    left: 21, // 카카오와 동일한 위치
-    top: 7,
+    left: '6.71%', // Locofy: left: "6.71%" (비율로 반응형)
+    top: 7, // Locofy: top: 7 (픽셀 고정)
   },
   googleLogo: {
-    width: 42.533, // 카카오와 동일한 크기
-    height: 42.533,
+    width: 35, // Locofy: width: 35 (픽셀 고정)
+    height: 35, // Locofy: height: 35 (픽셀 고정)
     position: 'absolute',
-    left: 21, // 카카오와 동일한 위치
-    top: 7,
+    left: '8.31%', // Locofy: left: "8.31%" (비율로 반응형)
+    top: 11, // Locofy: marginTop: -18.5 + 29.5 = 11 (픽셀 고정)
   },
 });
