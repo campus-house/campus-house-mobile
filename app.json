@@ -10,10 +10,7 @@
     "ios": {
       "supportsTablet": true
     },
-    "platforms": [
-      "ios",
-      "android"
-    ],
+    "platforms": ["ios", "android"],
     "plugins": [
       [
         "expo-router",
@@ -23,20 +20,6 @@
       ],
       "expo-font"
     ],
-    "scheme": "mobile",
-    "fonts": [
-      {
-        "asset": "./assets/fonts/Pretendard-Regular.otf",
-        "family": "Pretendard-Regular"
-      },
-      {
-        "asset": "./assets/fonts/Pretendard-SemiBold.otf", 
-        "family": "Pretendard-SemiBold"
-      },
-      {
-        "asset": "./assets/fonts/Pretendard-Bold.otf",
-        "family": "Pretendard-Bold"
-      }
-    ]
+    "scheme": "mobile"
   }
 }
