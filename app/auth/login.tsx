@@ -12,6 +12,7 @@ import {
 import { router } from 'expo-router';
 import { COLORS } from '@/constants/colors';
 
+
 export default function LoginScreen() {
   const [id, setId] = useState('');
   const [password, setPassword] = useState('');
@@ -26,8 +27,7 @@ export default function LoginScreen() {
   };
 
   const goToFindPassword = () => {
-    console.log('비밀번호 찾기');
-    // 비밀번호 찾기 페이지 구현 예정
+    router.push('/auth/find-password');
   };
 
   return (
