@@ -78,8 +78,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     paddingTop: 20,
     paddingHorizontal: 20,
-    paddingBottom: 40,
-    maxHeight: '70%',
+    paddingBottom: 20,
+    height: '55%',
   },
   header: {
     flexDirection: 'row',
@@ -97,6 +97,7 @@ const styles = StyleSheet.create({
     lineHeight: 22.519,
     textAlign: 'center',
     flex: 1,
+    marginLeft: 8,
   },
   closeButton: {
     width: 24,
@@ -106,17 +107,20 @@ const styles = StyleSheet.create({
   },
   carrierList: {
     flex: 1,
+    minHeight: 500,
+    marginTop: 6,
   },
   carrierItem: {
     width: 333,
-    height: 36,
+    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 12,
+    marginTop: 2,
   },
   carrierText: {
     width: 333,
-    height: 36,
+    height: 50,
     color: COLORS.text.primary,
     textAlign: 'center',
     fontFamily: 'Pretendard',
@@ -129,6 +133,7 @@ const styles = StyleSheet.create({
     width: 333,
     height: 1.5,
     backgroundColor: COLORS.neutral.grey2,
-    marginVertical: 8,
+    marginTop: 2,
+    marginBottom: 12,
   },
 });

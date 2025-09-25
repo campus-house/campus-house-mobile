@@ -18,7 +18,7 @@ export const GreyCheckButton: React.FC<GreyCheckButtonProps> = ({
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <CheckIcon color={isSelected ? COLORS.primary : COLORS.neutral.white} />
+      <CheckIcon color={COLORS.neutral.white} />
     </TouchableOpacity>
   );
 };

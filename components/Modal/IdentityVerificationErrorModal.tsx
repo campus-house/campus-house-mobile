@@ -20,7 +20,7 @@ export const IdentityVerificationErrorModal: React.FC<IdentityVerificationErrorM
         </Svg>
         <View style={styles.modalContainer}>
           <Text style={styles.errorMessage}>
-            입력정보 오류로 본인인증에{'\n'}실패하였습니다. 다시 시도해 주세요.
+            인증번호가 일치하지 않습니다.{'\n'}다시 확인해 주세요.
           </Text>
           <View style={styles.separator}>
             <Svg width="344" height="2" viewBox="0 0 344 2" fill="none">
