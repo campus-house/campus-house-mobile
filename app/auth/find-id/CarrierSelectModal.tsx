@@ -82,11 +82,11 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    width: 395,
-    height: 496,
+    width: '100%',
+    height: 400,
     backgroundColor: '#FFF',
-    borderTopLeftRadius: 43,
-    borderTopRightRadius: 43,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
   },
   header: {
     flexDirection: 'row',
@@ -95,6 +95,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 30,
     paddingBottom: 20,
+    width: '100%',
   },
   title: {
     color: '#323232',
@@ -103,7 +104,7 @@ const styles = StyleSheet.create({
     fontStyle: 'normal',
     fontWeight: '700',
     lineHeight: 22.519,
-    width: 213,
+    flex: 1,
   },
   closeButton: {
     padding: 4,
@@ -113,11 +114,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   carrierItem: {
-    width: 333,
-    height: 36,
+    width: '100%',
+    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 0,
   },
   carrierText: {
     color: '#323232',
@@ -126,12 +128,12 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontStyle: 'normal',
     fontWeight: '400',
-    lineHeight: 42.292,
+    lineHeight: 22,
   },
   separator: {
-    width: 333,
-    height: 1.5,
-    backgroundColor: '#CDCDCD',
-    marginLeft: 0,
+    width: '100%',
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 0,
   },
 });

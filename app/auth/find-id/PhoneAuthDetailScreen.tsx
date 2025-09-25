@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,11 +9,22 @@ import {
   TextInput,
   ScrollView,
 } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Rect } from 'react-native-svg';
 import CarrierSelectModal from './CarrierSelectModal';
+import IdFindResultScreen from './IdFindResultScreen';
 
-export default function PhoneAuthDetailScreen() {
+interface PhoneAuthDetailScreenProps {
+  onBack?: () => void;
+}
+
+export default function PhoneAuthDetailScreen({ onBack }: PhoneAuthDetailScreenProps) {
   const [isAllTermsAgreed, setIsAllTermsAgreed] = useState(false);
+  const [individualTerms, setIndividualTerms] = useState({
+    service: false,
+    carrier: false,
+    privacy: false,
+    identity: false,
+  });
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [residentNumber, setResidentNumber] = useState('');
@@ -22,6 +33,7 @@ export default function PhoneAuthDetailScreen() {
   
   // Focus states for input fields
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const residentNumberRef = useRef<TextInput>(null);
   
   // Modal state
   const [isCarrierModalVisible, setIsCarrierModalVisible] = useState(false);
@@ -30,23 +42,77 @@ export default function PhoneAuthDetailScreen() {
   const [isAuthRequested, setIsAuthRequested] = useState(false);
   const [authCode, setAuthCode] = useState('');
   const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
+  const [showResult, setShowResult] = useState(false);
+  const [foundId, setFoundId] = useState('');
 
   const handleAllTermsToggle = () => {
-    setIsAllTermsAgreed(!isAllTermsAgreed);
+    const newValue = !isAllTermsAgreed;
+    setIsAllTermsAgreed(newValue);
+    setIndividualTerms({
+      service: newValue,
+      carrier: newValue,
+      privacy: newValue,
+      identity: newValue,
+    });
+  };
+
+  const handleIndividualTermToggle = (term: keyof typeof individualTerms) => {
+    const newTerms = {
+      ...individualTerms,
+      [term]: !individualTerms[term],
+    };
+    setIndividualTerms(newTerms);
+    
+    // 모든 개별 약관이 체크되면 전체 동의도 체크
+    const allChecked = Object.values(newTerms).every(Boolean);
+    setIsAllTermsAgreed(allChecked);
   };
 
   const handleNext = () => {
     // 다음 단계로 이동하는 로직
-    console.log('Phone auth detail completed');
+    if (authCode.length === 6) {
+      setFoundId('bangmiooo1'); // 임시 아이디
+      setShowResult(true);
+    } else {
+      console.log('Phone auth detail completed');
+    }
   };
+
+  // 인증번호 입력 완료 감지 (자동 넘어가기 제거)
+  // useEffect(() => {
+  //   if (authCode.length === 6) {
+  //     // 인증번호가 6자리 입력되면 아이디 찾기 결과 표시
+  //     setTimeout(() => {
+  //       setFoundId('bangmiooo1'); // 임시 아이디
+  //       setShowResult(true);
+  //     }, 1000);
+  //   }
+  // }, [authCode]);
 
   const handleCarrierSelect = (selectedCarrier: string) => {
     setCarrier(selectedCarrier);
   };
 
+  const handleBirthDateChange = (text: string) => {
+    setBirthDate(text);
+    // 6자리 입력 완료되면 주민등록번호 뒷자리로 포커스 이동
+    if (text.length === 6) {
+      setTimeout(() => {
+        residentNumberRef.current?.focus();
+      }, 100);
+    }
+  };
+
   const handleAuthRequest = () => {
+    if (phoneNumber.length < 8) {
+      alert('휴대폰 번호를 올바르게 입력해주세요.');
+      return;
+    }
+    
     setIsAuthRequested(true);
     setTimeLeft(300); // Reset to 5 minutes
+    // 인증 요청 후 화면이 바뀌도록 처리
+    alert('인증번호가 발송되었습니다.');
   };
 
   // Timer effect
@@ -68,7 +134,11 @@ export default function PhoneAuthDetailScreen() {
   };
 
   const isFormValid = isAllTermsAgreed && name && birthDate && residentNumber && carrier && phoneNumber;
-  const isPhoneNumberComplete = phoneNumber.length === 11;
+  const isPhoneNumberComplete = phoneNumber.length >= 8;
+
+  if (showResult) {
+    return <IdFindResultScreen foundId={foundId} onBack={() => setShowResult(false)} />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -76,7 +146,7 @@ export default function PhoneAuthDetailScreen() {
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
+        <TouchableOpacity style={styles.backButton} onPress={onBack}>
           <Svg width="13" height="23" viewBox="0 0 13 23" fill="none">
             <Path
               d="M11.1777 2L1.55391 11.3274C1.34905 11.5259 1.35158 11.8554 1.55946 12.0508L11.1777 21.0909"
@@ -92,7 +162,9 @@ export default function PhoneAuthDetailScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Main Title */}
-        <Text style={styles.title}>본인 확인을 위해 인증을 진행해 주세요</Text>
+        <Text style={styles.title}>
+          본인 확인을 위해{'\n'}인증을 진행해 주세요
+        </Text>
         
         {/* Terms and Conditions */}
         <View style={styles.termsSection}>
@@ -102,50 +174,93 @@ export default function PhoneAuthDetailScreen() {
           >
             <View style={[styles.checkbox, isAllTermsAgreed && styles.checkboxChecked]}>
               {isAllTermsAgreed ? (
-                <Svg width="19" height="14" viewBox="0 0 19 14" fill="none">
-                  <Path
-                    d="M2.08008 5.65957L8.09122 11.3142L16.9201 1.41858"
-                    stroke="white"
-                    strokeWidth="2.43685"
-                    strokeLinecap="round"
-                  />
+                <Svg width="31" height="31" viewBox="0 0 31 31" fill="none">
+                  <Rect x="0.660156" y="0.522949" width="29.68" height="29.687" rx="14.84" fill="#FF6B35"/>
+                  <Path d="M8.08008 14.6596L14.0912 20.3142L22.9201 10.4186" stroke="white" strokeWidth="2.43685" strokeLinecap="round"/>
                 </Svg>
               ) : (
                 <Svg width="31" height="31" viewBox="0 0 31 31" fill="none">
-                  <Rect
-                    x="0.660156"
-                    y="0.522949"
-                    width="29.68"
-                    height="29.687"
-                    rx="14.84"
-                    fill="#CDCDCD"
-                  />
-                  <Path
-                    d="M8.08008 14.6596L14.0912 20.3142L22.9201 10.4186"
-                    stroke="white"
-                    strokeWidth="2.43685"
-                    strokeLinecap="round"
-                  />
+                  <Rect x="0.660156" y="0.522949" width="29.68" height="29.687" rx="14.84" fill="#CDCDCD"/>
+                  <Path d="M8.08008 14.6596L14.0912 20.3142L22.9201 10.4186" stroke="white" strokeWidth="2.43685" strokeLinecap="round"/>
                 </Svg>
               )}
             </View>
             <Text style={styles.allTermsText}>약관 전체 동의하기</Text>
           </TouchableOpacity>
+          
+          {/* Separator line - only show when all terms are agreed */}
+          {isAllTermsAgreed && (
+            <View style={styles.termsSeparator} />
+          )}
 
           {!isAllTermsAgreed && (
             <View style={styles.individualTerms}>
-              <TouchableOpacity style={styles.termItem}>
-                <View style={styles.termCheckbox}>
-                  <Svg width="31" height="31" viewBox="0 0 31 31" fill="none">
+            <TouchableOpacity 
+              style={styles.termItem}
+              onPress={() => handleIndividualTermToggle('service')}
+            >
+              <View style={styles.termCheckbox}>
+                {individualTerms.service ? (
+                  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <Path
-                      d="M7.75 15.338L14.0285 21.3007L23.25 10.866"
+                      d="M2 6L8 12L18 2"
+                      stroke="#FF6B35"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                ) : (
+                  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <Path
+                      d="M2 6L8 12L18 2"
                       stroke="#CDCDCD"
                       strokeWidth="2"
                       strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
                   </Svg>
-                </View>
-                <Text style={styles.termText}>휴대폰 본인인증 서비스 이용약관</Text>
+                )}
+              </View>
+              <Text style={styles.termText}>휴대폰 본인인증 서비스 이용약관</Text>
+              <Svg width="7" height="11" viewBox="0 0 7 11" fill="none">
+                <Path
+                  d="M0.800781 0.931152L5.39063 5.12542C5.60982 5.32573 5.60718 5.6718 5.38495 5.86873L0.800781 9.93115"
+                  stroke="#CDCDCD"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </Svg>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.termItem}
+              onPress={() => handleIndividualTermToggle('carrier')}
+            >
+              <View style={styles.termCheckbox}>
+                {individualTerms.carrier ? (
+                  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <Path
+                      d="M2 6L8 12L18 2"
+                      stroke="#FF6B35"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                ) : (
+                  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <Path
+                      d="M2 6L8 12L18 2"
+                      stroke="#CDCDCD"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                )}
+              </View>
+              <Text style={styles.termText}>휴대폰 통신사 이용약관 동의</Text>
                 <Svg width="7" height="11" viewBox="0 0 7 11" fill="none">
                   <Path
                     d="M0.800781 0.931152L5.39063 5.12542C5.60982 5.32573 5.60718 5.6718 5.38495 5.86873L0.800781 9.93115"
@@ -156,72 +271,82 @@ export default function PhoneAuthDetailScreen() {
                 </Svg>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.termItem}>
-                <View style={styles.termCheckbox}>
-                  <Svg width="31" height="31" viewBox="0 0 31 31" fill="none">
+            <TouchableOpacity 
+              style={styles.termItem}
+              onPress={() => handleIndividualTermToggle('privacy')}
+            >
+              <View style={styles.termCheckbox}>
+                {individualTerms.privacy ? (
+                  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <Path
-                      d="M7.75 15.338L14.0285 21.3007L23.25 10.866"
+                      d="M2 6L8 12L18 2"
+                      stroke="#FF6B35"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                ) : (
+                  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <Path
+                      d="M2 6L8 12L18 2"
                       stroke="#CDCDCD"
                       strokeWidth="2"
                       strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
                   </Svg>
-                </View>
-                <Text style={styles.termText}>휴대폰 통신사 이용약관 동의</Text>
-                <Svg width="7" height="11" viewBox="0 0 7 11" fill="none">
-                  <Path
-                    d="M0.800781 0.931152L5.39063 5.12542C5.60982 5.32573 5.60718 5.6718 5.38495 5.86873L0.800781 9.93115"
-                    stroke="#CDCDCD"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </Svg>
-              </TouchableOpacity>
+                )}
+              </View>
+              <Text style={styles.termText}>개인정보 제공 및 이용 동의</Text>
+              <Svg width="7" height="11" viewBox="0 0 7 11" fill="none">
+                <Path
+                  d="M0.800781 0.931152L5.39063 5.12542C5.60982 5.32573 5.60718 5.6718 5.38495 5.86873L0.800781 9.93115"
+                  stroke="#CDCDCD"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </Svg>
+            </TouchableOpacity>
 
-              <TouchableOpacity style={styles.termItem}>
-                <View style={styles.termCheckbox}>
-                  <Svg width="31" height="31" viewBox="0 0 31 31" fill="none">
+            <TouchableOpacity 
+              style={styles.termItem}
+              onPress={() => handleIndividualTermToggle('identity')}
+            >
+              <View style={styles.termCheckbox}>
+                {individualTerms.identity ? (
+                  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <Path
-                      d="M7.75 15.338L14.0285 21.3007L23.25 10.866"
+                      d="M2 6L8 12L18 2"
+                      stroke="#FF6B35"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                ) : (
+                  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <Path
+                      d="M2 6L8 12L18 2"
                       stroke="#CDCDCD"
                       strokeWidth="2"
                       strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
                   </Svg>
-                </View>
-                <Text style={styles.termText}>개인정보 제공 및 이용 동의</Text>
-                <Svg width="7" height="11" viewBox="0 0 7 11" fill="none">
-                  <Path
-                    d="M0.800781 0.931152L5.39063 5.12542C5.60982 5.32573 5.60718 5.6718 5.38495 5.86873L0.800781 9.93115"
-                    stroke="#CDCDCD"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </Svg>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.termItem}>
-                <View style={styles.termCheckbox}>
-                  <Svg width="31" height="31" viewBox="0 0 31 31" fill="none">
-                    <Path
-                      d="M7.75 15.338L14.0285 21.3007L23.25 10.866"
-                      stroke="#CDCDCD"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </Svg>
-                </View>
-                <Text style={styles.termText}>고유식별정보 처리</Text>
-                <Svg width="7" height="11" viewBox="0 0 7 11" fill="none">
-                  <Path
-                    d="M0.800781 0.931152L5.39063 5.12542C5.60982 5.32573 5.60718 5.6718 5.38495 5.86873L0.800781 9.93115"
-                    stroke="#CDCDCD"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </Svg>
-              </TouchableOpacity>
-            </View>
+                )}
+              </View>
+              <Text style={styles.termText}>고유식별정보 처리</Text>
+              <Svg width="7" height="11" viewBox="0 0 7 11" fill="none">
+                <Path
+                  d="M0.800781 0.931152L5.39063 5.12542C5.60982 5.32573 5.60718 5.6718 5.38495 5.86873L0.800781 9.93115"
+                  stroke="#CDCDCD"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </Svg>
+            </TouchableOpacity>
+          </View>
           )}
         </View>
 
@@ -262,7 +387,7 @@ export default function PhoneAuthDetailScreen() {
                   ]}
                   placeholder={focusedField === 'birthDate' ? '' : '생년월일 6자리'}
                   value={birthDate}
-                  onChangeText={setBirthDate}
+                  onChangeText={handleBirthDateChange}
                   onFocus={() => setFocusedField('birthDate')}
                   onBlur={() => setFocusedField(null)}
                   placeholderTextColor="#CDCDCD"
@@ -270,32 +395,34 @@ export default function PhoneAuthDetailScreen() {
                   maxLength={6}
                 />
                 <View style={[
-                  styles.residentNumberUnderline,
+                  styles.birthDateUnderline,
                   focusedField === 'birthDate' && styles.inputUnderlineFocused
                 ]} />
               </View>
-              <Svg width="8" height="2" viewBox="0 0 8 2" fill="none">
-                <Path
-                  d="M0.722656 0.529297H6.72266"
-                  stroke="#CDCDCD"
-                  strokeLinecap="round"
-                />
-              </Svg>
+              <View style={styles.hyphenContainer}>
+                <Svg width="8" height="2" viewBox="0 0 8 2" fill="none">
+                  <Path
+                    d="M0.722656 0.529297H6.72266"
+                    stroke="#CDCDCD"
+                    strokeLinecap="round"
+                  />
+                </Svg>
+              </View>
               <View style={styles.residentNumberField}>
                 <TextInput
+                  ref={residentNumberRef}
                   style={[
                     styles.residentNumberInput,
                     focusedField === 'residentNumber' && styles.inputFieldFocused
                   ]}
-                  placeholder={focusedField === 'residentNumber' ? '' : '••••••'}
-                  value={residentNumber}
+                  placeholder={focusedField === 'residentNumber' ? '' : '•------'}
+                  value={residentNumber ? residentNumber + '******' : ''}
                   onChangeText={setResidentNumber}
                   onFocus={() => setFocusedField('residentNumber')}
                   onBlur={() => setFocusedField(null)}
                   placeholderTextColor="#CDCDCD"
                   keyboardType="numeric"
-                  maxLength={7}
-                  secureTextEntry
+                  maxLength={1}
                 />
                 <View style={[
                   styles.residentNumberUnderline,
@@ -363,7 +490,6 @@ export default function PhoneAuthDetailScreen() {
                   styles.authRequestButton, 
                   isPhoneNumberComplete && styles.authRequestButtonActive
                 ]}
-                disabled={!isPhoneNumberComplete}
                 onPress={handleAuthRequest}
               >
                 <Text style={[
@@ -450,8 +576,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
   },
   backButton: {
     padding: 4,
@@ -462,7 +586,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontStyle: 'normal',
     fontWeight: '400',
-    lineHeight: 17,
+    lineHeight: 24,
   },
   headerSpacer: {
     width: 32,
@@ -478,23 +602,23 @@ const styles = StyleSheet.create({
     fontStyle: 'normal',
     fontWeight: '700',
     lineHeight: 35,
-    textAlign: 'center',
-    marginTop: 40,
-    marginBottom: 30,
+    textAlign: 'left',
+    marginTop: 20,
+    marginBottom: 20,
   },
   termsSection: {
-    marginBottom: 30,
+    marginBottom: 20,
+  },
+  termsSeparator: {
+    width: 345,
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginVertical: 15,
   },
   allTermsContainer: {
-    display: 'flex',
-    width: 151,
-    height: 52,
-    padding: 9.895,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 9.895,
     flexDirection: 'row',
-    marginBottom: 16,
+    alignItems: 'center',
+    marginBottom: 8,
   },
   checkbox: {
     width: 29.68,
@@ -510,15 +634,16 @@ const styles = StyleSheet.create({
   },
   allTermsText: {
     color: '#323232',
-    textAlign: 'center',
+    textAlign: 'left',
     fontFamily: 'Pretendard',
     fontSize: 17,
     fontStyle: 'normal',
     fontWeight: '600',
     lineHeight: 27.211,
+    marginLeft: 12,
   },
   individualTerms: {
-    paddingLeft: 32,
+    paddingLeft: 0,
   },
   termItem: {
     flexDirection: 'row',
@@ -549,7 +674,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     color: '#AAA',
-    textAlign: 'center',
+    textAlign: 'left',
     fontFamily: 'Pretendard',
     fontSize: 12,
     fontStyle: 'normal',
@@ -560,7 +685,7 @@ const styles = StyleSheet.create({
     width: 300.934,
   },
   inputField: {
-    color: '#CDCDCD',
+    color: '#000000',
     fontFamily: 'Pretendard',
     fontSize: 18.5,
     fontStyle: 'normal',
@@ -573,7 +698,7 @@ const styles = StyleSheet.create({
   },
   inputUnderline: {
     width: 308,
-    height: 1.5,
+    height: 1,
     backgroundColor: '#CDCDCD',
   },
   inputUnderlineFocused: {
@@ -582,23 +707,37 @@ const styles = StyleSheet.create({
   residentNumberContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
   },
   residentNumberField: {
     flex: 1,
   },
+  hyphenContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    left: '42%',
+    top: '42%',
+    transform: [{ translateX: -4 }],
+  },
   residentNumberInput: {
-    color: '#CDCDCD',
+    color: '#000000',
     fontFamily: 'Pretendard',
     fontSize: 18.5,
     fontStyle: 'normal',
     fontWeight: '400',
     lineHeight: 22,
+    letterSpacing: 1.12,
     paddingVertical: 8,
   },
-  residentNumberUnderline: {
+  birthDateUnderline: {
     width: 127,
-    height: 1.5,
+    height: 1,
+    backgroundColor: '#CDCDCD',
+  },
+  residentNumberUnderline: {
+    width: 15,
+    height: 1,
     backgroundColor: '#CDCDCD',
   },
   phoneContainer: {
@@ -612,7 +751,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   carrierInput: {
-    color: '#CDCDCD',
+    color: '#000000',
     fontFamily: 'Pretendard',
     fontSize: 18.5,
     fontStyle: 'normal',
@@ -626,7 +765,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     width: 78.104,
-    height: 1.5,
+    height: 1,
     backgroundColor: '#CDCDCD',
   },
   phoneField: {
@@ -634,7 +773,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   phoneInput: {
-    color: '#CDCDCD',
+    color: '#000000',
     fontFamily: 'Pretendard',
     fontSize: 18.5,
     fontStyle: 'normal',
@@ -647,14 +786,14 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     width: 138,
-    height: 1.5,
+    height: 1,
     backgroundColor: '#CDCDCD',
   },
   authRequestButton: {
     display: 'flex',
-    width: 80,
-    height: 40,
-    padding: 8,
+    width: 100,
+    height: 50,
+    padding: 12,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 10,
@@ -686,7 +825,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   authCodeInput: {
-    color: '#CDCDCD',
+    color: '#000000',
     fontFamily: 'Pretendard',
     fontSize: 18.5,
     fontStyle: 'normal',
@@ -699,7 +838,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     width: '100%',
-    height: 1.5,
+    height: 1,
     backgroundColor: '#CDCDCD',
   },
   timerContainer: {
@@ -741,7 +880,7 @@ const styles = StyleSheet.create({
     fontSize: 16.5,
     fontStyle: 'normal',
     fontWeight: '700',
-    lineHeight: 'normal',
+    lineHeight: 20,
   },
   nextButtonTextActive: {
     color: '#ffffff',

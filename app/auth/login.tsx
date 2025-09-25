@@ -18,6 +18,7 @@ import { LoginButton } from '@/components/Button/LoginButton';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
+
 export default function LoginScreen() {
   const [id, setId] = useState('');
   const [password, setPassword] = useState('');
@@ -35,7 +36,6 @@ export default function LoginScreen() {
 
   const goToFindPassword = () => {
     router.push('/auth/find-password');
-    // 비밀번호 찾기 페이지 구현 예정
   };
 
   return (
