@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { router } from 'expo-router';
 import { COLORS } from '@/constants/colors';
 import { GreyCheckButton } from '@/components/Button/CheckButton';
 import { GreyCheckIcon } from '@/components/Button/GreyCheckIcon';
-import { HouseLogo } from '@/components/Icon/HouseLogo';
 
 interface TermItem {
   id: string;
@@ -40,7 +39,7 @@ export default function TermsAgreementScreen() {
         term.id === id ? { ...term, isSelected: !term.isSelected } : term,
       );
 
-      // 모든 약관이 선택되었는지 확인
+      // 모든 약관이 선택되었는지 확인 (필수 + 선택 모두)
       const allSelected = newTerms.every((term) => term.isSelected);
       setIsAllAgreed(allSelected);
 
@@ -65,7 +64,11 @@ export default function TermsAgreementScreen() {
       {/* 로고 영역 */}
       <View style={styles.logoContainer}>
         <View style={styles.logoBackground}>
-          <HouseLogo size={137} />
+          <Image
+            source={require('@/assets/images/house-logo.png')}
+            style={styles.houseLogo}
+            resizeMode="contain"
+          />
         </View>
       </View>
 
@@ -126,6 +129,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     marginBottom: 40,
+    marginTop: 60,
   },
   logoBackground: {
     width: 168,
@@ -134,6 +138,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFBFB',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  houseLogo: {
+    width: 137,
+    height: 99,
+    flexShrink: 0,
+    aspectRatio: 137 / 99,
   },
   guideText: {
     color: COLORS.text.primary,
@@ -144,15 +154,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 24.5,
     marginBottom: 40,
+    marginTop: 20,
   },
   termsContainer: {
     marginBottom: 40,
+    marginTop: 20,
   },
   allAgreeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
     paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.neutral.grey2,
   },
   allAgreeText: {
     color: COLORS.text.primary,
@@ -167,8 +181,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.neutral.grey2,
   },
   termText: {
     color: COLORS.neutral.grey4,

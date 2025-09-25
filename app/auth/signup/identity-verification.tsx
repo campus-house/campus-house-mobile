@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { router } from 'expo-router';
 import { COLORS } from '@/constants/colors';
 import Svg, { Path } from 'react-native-svg';
 import { CarrierSelectionModal } from '@/components/Modal/CarrierSelectionModal';
@@ -27,7 +28,7 @@ export default function IdentityVerificationScreen() {
     name.length > 0 &&
     birthDate.length === 6 &&
     rrnFirstDigit.length === 1 &&
-    phoneNumber.length > 0 &&
+    phoneNumber.length === 11 &&
     selectedCarrier.length > 0 &&
     verificationCode.length === 6;
 
@@ -62,22 +63,22 @@ export default function IdentityVerificationScreen() {
 
   const handleNext = () => {
     if (isFormValid) {
-      // 인증번호 검증 로직 (임시로 틀린 인증번호로 처리)
+      // 인증번호 검증 로직 (임시로 000000으로 설정)
       // 실제로는 API 호출로 인증번호 검증
-      if (verificationCode === '123456') {
+      if (verificationCode === '000000') {
         // 인증 성공 - 다음 단계로 이동
-        console.log('인증 성공 - 다음 단계로 이동');
+        router.push('/auth/signup/register');
       } else {
         // 인증 실패 - 오류 메시지 표시
-        setIsVerificationError(true);
+        setIsErrorModalVisible(true);
       }
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <View style={styles.container}>
       {/* 뒤로가기 버튼 */}
-      <TouchableOpacity style={styles.backButton}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Svg width={13} height={23} viewBox="0 0 13 23" fill="none">
           <Path
             d="M11.6602 2L2.03634 11.3274C1.83148 11.5259 1.834 11.8554 2.04188 12.0508L11.6602 21.0909"
@@ -97,7 +98,7 @@ export default function IdentityVerificationScreen() {
       </View>
 
       {/* 메인 콘텐츠 */}
-      <View style={styles.contentContainer}>
+      <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.contentContainer}>
         {/* 제목 */}
         <Text style={styles.title}>본인인증</Text>
         <Text style={styles.subtitle}>*계정 도용을 막기 위한 본인인증 절차입니다.</Text>
@@ -184,26 +185,34 @@ export default function IdentityVerificationScreen() {
 
         {/* 휴대폰 입력 */}
         <View style={styles.inputSection}>
-          <Text style={styles.label}>휴대폰</Text>
           <View style={styles.phoneContainer}>
-            {/* 통신사 선택 */}
-            <TouchableOpacity
-              style={styles.carrierContainer}
-              onPress={() => setIsCarrierModalVisible(true)}
-            >
-              <Text style={[styles.carrierText, selectedCarrier && styles.carrierTextSelected]}>
-                {selectedCarrier || '통신사'}
-              </Text>
-              <Svg width={11} height={7} viewBox="0 0 11 7" fill="none">
-                <Path
-                  d="M1 1L5.3536 5.35352L9.70703 1"
-                  stroke="#CDCDCD"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-              </Svg>
-              <View style={styles.carrierUnderline} />
-            </TouchableOpacity>
+            <View style={styles.phoneLabelContainer}>
+              <Text style={styles.label}>휴대폰</Text>
+              {/* 통신사 선택 */}
+              <TouchableOpacity
+                style={styles.carrierContainer}
+                onPress={() => {
+                  setIsCarrierModalVisible(true);
+                }}
+                hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.carrierText, selectedCarrier && styles.carrierTextSelected]}>
+                  {selectedCarrier || '통신사'}
+                </Text>
+                <View style={{ marginLeft: 36, marginTop: -1 }}>
+                  <Svg width={11} height={7} viewBox="0 0 11 7" fill="none">
+                    <Path
+                      d="M1 1L5.3536 5.35352L9.70703 1"
+                      stroke="#CDCDCD"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  </Svg>
+                </View>
+                <View style={styles.carrierUnderline} />
+              </TouchableOpacity>
+            </View>
 
             {/* 휴대폰 번호 */}
             <View style={styles.phoneNumberContainer}>
@@ -213,12 +222,17 @@ export default function IdentityVerificationScreen() {
                   (isPhoneFocused || phoneNumber.length > 0) && styles.phoneTextInputFocused,
                 ]}
                 value={phoneNumber}
-                onChangeText={setPhoneNumber}
+                onChangeText={(text) => {
+                  if (text.length <= 11) {
+                    setPhoneNumber(text);
+                  }
+                }}
                 onFocus={() => setIsPhoneFocused(true)}
                 onBlur={() => setIsPhoneFocused(false)}
                 placeholder={isPhoneFocused || phoneNumber.length > 0 ? '' : '휴대폰 번호'}
                 placeholderTextColor={COLORS.neutral.grey3}
                 keyboardType="numeric"
+                maxLength={11}
               />
               <View
                 style={[styles.phoneUnderline, isPhoneFocused && styles.phoneUnderlineFocused]}
@@ -262,6 +276,10 @@ export default function IdentityVerificationScreen() {
                     if (isVerificationError) {
                       setIsVerificationError(false);
                     }
+                    // 오류 모달이 열려있으면 닫기
+                    if (isErrorModalVisible) {
+                      setIsErrorModalVisible(false);
+                    }
                   }}
                   onFocus={() => setIsVerificationCodeFocused(true)}
                   onBlur={() => setIsVerificationCodeFocused(false)}
@@ -291,7 +309,7 @@ export default function IdentityVerificationScreen() {
             </View>
           )}
         </View>
-      </View>
+      </ScrollView>
 
       {/* 다음 버튼 */}
       <TouchableOpacity
@@ -315,7 +333,7 @@ export default function IdentityVerificationScreen() {
         visible={isErrorModalVisible}
         onClose={() => setIsErrorModalVisible(false)}
       />
-    </ScrollView>
+    </View>
   );
 }
 
@@ -323,12 +341,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background.primary,
+    paddingTop: 60,
+  },
+  scrollContainer: {
+    flex: 1,
   },
   contentContainer: {
-    flexGrow: 1,
+    paddingTop: 0,
+    paddingBottom: 20,
     paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 40,
   },
   backButton: {
     width: 40,
@@ -336,22 +357,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+    marginLeft: 10,
+    marginTop: 10,
   },
   progressContainer: {
     marginBottom: 40,
+    paddingHorizontal: 0,
+    marginLeft: -30,
+    marginRight: 0,
+    alignSelf: 'stretch',
   },
   progressBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    width: '100%',
+    transform: [{ translateX: -40 }],
   },
   progressActive: {
-    width: 252,
+    width: '50%',
     height: 3,
     borderRadius: 16,
     backgroundColor: COLORS.primary,
   },
   progressInactive: {
-    width: 396,
+    width: '50%',
     height: 3,
     backgroundColor: COLORS.neutral.grey2,
   },
@@ -361,8 +390,9 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontStyle: 'normal',
     fontWeight: '700',
-    lineHeight: 17,
-    marginBottom: 8,
+    lineHeight: 40,
+    marginBottom: 5,
+    marginLeft: 10,
   },
   subtitle: {
     color: COLORS.primary,
@@ -371,10 +401,12 @@ const styles = StyleSheet.create({
     fontStyle: 'normal',
     fontWeight: '400',
     lineHeight: 17,
-    marginBottom: 40,
+    marginBottom: 20,
+    marginLeft: 10,
   },
   inputSection: {
-    marginBottom: 30,
+    marginBottom: 10,
+    marginTop: 30,
   },
   label: {
     color: COLORS.neutral.grey4,
@@ -383,7 +415,7 @@ const styles = StyleSheet.create({
     fontStyle: 'normal',
     fontWeight: '500',
     lineHeight: 22,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   inputContainer: {
     position: 'relative',
@@ -405,7 +437,7 @@ const styles = StyleSheet.create({
     width: 308,
     height: 1.5,
     backgroundColor: COLORS.neutral.grey3,
-    marginTop: 8,
+    marginTop: 6,
   },
   inputUnderlineFocused: {
     backgroundColor: COLORS.text.primary,
@@ -427,7 +459,8 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 22,
     letterSpacing: 0.555,
-    paddingVertical: 8,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   rrnTextInputFocused: {
     color: COLORS.text.primary,
@@ -436,7 +469,7 @@ const styles = StyleSheet.create({
     width: 127,
     height: 1.5,
     backgroundColor: COLORS.neutral.grey3,
-    marginTop: 8,
+    marginTop: 6,
   },
   rrnUnderlineFocused: {
     backgroundColor: COLORS.text.primary,
@@ -444,7 +477,7 @@ const styles = StyleSheet.create({
   hyphenContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 24,
   },
   rrnFirstDigitContainer: {
     position: 'relative',
@@ -457,7 +490,7 @@ const styles = StyleSheet.create({
     fontStyle: 'normal',
     fontWeight: '400',
     lineHeight: 22,
-    paddingVertical: 8,
+    paddingVertical: 4,
     textAlign: 'center',
   },
   rrnFirstDigitInputFocused: {
@@ -485,13 +518,21 @@ const styles = StyleSheet.create({
   phoneContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 12,
+    gap: 10,
+  },
+  phoneLabelContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    marginBottom: 8,
   },
   carrierContainer: {
     position: 'relative',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    minHeight: 40,
+    paddingVertical: 8,
+    marginTop: 4,
   },
   carrierText: {
     color: COLORS.neutral.grey3,
@@ -500,23 +541,25 @@ const styles = StyleSheet.create({
     fontStyle: 'normal',
     fontWeight: '400',
     lineHeight: 22,
+    paddingTop: 0,
   },
   carrierTextSelected: {
     color: COLORS.neutral.grey5,
   },
   carrierUnderline: {
     position: 'absolute',
-    bottom: -8,
+    bottom: -6,
     left: 0,
-    width: 78.104,
+    width: 110,
     height: 1.5,
     backgroundColor: COLORS.neutral.grey3,
   },
   phoneNumberContainer: {
     position: 'relative',
+    marginLeft: 24,
   },
   phoneTextInput: {
-    width: 184,
+    width: 150,
     color: COLORS.neutral.grey3,
     fontFamily: 'Pretendard',
     fontSize: 18.5,
@@ -524,16 +567,17 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 22,
     letterSpacing: 0.555,
-    paddingVertical: 8,
+    paddingTop: 33,
+    paddingBottom: 0,
   },
   phoneTextInputFocused: {
     color: COLORS.text.primary,
   },
   phoneUnderline: {
-    width: 184,
+    width: 145,
     height: 1.5,
     backgroundColor: COLORS.neutral.grey3,
-    marginTop: 8,
+    marginTop: 14,
   },
   phoneUnderlineFocused: {
     backgroundColor: COLORS.text.primary,
@@ -545,8 +589,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 10,
-    borderRadius: 30,
+    borderRadius: 12,
     backgroundColor: 'rgba(255, 128, 95, 0.10)',
+    marginLeft: -2,
   },
   verifyRequestButtonActive: {
     backgroundColor: COLORS.primary,
@@ -630,7 +675,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: COLORS.neutral.grey4,
     alignSelf: 'center',
-    marginBottom: 40,
+    marginBottom: 60,
   },
   nextButtonActive: {
     backgroundColor: COLORS.primary,

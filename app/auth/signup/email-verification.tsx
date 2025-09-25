@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  Keyboard,
+  Platform,
+} from 'react-native';
 import { COLORS } from '@/constants/colors';
 import Svg, { Path } from 'react-native-svg';
 import { LoadingModal } from '@/components/Modal/LoadingModal';
@@ -51,7 +59,7 @@ export default function EmailVerificationScreen() {
   return (
     <View style={styles.container}>
       {/* 뒤로가기 버튼 */}
-      <TouchableOpacity style={styles.backButton}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Svg width={13} height={23} viewBox="0 0 13 23" fill="none">
           <Path
             d="M11.6602 2L2.03634 11.3274C1.83148 11.5259 1.834 11.8554 2.04188 12.0508L11.6602 21.0909"
@@ -90,6 +98,10 @@ export default function EmailVerificationScreen() {
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              returnKeyType="done"
+              textContentType="emailAddress"
+              editable={true}
+              selectTextOnFocus={true}
             />
             <View style={[styles.inputUnderline, isFocused && styles.inputUnderlineActive]} />
           </View>
@@ -102,9 +114,7 @@ export default function EmailVerificationScreen() {
         onPress={handleVerify}
         disabled={!isEmailValid}
       >
-        <Text style={[styles.verifyButtonText, isEmailValid && styles.verifyButtonTextActive]}>
-          인증하기
-        </Text>
+        <Text style={styles.verifyButtonText}>인증하기</Text>
       </TouchableOpacity>
 
       {/* 로딩 모달 */}
@@ -132,28 +142,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+    marginTop: 20,
+    marginLeft: -10,
   },
   progressContainer: {
     marginBottom: 40,
+    marginLeft: -40,
+    marginRight: -20,
   },
   progressBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    width: '100%',
   },
   progressActive: {
-    width: 252,
+    flex: 1,
     height: 3,
-    borderRadius: 16,
     backgroundColor: COLORS.primary,
+    marginLeft: -20,
   },
   progressInactive: {
-    width: 396,
+    flex: 1,
     height: 3,
     backgroundColor: COLORS.neutral.grey2,
   },
   contentContainer: {
     flex: 1,
-    justifyContent: 'center',
+    paddingTop: 20,
   },
   title: {
     width: 260,
@@ -163,10 +178,12 @@ const styles = StyleSheet.create({
     fontStyle: 'normal',
     fontWeight: '700',
     lineHeight: 35,
-    marginBottom: 40,
+    marginBottom: 30,
+    textAlign: 'left',
   },
   inputSection: {
     marginBottom: 40,
+    width: '100%',
   },
   label: {
     color: COLORS.neutral.grey4,
@@ -176,9 +193,11 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 22,
     marginBottom: 8,
+    textAlign: 'left',
   },
   inputContainer: {
     position: 'relative',
+    width: '100%',
   },
   textInput: {
     width: 300.934,
@@ -189,6 +208,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 22.519,
     paddingVertical: 8,
+    textAlign: 'left',
   },
   inputUnderline: {
     width: 308,
@@ -208,7 +228,7 @@ const styles = StyleSheet.create({
     gap: 8,
     borderRadius: 20,
     backgroundColor: COLORS.neutral.grey4,
-    marginBottom: 40,
+    marginBottom: 60,
     alignSelf: 'center',
   },
   verifyButtonActive: {
@@ -221,8 +241,5 @@ const styles = StyleSheet.create({
     fontStyle: 'normal',
     fontWeight: '700',
     lineHeight: 16.5,
-  },
-  verifyButtonTextActive: {
-    color: COLORS.text.inverse,
   },
 });
