@@ -20,7 +20,7 @@ export const COLORS = {
     grey4: '#AAAAAA',
     grey3: '#CDCDCD',
     grey2: '#F2F2F2',
-    grey1: '#F9F9F9',
+    grey1: '#FCFCFC',
     white: '#FFFFFF',
   },
 

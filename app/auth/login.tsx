@@ -18,7 +18,6 @@ import { LoginButton } from '@/components/Button/LoginButton';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-
 export default function LoginScreen() {
   const [id, setId] = useState('');
   const [password, setPassword] = useState('');
@@ -28,6 +27,8 @@ export default function LoginScreen() {
   const handleLogin = () => {
     console.log('로그인 시도:', { id, password });
     // 실제 로그인 로직 구현 예정
+    // 로그인 성공 시 메인 화면으로 이동
+    router.replace('/main');
   };
 
   const goToFindId = () => {
