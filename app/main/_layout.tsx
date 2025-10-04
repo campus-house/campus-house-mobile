@@ -5,6 +5,24 @@ import Svg, { Path, Circle } from 'react-native-svg';
 import { COLORS } from '@/constants/colors';
 
 export default function MainLayout() {
+  const baseTabBarStyle = {
+    position: 'absolute' as const,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 76,
+    width: 393,
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: -1.5, height: -4.5 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 5,
+  };
   return (
     <>
       <StatusBar style="auto" backgroundColor={COLORS.background.primary} />
@@ -12,27 +30,7 @@ export default function MainLayout() {
         <Tabs
           screenOptions={{
             headerShown: false,
-            tabBarStyle: {
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 76,
-              width: 393,
-              backgroundColor: '#FFF',
-              borderTopLeftRadius: 25,
-              borderTopRightRadius: 25,
-              borderBottomLeftRadius: 0,
-              borderBottomRightRadius: 0,
-              shadowColor: '#000',
-              shadowOffset: {
-                width: -1.5,
-                height: -4.5,
-              },
-              shadowOpacity: 0.03,
-              shadowRadius: 4,
-              elevation: 5,
-            },
+            tabBarStyle: baseTabBarStyle,
             tabBarActiveTintColor: '#FF805F',
             tabBarInactiveTintColor: '#636363',
             tabBarLabelStyle: {

@@ -1,13 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform, Keyboard, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { COLORS } from '@/constants/colors';
+import { useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import HeartButton from '@/components/HeartButton';
-import FeedbackText from '@/components/FeedbackText';
-import HeartRewardModal from '@/components/HeartRewardModal';
-import ChatRewardModal from '@/components/ChatRewardModal';
-import AttachmentOptionText from '@/components/AttachmentOptionText';
+import ProfileScreen from '@/components/ProfileScreen';
 
 interface Message {
   id: string;
@@ -17,11 +13,11 @@ interface Message {
   readCount?: number;
 }
 
-export default function CommunityScreen() {
+export default function ChatScreen() {
+  const navigation: any = useNavigation();
   const [message, setMessage] = useState('');
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
-  const [showAttachmentOptions, setShowAttachmentOptions] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -56,15 +52,12 @@ export default function CommunityScreen() {
       timestamp: '오후 18:26'
     }
   ]);
-  const [showHeartFeedback, setShowHeartFeedback] = useState(false);
-  const [showRewardModal, setShowRewardModal] = useState(false);
-  const [showChatRewardModal, setShowChatRewardModal] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
   React.useEffect(() => {
     const showSub = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => {
+      (e) => {
         setIsKeyboardVisible(true);
         // 키보드가 나타날 때 스크롤을 맨 아래로
         setTimeout(() => {
@@ -93,7 +86,7 @@ export default function CommunityScreen() {
     return `${period} ${displayHours}:${minutes.toString().padStart(2, '0')}`;
   };
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = () => {
     if (message.trim()) {
       const newMessage: Message = {
         id: Date.now().toString(),
@@ -106,15 +99,6 @@ export default function CommunityScreen() {
       setMessages(prev => [...prev, newMessage]);
       setMessage('');
       
-      // 첫 번째 사용자 메시지 전송 시 하트 피드백 표시 및 첫 채팅 상태 저장
-      if (!showHeartFeedback) {
-        console.log('첫 번째 메시지 전송 - 하트 피드백 표시');
-        setShowHeartFeedback(true);
-        // 첫 채팅을 보냈다는 상태를 AsyncStorage에 저장
-        await AsyncStorage.setItem('hasSentFirstMessage', 'true');
-        console.log('hasSentFirstMessage 저장 완료');
-      }
-      
       // 스크롤을 맨 아래로
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -124,26 +108,11 @@ export default function CommunityScreen() {
 
   // 사용자 프로필 화면
   if (showUserProfile) {
-    console.log('프로필 화면 렌더링됨');
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#4ba2ff' }}>
-        <Text style={{ fontSize: 24, color: '#fff', marginBottom: 20 }}>프로필 화면</Text>
-        <Text style={{ fontSize: 16, color: '#fff', marginBottom: 20 }}>라쿤인데요님</Text>
-        <TouchableOpacity 
-          onPress={() => {
-            console.log('뒤로가기 버튼 클릭됨');
-            setShowUserProfile(false);
-          }}
-          style={{ 
-            backgroundColor: '#FF805F', 
-            padding: 15, 
-            borderRadius: 10,
-            marginTop: 20 
-          }}
-        >
-          <Text style={{ color: '#fff', fontSize: 16 }}>뒤로가기</Text>
-        </TouchableOpacity>
-      </View>
+      <ProfileScreen onBack={() => {
+        console.log('프로필 화면에서 뒤로가기 호출됨');
+        setShowUserProfile(false);
+      }} />
     );
   }
 
@@ -164,9 +133,7 @@ export default function CommunityScreen() {
         <View style={{ width: '100%', paddingTop: 82, paddingBottom: 12, paddingHorizontal: 20 }}>
         <View style={{ position: 'absolute', left: 5, top: 87, height: 32, width: 32, justifyContent: 'center', alignItems: 'center' }}>
           <Pressable style={{ height: 32, width: 32, justifyContent: 'center', alignItems: 'center' }} onPress={() => {
-            // 뒤로가기 시 모달 표시
-            console.log('커뮤니티 화면에서 뒤로가기 - 모달 표시');
-            setShowChatRewardModal(true);
+            router.back();
           }}>
             <Image source={require('@/assets/images/backbutton.png')} style={{ width: 24, height: 24 }} resizeMode="contain" />
           </Pressable>
@@ -176,63 +143,15 @@ export default function CommunityScreen() {
           <Image source={require('@/assets/images/jum3.png')} style={{ width: 18, height: 15 }} resizeMode="contain" />
         </Pressable>
         <Text style={{ width: 80, alignSelf: 'center', marginTop: 4, fontSize: 14, lineHeight: 21, fontWeight: '300', fontFamily: 'Pretendard', color: '#323232', textAlign: 'center' }}>보유하트 70개</Text>
-        
-        {/* 테스트 버튼 */}
-        <TouchableOpacity 
-          onPress={() => {
-            console.log('테스트 버튼 클릭됨');
-            Alert.alert('테스트 버튼 클릭됨!');
-            setShowUserProfile(true);
-          }}
-          style={{ 
-            backgroundColor: '#FF805F', 
-            padding: 10, 
-            margin: 20, 
-            borderRadius: 10,
-            alignSelf: 'center'
-          }}
-        >
-          <Text style={{ color: '#fff', fontSize: 16 }}>프로필 테스트 버튼</Text>
-        </TouchableOpacity>
 
-        {/* 도넛 나눔할게요 카드 */}
-        <View style={styles.offerBox}>
-          <Image source={require('@/assets/images/donut.png')} style={styles.offerImage} resizeMode="cover" />
-          <Text style={[styles.offerTitle, { marginTop: -2, marginLeft: -8 }]}>도넛 나눔할게요</Text>
-        </View>
-
-        {/* 구분선 */}
-        <View style={styles.offerSeparator} />
-
-        {/* 공지 박스 */}
-        <View style={styles.noticeBox}>
-          <Image source={require('@/assets/images/loudspeaker.png')} style={styles.noticeIcon} resizeMode="contain" />
-          <Text style={styles.noticeText}>대화 중 폭언과 비하발언은 삼가해주세요.</Text>
-        </View>
-
-        {/* 날짜 텍스트 */}
-        <Text style={styles.dateText}>2025년 9월 1일</Text>
 
         {/* 첫 채팅 버블 - 라쿤 */}
         <View style={[styles.chatRow, { paddingLeft: -22, paddingRight: 50, marginTop: 19 }]}>
-          <TouchableOpacity 
-            onPress={() => {
-              console.log('라쿤 아바타 클릭됨 - 프로필 화면으로 이동');
-              Alert.alert('라쿤 클릭됨!'); // 임시 알림
-              setShowUserProfile(true);
-            }}
-            style={{ 
-              padding: 10,
-              backgroundColor: 'rgba(255, 0, 0, 0.1)', // 임시 빨간 배경으로 터치 영역 확인
-              borderRadius: 30
-            }}
-            activeOpacity={0.5}
-            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-          >
+          <Pressable onPress={() => setShowUserProfile(true)}>
             <View style={[styles.greenCircle, { width: 48, height: 48, borderRadius: 24, marginTop: -3 }]}>
               <Image source={require('@/assets/images/real-racoon-4x.png')} style={[styles.avatarImage, { width: 47, height: 47 }]} resizeMode="contain" />
             </View>
-          </TouchableOpacity>
+          </Pressable>
           <View style={[styles.chatBubbleLeft, { marginTop: 5 }]}>
             <Text style={styles.chatBubbleText}>안녕하세요~!</Text>
           </View>
@@ -255,9 +174,9 @@ export default function CommunityScreen() {
             <Text style={[styles.timeTextSmallLeft, { marginRight: 10, marginBottom: 0 }]}>오후 18:24</Text>
             <View style={styles.chatBubbleRight}>
               <Text style={styles.chatBubbleTextUser}>안녕하세용</Text>
-      </View>
+            </View>
+          </View>
         </View>
-      </View>
 
         {/* 사용자 메시지 2 */}
         <View style={[styles.chatRow, { paddingLeft: 50, paddingRight: -22, marginTop: 13, justifyContent: 'flex-end' }]}>
@@ -271,24 +190,11 @@ export default function CommunityScreen() {
 
         {/* 라쿤 마지막 메시지 */}
         <View style={[styles.chatRow, { paddingLeft: -22, paddingRight: 50, marginTop: 13 }]}>
-          <TouchableOpacity 
-            onPress={() => {
-              console.log('라쿤 아바타 클릭됨 - 프로필 화면으로 이동');
-              Alert.alert('라쿤 클릭됨!'); // 임시 알림
-              setShowUserProfile(true);
-            }}
-            style={{ 
-              padding: 10,
-              backgroundColor: 'rgba(255, 0, 0, 0.1)', // 임시 빨간 배경으로 터치 영역 확인
-              borderRadius: 30
-            }}
-            activeOpacity={0.5}
-            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-          >
+          <Pressable onPress={() => setShowUserProfile(true)}>
             <View style={[styles.greenCircle, { width: 48, height: 48, borderRadius: 24 }]}>
               <Image source={require('@/assets/images/real-racoon-4x.png')} style={[styles.avatarImage, { width: 47, height: 47 }]} resizeMode="contain" />
             </View>
-          </TouchableOpacity>
+          </Pressable>
           <View style={styles.bubbleWithTime}>
             <View style={styles.chatBubbleLeft}>
               <Text style={styles.chatBubbleTextWide}>네!!!! 금방 가겠습니다!!</Text>
@@ -298,7 +204,7 @@ export default function CommunityScreen() {
         </View>
 
         {/* 새로 추가되는 사용자 메시지들 */}
-        {messages.filter(msg => msg.isUser && parseInt(msg.id) > 5).map((msg) => (
+        {messages.filter(msg => msg.isUser && parseInt(msg.id) > 5).map((msg, index) => (
           <View key={msg.id} style={[styles.chatRow, { paddingLeft: 50, paddingRight: -22, marginTop: 13, justifyContent: 'flex-end' }]}>
             <View style={styles.bubbleWithTimeUser}>
               <View style={{ alignItems: 'flex-end' }}>
@@ -309,66 +215,22 @@ export default function CommunityScreen() {
               </View>
               <View style={[styles.chatBubbleRight, { maxWidth: '80%' }]}>
                 <Text style={styles.chatBubbleTextUser}>{msg.text}</Text>
-        </View>
-      </View>
-    </View>
-        ))}
-
-        {/* 하트 피드백 시스템 - 첫 번째 사용자 메시지 전송 후에만 표시 */}
-        {showHeartFeedback && (
-          <View style={styles.heartFeedbackContainer}>
-            <View style={styles.heartFeedbackContent}>
-            <View style={styles.heartButtonContainer}>
-              <HeartButton onPress={() => {
-                // 하트 버튼 클릭 시 모달 표시
-                console.log('하트 버튼 클릭됨');
-                setShowRewardModal(true);
-              }} />
-            </View>
-              <FeedbackText />
+              </View>
             </View>
           </View>
-        )}
+        ))}
+
         </View>
       </ScrollView>
 
-      {/* 하트 리워드 모달 */}
-      <HeartRewardModal
-        visible={showRewardModal}
-        onClose={() => setShowRewardModal(false)}
-      />
-      
-      {/* 채팅 리워드 모달 */}
-      <ChatRewardModal
-        visible={showChatRewardModal}
-        onClose={() => {
-          setShowChatRewardModal(false);
-          // 모달을 닫을 때 뒤로가기
-          setTimeout(() => {
-            router.back();
-          }, 100);
-        }}
-      />
 
       {/* 입력 바 */}
       <View style={[
         styles.inputBar, 
         { 
-          bottom: showAttachmentOptions 
-            ? (isKeyboardVisible ? 125 : 130) 
-            : (isKeyboardVisible ? 25 : 30)
+          bottom: isKeyboardVisible ? 25 : 30
         }
       ]}>
-        <Pressable 
-          style={styles.plusButton}
-          onPress={() => setShowAttachmentOptions(!showAttachmentOptions)}
-        >
-          {showAttachmentOptions ? (
-            <Text style={styles.xText}>×</Text>
-          ) : (
-            <Text style={styles.plusText}>+</Text>
-          )}
-        </Pressable>
         <View style={styles.inputFieldBox}>
           <TextInput
             style={styles.textInput}
@@ -384,64 +246,7 @@ export default function CommunityScreen() {
             <Image source={require('@/assets/images/sendbutton2x.png')} style={{ width: 42, height: 42 }} resizeMode="contain" />
           </Pressable>
         </View>
-        </View>
-
-      {/* 첨부 옵션들 */}
-      {showAttachmentOptions && (
-        <View style={styles.attachmentOptions}>
-          <View style={styles.attachmentRow}>
-            <View style={styles.attachmentItem}>
-              <View style={styles.attachmentIconContainer}>
-                <Image 
-                  source={require('@/assets/images/camerabutton.png')} 
-                  style={styles.attachmentIcon} 
-                  resizeMode="contain" 
-                />
-              </View>
-              <AttachmentOptionText text="카메라" />
-            </View>
-            
-            <View style={styles.attachmentItem}>
-              <View style={styles.attachmentIconContainer}>
-                <Image 
-                  source={require('@/assets/images/picturebutton.png')} 
-                  style={styles.attachmentIcon} 
-                  resizeMode="contain" 
-                />
-              </View>
-              <View style={styles.albumTextContainer}>
-                <AttachmentOptionText text="앨범" style={{ marginLeft: 6 }} />
-              </View>
-            </View>
-            
-            <View style={styles.attachmentItem}>
-              <View style={styles.attachmentIconContainer}>
-                <Image 
-                  source={require('@/assets/images/mapbutton.png')} 
-                  style={styles.attachmentIcon} 
-                  resizeMode="contain" 
-                />
-              </View>
-              <View style={styles.locationTextContainer}>
-                <AttachmentOptionText text="장소" style={{ marginLeft: 6 }} />
-              </View>
-            </View>
-            
-            <View style={styles.attachmentItem}>
-              <View style={styles.attachmentIconContainer}>
-                <Image 
-                  source={require('@/assets/images/schedulebutton.png')} 
-                  style={styles.attachmentIcon} 
-                  resizeMode="contain" 
-                />
-              </View>
-              <View style={styles.appointmentTextContainer}>
-                <AttachmentOptionText text="약속" style={{ marginLeft: 6 }} />
-              </View>
-            </View>
-          </View>
-        </View>
-      )}
+      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -452,78 +257,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.background.primary,
-  },
-  offerBox: {
-    marginTop: 18,
-    height: 55,
-    borderWidth: 1.2,
-    borderColor: '#f2f2f2',
-    backgroundColor: '#fcfcfc',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    marginHorizontal: 43,
-    alignSelf: 'center',
-  },
-  offerImage: {
-    width: 41,
-    height: 41,
-    borderRadius: 8,
-    marginRight: 23,
-    marginTop: 4,
-  },
-  offerTitle: {
-    width: 102,
-    fontSize: 16,
-    lineHeight: 24,
-    fontFamily: 'Pretendard',
-    color: '#323232',
-    textAlign: 'center',
-  },
-  noticeBox: {
-    marginTop: 24,
-    height: 45,
-    backgroundColor: '#f2f2f2',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    marginHorizontal: 15,
-  },
-  noticeIcon: {
-    width: 22,
-    height: 22,
-    marginRight: 10,
-  },
-  noticeText: {
-    width: 208,
-    fontSize: 13,
-    lineHeight: 22,
-    fontWeight: '400',
-    fontFamily: 'Pretendard',
-    color: '#323232',
-    textAlign: 'left',
-  },
-  dateText: {
-    width: '100%',
-    fontSize: 14,
-    lineHeight: 22,
-    fontFamily: 'Pretendard',
-    color: '#636363',
-    textAlign: 'center',
-    alignSelf: 'stretch',
-    marginTop: 22,
-  },
-  offerSeparator: {
-    height: 1,
-    backgroundColor: '#f5f5f5',
-    marginTop: 20,
-    marginHorizontal: -20,
-    width: 'auto',
-    alignSelf: 'stretch',
   },
   chatRow: {
     flexDirection: 'row',
@@ -625,33 +358,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 100,
   },
-  plusButton: {
-    width: 51,
-    height: 51,
-    backgroundColor: '#f2f2f2',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  plusText: {
-    fontSize: 36,
-    lineHeight: 36,
-    color: '#aaa',
-  },
-  xText: {
-    fontSize: 36,
-    lineHeight: 36,
-    color: '#aaa',
-  },
-  plusIcon: {
-    width: 24,
-    height: 24,
-    tintColor: '#aaa',
-  },
-  xIcon: {
-    width: 20,
-    height: 20,
-  },
   inputFieldBox: {
     flex: 1,
     height: 62,
@@ -691,70 +397,5 @@ const styles = StyleSheet.create({
     height: 42,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  attachmentOptions: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-  },
-  attachmentRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  attachmentItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  attachmentIconContainer: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#f2f2f2',
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  attachmentIcon: {
-    width: 45,
-    height: 45,
-  },
-  attachmentTextContainer: {
-    marginLeft: 5,
-  },
-  albumTextContainer: {
-    marginLeft: 7,
-  },
-  locationTextContainer: {
-    marginLeft: 7,
-  },
-  appointmentTextContainer: {
-    marginLeft: 7,
-  },
-  heartFeedbackContainer: {
-    backgroundColor: "rgba(255, 204, 0, 0.22)",
-    width: "100%",
-    height: 79,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
-    paddingHorizontal: 60,
-    borderRadius: 12,
-  },
-  heartFeedbackContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heartButtonContainer: {
-    marginRight: 10,
-    marginLeft: -40,
-    width: 25,
-    height: 25,
   },
 });
