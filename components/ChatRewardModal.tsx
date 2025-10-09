@@ -9,9 +9,10 @@ import SparkleEffects from './SparkleEffects';
 interface ChatRewardModalProps {
   visible: boolean;
   onClose: () => void;
+  titleText?: string;
 }
 
-const ChatRewardModal: React.FC<ChatRewardModalProps> = ({ visible, onClose }) => {
+const ChatRewardModal: React.FC<ChatRewardModalProps> = ({ visible, onClose, titleText }) => {
   return (
     <Modal
       visible={visible}
@@ -29,7 +30,7 @@ const ChatRewardModal: React.FC<ChatRewardModalProps> = ({ visible, onClose }) =
             <SparkleEffects />
             <SquirrelImage />
             <View style={styles.textContainer}>
-              <ChatRewardTitleText />
+              <ChatRewardTitleText text={titleText} />
               <RewardSubText />
             </View>
             <View style={styles.buttonContainer}>
@@ -63,6 +64,7 @@ const styles = StyleSheet.create({
     height: '100%',
     position: 'relative',
     justifyContent: 'center',
+    transform: [{ translateY: 30 }],
   },
   textContainer: {
     alignItems: 'center',

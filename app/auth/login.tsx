@@ -84,6 +84,10 @@ export default function LoginScreen() {
               placeholder="비밀번호 입력"
               placeholderTextColor={COLORS.neutral.grey3}
               secureTextEntry
+              keyboardType="default"
+              autoCapitalize="none"
+              autoCorrect={false}
+              textContentType="password"
             />
             <View
               style={[styles.inputUnderline, passwordFocused && styles.inputUnderlineFocused]}

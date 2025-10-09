@@ -1,760 +1,709 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform, Keyboard, Alert } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+  Image,
+  Dimensions,
+  PanResponder,
+  Animated,
+} from 'react-native';
 import { router } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import HeartButton from '@/components/HeartButton';
-import FeedbackText from '@/components/FeedbackText';
-import HeartRewardModal from '@/components/HeartRewardModal';
-import ChatRewardModal from '@/components/ChatRewardModal';
-import AttachmentOptionText from '@/components/AttachmentOptionText';
+import Svg, { Path } from 'react-native-svg';
+import { COLORS } from '@/constants/colors';
+import { PlusIcon } from '@/components/Icon/PlusIcon';
+import { BackIcon } from '@/components/Icon/BackIcon';
 
-interface Message {
-  id: string;
-  text: string;
-  isUser: boolean;
-  timestamp: string;
-  readCount?: number;
-}
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-export default function CommunityScreen() {
-  const [message, setMessage] = useState('');
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  const [showUserProfile, setShowUserProfile] = useState(false);
-  const [showAttachmentOptions, setShowAttachmentOptions] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: '안녕하세요~!',
-      isUser: false,
-      timestamp: '오후 18:24'
-    },
-    {
-      id: '2',
-      text: '도넛 다 나눔하셨나요?',
-      isUser: false,
-      timestamp: '오후 18:24'
-    },
-    {
-      id: '3',
-      text: '안녕하세용',
-      isUser: true,
-      timestamp: '오후 18:24',
-      readCount: 1
-    },
-    {
-      id: '4',
-      text: '아직 3개 남았습니다!',
-      isUser: true,
-      timestamp: '오후 18:24',
-      readCount: 1
-    },
-    {
-      id: '5',
-      text: '네!!!! 금방 가겠습니다!!',
-      isUser: false,
-      timestamp: '오후 18:26'
-    }
-  ]);
-  const [showHeartFeedback, setShowHeartFeedback] = useState(false);
-  const [showRewardModal, setShowRewardModal] = useState(false);
-  const [showChatRewardModal, setShowChatRewardModal] = useState(false);
+// 샘플 데이터
+const samplePosts = [
+  {
+    id: 1,
+    author: '배달요정',
+    profileImage: '🐕',
+    time: '1시간 전',
+    date: '2025.09.01',
+    title: '같이 배달 시켜 먹을 사람 구해요!',
+    content: '배민으로 배달하려고 하는데 같이 시킬 분 연락 주세요~!',
+    image: '☕',
+    comments: 12,
+    likes: 5,
+    shares: 0,
+  },
+  {
+    id: 2,
+    author: '방미오',
+    profileImage: '🦉',
+    time: '1시간 전',
+    date: '2025.09.01',
+    title: '도넛 나눔할게요',
+    content: '도넛을 너무 많이 구매해서 여섯 분께 드리려고 해요! 오늘까지 아이파크 앞으...',
+    image: '🍩',
+    comments: 12,
+    likes: 5,
+    shares: 0,
+  },
+  {
+    id: 3,
+    author: '말하는감자',
+    profileImage: '🥔',
+    time: '1시간 전',
+    date: '2025.09.01',
+    title: '컵 공동구매 하실 분 있나요',
+    content: '요즘 분위기 좋은 카페에서 사용한다는 컵을 공동구매 한다는데 관심 있으신 분 계...',
+    image: '',
+    comments: 18,
+    likes: 0,
+    shares: 0,
+  },
+  {
+    id: 4,
+    author: '책벌레',
+    profileImage: '📚',
+    time: '2시간 전',
+    date: '2025.09.01',
+    title: '독서모임 같이 하실 분?',
+    content: '매주 토요일 오후에 카페에서 독서모임을 하는데 함께 하실 분 있나요?',
+    image: '📖',
+    comments: 8,
+    likes: 12,
+    shares: 2,
+  },
+  {
+    id: 5,
+    author: '운동러',
+    profileImage: '💪',
+    time: '3시간 전',
+    date: '2025.09.01',
+    title: '헬스장 같이 가실 분',
+    content: '혼자 운동하기 심심해서 같이 가실 분 구해요! 초보자도 환영입니다.',
+    image: '🏋️',
+    comments: 15,
+    likes: 8,
+    shares: 1,
+  },
+];
+
+export default function MainScreen() {
+  const [showBackButton, setShowBackButton] = useState(false);
+  const [scrollOffset, setScrollOffset] = useState(0);
+  const [cardPosition, setCardPosition] = useState(screenHeight * 0.6); // 카드의 Y 위치 (화면의 60% 지점에서 시작)
   const scrollViewRef = useRef<ScrollView>(null);
+  const pan = useRef(new Animated.ValueXY()).current;
 
-  React.useEffect(() => {
-    const showSub = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => {
-        setIsKeyboardVisible(true);
-        // 키보드가 나타날 때 스크롤을 맨 아래로
-        setTimeout(() => {
-          scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-      },
-    );
-    const hideSub = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => {
-        setIsKeyboardVisible(false);
-      },
-    );
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (evt, gestureState) => {
+      // 세로 드래그가 더 크면 카드 드래그, 가로 드래그가 더 크면 스크롤
+      return Math.abs(gestureState.dy) > Math.abs(gestureState.dx) && Math.abs(gestureState.dy) > 5;
+    },
+    onPanResponderGrant: () => {
+      pan.setOffset({
+        x: (pan.x as any)._value,
+        y: (pan.y as any)._value,
+      });
+    },
+    onPanResponderMove: (evt, gestureState) => {
+      const newY = cardPosition + gestureState.dy;
 
-  const getCurrentTime = () => {
-    const now = new Date();
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-    const period = hours >= 12 ? '오후' : '오전';
-    const displayHours = hours > 12 ? hours - 12 : hours;
-    return `${period} ${displayHours}:${minutes.toString().padStart(2, '0')}`;
-  };
-
-  const handleSendMessage = async () => {
-    if (message.trim()) {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        text: message.trim(),
-        isUser: true,
-        timestamp: getCurrentTime(),
-        readCount: 1
-      };
-      
-      setMessages(prev => [...prev, newMessage]);
-      setMessage('');
-      
-      // 첫 번째 사용자 메시지 전송 시 하트 피드백 표시 및 첫 채팅 상태 저장
-      if (!showHeartFeedback) {
-        console.log('첫 번째 메시지 전송 - 하트 피드백 표시');
-        setShowHeartFeedback(true);
-        // 첫 채팅을 보냈다는 상태를 AsyncStorage에 저장
-        await AsyncStorage.setItem('hasSentFirstMessage', 'true');
-        console.log('hasSentFirstMessage 저장 완료');
+      // 카드가 화면 최상단에 가까우면 뒤로가기 버튼 표시
+      if (newY < 100) {
+        setShowBackButton(true);
+      } else {
+        setShowBackButton(false);
       }
-      
-      // 스크롤을 맨 아래로
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    }
+
+      // 실시간으로 카드 위치 업데이트
+      setCardPosition(newY);
+      pan.setValue({ x: 0, y: gestureState.dy });
+    },
+    onPanResponderRelease: (evt, gestureState) => {
+      pan.flattenOffset();
+      const newY = cardPosition + gestureState.dy;
+
+      // 카드 위치 제한
+      const minY = 0; // 최상단 (전체 화면 덮음)
+      const maxY = screenHeight * 0.8; // 최하단 (화면의 80% 지점으로 더 아래로)
+
+      let finalY = newY;
+      if (newY < minY) {
+        finalY = minY;
+      }
+      if (newY > maxY) {
+        finalY = maxY;
+      }
+
+      // 애니메이션으로 부드럽게 이동
+      Animated.spring(pan, {
+        toValue: { x: 0, y: 0 },
+        useNativeDriver: false,
+      }).start();
+
+      setCardPosition(finalY);
+    },
+  });
+
+  const handleScroll = (event: any) => {
+    const currentOffset = event.nativeEvent.contentOffset.y;
+    setScrollOffset(currentOffset);
   };
 
-  // 사용자 프로필 화면
-  if (showUserProfile) {
-    console.log('프로필 화면 렌더링됨');
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#4ba2ff' }}>
-        <Text style={{ fontSize: 24, color: '#fff', marginBottom: 20 }}>프로필 화면</Text>
-        <Text style={{ fontSize: 16, color: '#fff', marginBottom: 20 }}>라쿤인데요님</Text>
-        <TouchableOpacity 
-          onPress={() => {
-            console.log('뒤로가기 버튼 클릭됨');
-            setShowUserProfile(false);
-          }}
-          style={{ 
-            backgroundColor: '#FF805F', 
-            padding: 15, 
-            borderRadius: 10,
-            marginTop: 20 
-          }}
-        >
-          <Text style={{ color: '#fff', fontSize: 16 }}>뒤로가기</Text>
-        </TouchableOpacity>
+  const renderPost = (post: (typeof samplePosts)[0]) => (
+    <TouchableOpacity 
+      key={post.id} 
+      style={styles.postCard}
+      onPress={() => {
+        if (post.title === '도넛 나눔할게요') {
+          router.push('/chat');
+        }
+      }}
+    >
+      <View style={styles.postHeader}>
+        <View style={styles.authorInfo}>
+          <View style={styles.profileImage}>
+            <Image
+              source={require('@/assets/images/ramjui.png')}
+              style={styles.profileImageInner}
+              resizeMode="cover"
+            />
+          </View>
+          <View style={styles.authorDetails}>
+            <View style={styles.nameTimeRow}>
+              <Text style={styles.authorName}>{post.author}</Text>
+              <Text style={styles.postTime}>{post.time}</Text>
+            </View>
+            <Text style={styles.postDate}>{post.date}</Text>
+          </View>
+        </View>
       </View>
-    );
-  }
+
+      <View style={styles.postContent}>
+        <View style={styles.contentLeft}>
+          <Text style={styles.postTitle}>{post.title}</Text>
+          <Text style={styles.postDescription}>{post.content}</Text>
+        </View>
+        <View style={styles.contentImage}>
+          <Image
+            source={require('@/assets/images/cuffie.png')}
+            style={styles.coffeeImage}
+            resizeMode="cover"
+          />
+        </View>
+      </View>
+
+      <View style={styles.divider} />
+
+      <View style={styles.postActions}>
+        <View style={styles.actionItem}>
+          <View style={styles.speechBubbleContainer}>
+            <Svg width="22" height="18" viewBox="0 0 22 18" style={styles.speechBubble}>
+              <Path
+                d="M15.9326 0.478516C19.0464 0.4787 21.5703 3.00334 21.5703 6.11719V8.43457C21.5703 11.5484 19.0464 14.0731 15.9326 14.0732H13.4951L11.624 17.1582C11.372 17.5738 10.7686 17.5738 10.5166 17.1582L8.64648 14.0732H6.20898C3.09503 14.0732 0.570327 11.5485 0.570312 8.43457V6.11719C0.570312 3.00323 3.09503 0.478516 6.20898 0.478516H15.9326Z"
+                stroke="#AAAAAA"
+                strokeWidth="1.485"
+                fill="none"
+              />
+            </Svg>
+            <View style={styles.dotsContainer}>
+              <View style={styles.dot} />
+              <View style={styles.dot} />
+              <View style={styles.dot} />
+            </View>
+          </View>
+          <Text style={styles.actionText}>4</Text>
+        </View>
+        <View style={styles.actionItem}>
+          <Svg width="19" height="16" viewBox="0 0 19 16" style={styles.actionIcon}>
+            <Path
+              d="M1.94824 1.76562C3.78556 -0.130104 6.76425 -0.130118 8.60156 1.76562L9.50586 2.69922L10.4111 1.7666C12.2485 -0.129148 15.2281 -0.129148 17.0654 1.7666C18.9025 3.66233 18.9026 6.73615 17.0654 8.63184L16.1602 9.56445L16.1621 9.56641L10.8516 15.0469C10.5734 15.3338 10.2302 15.5133 9.87109 15.585C9.27164 15.7062 8.62656 15.527 8.16211 15.0479L2.85059 9.56738L2.85254 9.56445L1.94824 8.63086C0.110923 6.73511 0.110923 3.66137 1.94824 1.76562Z"
+              stroke="#AAAAAA"
+              strokeWidth="1.483"
+              fill="none"
+            />
+          </Svg>
+          <Text style={styles.actionText}>5</Text>
+        </View>
+        <View style={styles.actionItem}>
+          <Svg width="14" height="16" viewBox="0 0 14 16" style={styles.actionIcon}>
+            <Path
+              d="M11.1297 1H2.76228C2.03516 1 1.44592 1.58985 1.44667 2.31697L1.45845 13.7494C1.45907 14.3576 2.06346 14.7806 2.63509 14.5729L6.73478 13.083C6.86597 13.0353 7.00973 13.0352 7.141 13.0826L11.2701 14.5752C11.8418 14.7819 12.4453 14.3583 12.4453 13.7503V2.31561C12.4453 1.58902 11.8563 1 11.1297 1Z"
+              stroke="#AAAAAA"
+              strokeWidth="1.38133"
+              fill="none"
+            />
+          </Svg>
+          <Text style={styles.actionText}>0</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
-    <KeyboardAvoidingView 
-      style={[styles.container, { backgroundColor: '#fff' }]} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-    >
-      <ScrollView 
-        ref={scrollViewRef}
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 20, flexGrow: 1 }}
-        showsVerticalScrollIndicator={true}
-        scrollEnabled={true}
-        bounces={true}
-      >
-        <View style={{ width: '100%', paddingTop: 82, paddingBottom: 12, paddingHorizontal: 20 }}>
-        <View style={{ position: 'absolute', left: 5, top: 87, height: 32, width: 32, justifyContent: 'center', alignItems: 'center' }}>
-          <Pressable style={{ height: 32, width: 32, justifyContent: 'center', alignItems: 'center' }} onPress={() => {
-            // 뒤로가기 시 모달 표시
-            console.log('커뮤니티 화면에서 뒤로가기 - 모달 표시');
-            setShowChatRewardModal(true);
-          }}>
-            <Image source={require('@/assets/images/backbutton.png')} style={{ width: 24, height: 24 }} resizeMode="contain" />
-          </Pressable>
-        </View>
-        <Text style={{ width: 78, alignSelf: 'center', marginTop: 2, fontSize: 18, lineHeight: 22, fontWeight: '600', fontFamily: 'Pretendard', color: '#000', textAlign: 'center' }}>라쿤인데요</Text>
-        <Pressable style={{ position: 'absolute', right: 5, top: 89, height: 22, width: 22, justifyContent: 'center', alignItems: 'center' }} onPress={() => {}}>
-          <Image source={require('@/assets/images/jum3.png')} style={{ width: 18, height: 15 }} resizeMode="contain" />
-        </Pressable>
-        <Text style={{ width: 80, alignSelf: 'center', marginTop: 4, fontSize: 14, lineHeight: 21, fontWeight: '300', fontFamily: 'Pretendard', color: '#323232', textAlign: 'center' }}>보유하트 70개</Text>
-        
-        {/* 테스트 버튼 */}
-        <TouchableOpacity 
-          onPress={() => {
-            console.log('테스트 버튼 클릭됨');
-            Alert.alert('테스트 버튼 클릭됨!');
-            setShowUserProfile(true);
-          }}
-          style={{ 
-            backgroundColor: '#FF805F', 
-            padding: 10, 
-            margin: 20, 
-            borderRadius: 10,
-            alignSelf: 'center'
-          }}
-        >
-          <Text style={{ color: '#fff', fontSize: 16 }}>프로필 테스트 버튼</Text>
-        </TouchableOpacity>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#D7F0FF" />
 
-        {/* 도넛 나눔할게요 카드 */}
-        <View style={styles.offerBox}>
-          <Image source={require('@/assets/images/donut.png')} style={styles.offerImage} resizeMode="cover" />
-          <Text style={[styles.offerTitle, { marginTop: -2, marginLeft: -8 }]}>도넛 나눔할게요</Text>
-        </View>
-
-        {/* 구분선 */}
-        <View style={styles.offerSeparator} />
-
-        {/* 공지 박스 */}
-        <View style={styles.noticeBox}>
-          <Image source={require('@/assets/images/loudspeaker.png')} style={styles.noticeIcon} resizeMode="contain" />
-          <Text style={styles.noticeText}>대화 중 폭언과 비하발언은 삼가해주세요.</Text>
-        </View>
-
-        {/* 날짜 텍스트 */}
-        <Text style={styles.dateText}>2025년 9월 1일</Text>
-
-        {/* 첫 채팅 버블 - 라쿤 */}
-        <View style={[styles.chatRow, { paddingLeft: -22, paddingRight: 50, marginTop: 19 }]}>
-          <TouchableOpacity 
-            onPress={() => {
-              console.log('라쿤 아바타 클릭됨 - 프로필 화면으로 이동');
-              Alert.alert('라쿤 클릭됨!'); // 임시 알림
-              setShowUserProfile(true);
-            }}
-            style={{ 
-              padding: 10,
-              backgroundColor: 'rgba(255, 0, 0, 0.1)', // 임시 빨간 배경으로 터치 영역 확인
-              borderRadius: 30
-            }}
-            activeOpacity={0.5}
-            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-          >
-            <View style={[styles.greenCircle, { width: 48, height: 48, borderRadius: 24, marginTop: -3 }]}>
-              <Image source={require('@/assets/images/real-racoon-4x.png')} style={[styles.avatarImage, { width: 47, height: 47 }]} resizeMode="contain" />
-            </View>
+      {/* Back Button - Only show when card is at top */}
+      {showBackButton && (
+        <View style={styles.backButtonContainer}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <BackIcon size={16} color={COLORS.neutral.grey4} />
           </TouchableOpacity>
-          <View style={[styles.chatBubbleLeft, { marginTop: 5 }]}>
-            <Text style={styles.chatBubbleText}>안녕하세요~!</Text>
-          </View>
-        </View>
-
-        {/* 두 번째 채팅 버블 - 라쿤 */}
-        <View style={[styles.chatRow, { paddingLeft: 13, paddingRight: 20, marginTop: 8 }]}> 
-          <View style={{ width: 54 }} />
-          <View style={styles.bubbleWithTime}>
-            <View style={[styles.chatBubbleLeft, { marginLeft: -10, marginRight: -10 }]}>
-              <Text style={styles.chatBubbleTextWide}>도넛 다 나눔하셨나요?</Text>
-            </View>
-            <Text style={[styles.timeTextSmallRight, { marginLeft: 10, marginBottom: 0 }]}>오후 18:24</Text>
-          </View>
-        </View>
-
-        {/* 사용자 메시지 1 */}
-        <View style={[styles.chatRow, { paddingLeft: 50, paddingRight: -22, marginTop: 13, justifyContent: 'flex-end' }]}>
-          <View style={styles.bubbleWithTimeUser}>
-            <Text style={[styles.timeTextSmallLeft, { marginRight: 10, marginBottom: 0 }]}>오후 18:24</Text>
-            <View style={styles.chatBubbleRight}>
-              <Text style={styles.chatBubbleTextUser}>안녕하세용</Text>
-      </View>
-        </View>
-      </View>
-
-        {/* 사용자 메시지 2 */}
-        <View style={[styles.chatRow, { paddingLeft: 50, paddingRight: -22, marginTop: 13, justifyContent: 'flex-end' }]}>
-          <View style={styles.bubbleWithTimeUser}>
-            <Text style={[styles.timeTextSmallLeft, { marginRight: 10, marginBottom: 0 }]}>오후 18:24</Text>
-            <View style={styles.chatBubbleRight}>
-              <Text style={styles.chatBubbleTextUser}>아직 3개 남았습니다!</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* 라쿤 마지막 메시지 */}
-        <View style={[styles.chatRow, { paddingLeft: -22, paddingRight: 50, marginTop: 13 }]}>
-          <TouchableOpacity 
-            onPress={() => {
-              console.log('라쿤 아바타 클릭됨 - 프로필 화면으로 이동');
-              Alert.alert('라쿤 클릭됨!'); // 임시 알림
-              setShowUserProfile(true);
-            }}
-            style={{ 
-              padding: 10,
-              backgroundColor: 'rgba(255, 0, 0, 0.1)', // 임시 빨간 배경으로 터치 영역 확인
-              borderRadius: 30
-            }}
-            activeOpacity={0.5}
-            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-          >
-            <View style={[styles.greenCircle, { width: 48, height: 48, borderRadius: 24 }]}>
-              <Image source={require('@/assets/images/real-racoon-4x.png')} style={[styles.avatarImage, { width: 47, height: 47 }]} resizeMode="contain" />
-            </View>
-          </TouchableOpacity>
-          <View style={styles.bubbleWithTime}>
-            <View style={styles.chatBubbleLeft}>
-              <Text style={styles.chatBubbleTextWide}>네!!!! 금방 가겠습니다!!</Text>
-            </View>
-            <Text style={[styles.timeTextSmallRight, { marginLeft: 10, marginBottom: 0 }]}>오후 18:26</Text>
-          </View>
-        </View>
-
-        {/* 새로 추가되는 사용자 메시지들 */}
-        {messages.filter(msg => msg.isUser && parseInt(msg.id) > 5).map((msg) => (
-          <View key={msg.id} style={[styles.chatRow, { paddingLeft: 50, paddingRight: -22, marginTop: 13, justifyContent: 'flex-end' }]}>
-            <View style={styles.bubbleWithTimeUser}>
-              <View style={{ alignItems: 'flex-end' }}>
-                <View style={{ width: 8, height: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 5, marginRight: 6, transform: [{ translateX: -3 }, { translateY: 9 }] }}>
-                  <Text style={{ fontSize: 12, lineHeight: 16, fontFamily: 'Pretendard', color: '#FF805F', textAlign: 'center' }}>1</Text>
-                </View>
-                <Text style={[styles.timeTextSmallLeft, { marginRight: 10, marginBottom: 0 }]}>{msg.timestamp}</Text>
-              </View>
-              <View style={[styles.chatBubbleRight, { maxWidth: '80%' }]}>
-                <Text style={styles.chatBubbleTextUser}>{msg.text}</Text>
-        </View>
-      </View>
-    </View>
-        ))}
-
-        {/* 하트 피드백 시스템 - 첫 번째 사용자 메시지 전송 후에만 표시 */}
-        {showHeartFeedback && (
-          <View style={styles.heartFeedbackContainer}>
-            <View style={styles.heartFeedbackContent}>
-            <View style={styles.heartButtonContainer}>
-              <HeartButton onPress={() => {
-                // 하트 버튼 클릭 시 모달 표시
-                console.log('하트 버튼 클릭됨');
-                setShowRewardModal(true);
-              }} />
-            </View>
-              <FeedbackText />
-            </View>
-          </View>
-        )}
-        </View>
-      </ScrollView>
-
-      {/* 하트 리워드 모달 */}
-      <HeartRewardModal
-        visible={showRewardModal}
-        onClose={() => setShowRewardModal(false)}
-      />
-      
-      {/* 채팅 리워드 모달 */}
-      <ChatRewardModal
-        visible={showChatRewardModal}
-        onClose={() => {
-          setShowChatRewardModal(false);
-          // 모달을 닫을 때 뒤로가기
-          setTimeout(() => {
-            router.back();
-          }, 100);
-        }}
-      />
-
-      {/* 입력 바 */}
-      <View style={[
-        styles.inputBar, 
-        { 
-          bottom: showAttachmentOptions 
-            ? (isKeyboardVisible ? 125 : 130) 
-            : (isKeyboardVisible ? 25 : 30)
-        }
-      ]}>
-        <Pressable 
-          style={styles.plusButton}
-          onPress={() => setShowAttachmentOptions(!showAttachmentOptions)}
-        >
-          {showAttachmentOptions ? (
-            <Text style={styles.xText}>×</Text>
-          ) : (
-            <Text style={styles.plusText}>+</Text>
-          )}
-        </Pressable>
-        <View style={styles.inputFieldBox}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="메시지를 입력해주세요."
-            placeholderTextColor="#aaa"
-            value={message}
-            onChangeText={setMessage}
-            multiline={false}
-            returnKeyType="send"
-            onSubmitEditing={handleSendMessage}
-          />
-          <Pressable style={styles.sendButton} onPress={handleSendMessage}>
-            <Image source={require('@/assets/images/sendbutton2x.png')} style={{ width: 42, height: 42 }} resizeMode="contain" />
-          </Pressable>
-        </View>
-        </View>
-
-      {/* 첨부 옵션들 */}
-      {showAttachmentOptions && (
-        <View style={styles.attachmentOptions}>
-          <View style={styles.attachmentRow}>
-            <View style={styles.attachmentItem}>
-              <View style={styles.attachmentIconContainer}>
-                <Image 
-                  source={require('@/assets/images/camerabutton.png')} 
-                  style={styles.attachmentIcon} 
-                  resizeMode="contain" 
-                />
-              </View>
-              <AttachmentOptionText text="카메라" />
-            </View>
-            
-            <View style={styles.attachmentItem}>
-              <View style={styles.attachmentIconContainer}>
-                <Image 
-                  source={require('@/assets/images/picturebutton.png')} 
-                  style={styles.attachmentIcon} 
-                  resizeMode="contain" 
-                />
-              </View>
-              <View style={styles.albumTextContainer}>
-                <AttachmentOptionText text="앨범" style={{ marginLeft: 6 }} />
-              </View>
-            </View>
-            
-            <View style={styles.attachmentItem}>
-              <View style={styles.attachmentIconContainer}>
-                <Image 
-                  source={require('@/assets/images/mapbutton.png')} 
-                  style={styles.attachmentIcon} 
-                  resizeMode="contain" 
-                />
-              </View>
-              <View style={styles.locationTextContainer}>
-                <AttachmentOptionText text="장소" style={{ marginLeft: 6 }} />
-              </View>
-            </View>
-            
-            <View style={styles.attachmentItem}>
-              <View style={styles.attachmentIconContainer}>
-                <Image 
-                  source={require('@/assets/images/schedulebutton.png')} 
-                  style={styles.attachmentIcon} 
-                  resizeMode="contain" 
-                />
-              </View>
-              <View style={styles.appointmentTextContainer}>
-                <AttachmentOptionText text="약속" style={{ marginLeft: 6 }} />
-              </View>
-            </View>
-          </View>
         </View>
       )}
-    </KeyboardAvoidingView>
+
+      {/* Draggable Card */}
+      <Animated.View
+        style={[
+          styles.draggableCard,
+          {
+            top: cardPosition,
+            transform: pan.getTranslateTransform(),
+          },
+        ]}
+      >
+        {/* Draggable Header */}
+        <View
+          style={[styles.header, showBackButton && { marginTop: 80 }]}
+          {...panResponder.panHandlers}
+        >
+          {!showBackButton && <View style={styles.dragHandle} />}
+          <Text style={[styles.headerTitle, showBackButton && styles.headerTitleFullScreen]}>
+            질문 게시판
+          </Text>
+        </View>
+
+        {/* Notification Card */}
+        <TouchableOpacity
+          style={styles.notificationCardContainer}
+          onPress={() => router.push('/main/questions')}
+        >
+          <Svg width="356" height="80" viewBox="0 0 356 80" style={styles.notificationCardSvg}>
+            <Path
+              d="M4.5 17C4.5 7.61116 12.1112 0 21.5 0H334.5C343.889 0 351.5 7.61116 351.5 17V55C351.5 64.3888 343.889 72 334.5 72H21.5C12.1112 72 4.5 64.3888 4.5 55V17Z"
+              fill="#FF805F"
+              fillOpacity="0.05"
+            />
+          </Svg>
+          <View style={styles.notificationContent}>
+            <Svg width="25" height="23" viewBox="0 0 25 23" style={styles.notificationIcon}>
+              <Path
+                d="M18.8616 2.47949L11.8447 6.52643V15.5413L18.8616 19.5916V2.47949Z"
+                fill="#FF805F"
+              />
+              <Path
+                d="M0.167969 9.89754C0.167969 8.63921 1.18804 7.61914 2.44636 7.61914H3.85965V14.3924H2.44636C1.18804 14.3924 0.167969 13.3723 0.167969 12.114V9.89754Z"
+                fill="#C3C3C3"
+              />
+              <Path
+                d="M18.6088 3.36888C18.6088 1.79577 19.884 0.520508 21.4571 0.520508C23.0302 0.520508 24.3055 1.79576 24.3055 3.36887V18.7028C24.3055 20.2759 23.0302 21.5512 21.4571 21.5512C19.884 21.5512 18.6088 20.2759 18.6088 18.7028V3.36888Z"
+                fill="#FF592E"
+              />
+              <Path
+                d="M5.92334 15.1611H9.56417V21.4809C9.56417 22.3197 8.88412 22.9998 8.04524 22.9998H7.44227C6.60339 22.9998 5.92334 22.3197 5.92334 21.4809V15.1611Z"
+                fill="#C3C3C3"
+              />
+              <Path d="M5.92029 15.4775H9.55812V16.6171H5.92029V15.4775Z" fill="#8C8C8C" />
+              <Path
+                d="M2.98633 8.00428C2.98633 7.1654 3.66638 6.48535 4.50526 6.48535H12.496V15.5259H4.50526C3.66638 15.5259 2.98633 14.8458 2.98633 14.0069V8.00428Z"
+                fill="#FF805F"
+              />
+            </Svg>
+            <Text style={styles.notificationText}>똑똑! 새로운 질문이 들어왔어요!</Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* Gray Line */}
+        <View style={styles.grayLine} />
+
+        {/* Apartment News Section */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>아파트소식</Text>
+        </View>
+
+        {/* Posts */}
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.postsContainer}
+          showsVerticalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          bounces={true}
+          scrollEnabled={true}
+          nestedScrollEnabled={true}
+        >
+          <View style={styles.communityPosts}>{samplePosts.map(renderPost)}</View>
+        </ScrollView>
+      </Animated.View>
+
+      {/* Floating Action Button - only show when scrolled */}
+      {showBackButton && (
+        <TouchableOpacity style={styles.fab} onPress={() => router.push('/write')}>
+          <View style={styles.fabIcon}>
+            <View style={styles.fabCrossHorizontal} />
+            <View style={styles.fabCrossVertical} />
+          </View>
+        </TouchableOpacity>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: '#D7F0FF',
   },
-  offerBox: {
-    marginTop: 18,
-    height: 55,
-    borderWidth: 1.2,
-    borderColor: '#f2f2f2',
-    backgroundColor: '#fcfcfc',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    marginHorizontal: 43,
+  backButtonContainer: {
+    position: 'absolute',
+    top: 75, // 뒤로가기 버튼을 조금만 내림
+    left: 20,
+    zIndex: 1000,
+  },
+  backButton: {
+    padding: 8, // SVG 크기에 맞게 조정
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 20,
+  },
+  draggableCard: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    width: screenWidth,
+    height: screenHeight + 100, // 하늘색 배경이 보이지 않도록 여유분 추가
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    shadowColor: 'rgba(194, 224, 242, 0.20)',
+    shadowOffset: {
+      width: 0,
+      height: -12,
+    },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 12,
+  },
+  header: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingTop: 20, // 원래 상태로 복구
+    paddingBottom: 20,
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    alignItems: 'flex-start',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    lineHeight: 18,
+    marginTop: 20, // 질문게시판 글씨만 아래로 내림
+  },
+  headerTitleFullScreen: {
+    marginTop: 60, // 질문게시판을 더 밑으로 내려감
+  },
+  dragHandle: {
+    width: 102,
+    height: 4,
+    backgroundColor: '#CDCDCD',
+    borderRadius: 2,
+    marginBottom: 32,
     alignSelf: 'center',
   },
-  offerImage: {
-    width: 41,
-    height: 41,
-    borderRadius: 8,
-    marginRight: 23,
-    marginTop: 4,
-  },
-  offerTitle: {
-    width: 102,
-    fontSize: 16,
-    lineHeight: 24,
-    fontFamily: 'Pretendard',
-    color: '#323232',
-    textAlign: 'center',
-  },
-  noticeBox: {
-    marginTop: 24,
-    height: 45,
-    backgroundColor: '#f2f2f2',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    marginHorizontal: 15,
-  },
-  noticeIcon: {
-    width: 22,
-    height: 22,
-    marginRight: 10,
-  },
-  noticeText: {
-    width: 208,
-    fontSize: 13,
-    lineHeight: 22,
-    fontWeight: '400',
-    fontFamily: 'Pretendard',
-    color: '#323232',
-    textAlign: 'left',
-  },
-  dateText: {
-    width: '100%',
-    fontSize: 14,
-    lineHeight: 22,
-    fontFamily: 'Pretendard',
-    color: '#636363',
-    textAlign: 'center',
-    alignSelf: 'stretch',
-    marginTop: 22,
-  },
-  offerSeparator: {
-    height: 1,
-    backgroundColor: '#f5f5f5',
-    marginTop: 20,
-    marginHorizontal: -20,
-    width: 'auto',
-    alignSelf: 'stretch',
-  },
-  chatRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  postsContainer: {
+    flex: 1,
     paddingHorizontal: 20,
-    marginTop: 14,
+    paddingTop: 20, // 게시물들을 더 아래로
+    paddingBottom: 300, // 하단 네비게이션 바 높이 + 충분한 여백
   },
-  greenCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#86d382',
+  notificationCardContainer: {
+    marginHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 16,
+    position: 'relative',
+    width: 347,
+    height: 72,
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  notificationCardSvg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 347,
+    height: 72,
+  },
+  notificationContent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  notificationIcon: {
+    width: 25,
+    height: 23,
+    marginRight: 12,
+  },
+  notificationText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#FF805F',
+    fontFamily: 'Pretendard',
+    flex: 1,
+    lineHeight: 17,
+  },
+  grayLine: {
+    width: 393,
+    height: 5,
+    backgroundColor: '#F2F2F2',
+    marginTop: 20,
+    marginBottom: 30, // 회색줄과 아파트소식 사이 간격 늘림
+  },
+  sectionHeader: {
+    paddingHorizontal: 20,
+    marginBottom: 20, // 아파트소식과 게시물 사이 간격 늘림
+  },
+  sectionTitle: {
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 20,
+    fontWeight: '600',
+    lineHeight: 23,
+    marginTop: 10, // 아파트소식 글씨를 조금 더 내림
+  },
+  tabSection: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 20,
+    marginBottom: 16,
+    borderRadius: 12,
+    padding: 4,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  activeTab: {
+    backgroundColor: '#FF6B35',
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#AAAAAA',
+    fontFamily: 'Pretendard',
+  },
+  activeTabText: {
+    color: '#FFFFFF',
+  },
+  communityPosts: {
+    paddingBottom: 100,
+  },
+  newsPosts: {
+    paddingBottom: 100,
+  },
+  postCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  postHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  authorInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  profileImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FFD429',
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
+    marginRight: 8,
     overflow: 'hidden',
   },
-  avatarImage: {
-    width: 55,
-    height: 55,
-    transform: [{ translateY: 5 }, { translateX: 0 }],
+  profileImageInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
-  chatBubbleLeft: {
-    backgroundColor: '#f2f2f2',
-    height: 42,
-    borderRadius: 21,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    marginLeft: 12,
-    justifyContent: 'center',
-  },
-  chatBubbleText: {
-    width: 79,
-    fontSize: 15,
-    lineHeight: 22,
-    fontFamily: 'Pretendard',
-    color: '#323232',
-    textAlign: 'left',
-  },
-  chatBubbleTextWide: {
-    fontSize: 15,
-    lineHeight: 22,
-    fontFamily: 'Pretendard',
-    color: '#323232',
-    textAlign: 'left',
-  },
-  bubbleWithTime: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-  bubbleWithTimeUser: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-  timeTextSmallRight: {
-    width: 54,
-    fontSize: 12,
-    lineHeight: 22,
-    fontFamily: 'Pretendard',
-    color: '#aaa',
-    textAlign: 'left',
-    marginLeft: 10,
-    marginBottom: 0,
-  },
-  timeTextSmallLeft: {
-    width: 54,
-    fontSize: 12,
-    lineHeight: 22,
-    fontFamily: 'Pretendard',
-    color: '#aaa',
-    textAlign: 'right',
-    marginRight: 10,
-    marginBottom: 0,
-  },
-  chatBubbleRight: {
-    backgroundColor: '#FF805F',
-    height: 42,
-    borderRadius: 21,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    justifyContent: 'center',
-  },
-  chatBubbleTextUser: {
-    fontSize: 15,
-    lineHeight: 22,
-    fontFamily: 'Pretendard',
-    color: '#fff',
-    textAlign: 'left',
-  },
-  inputBar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    zIndex: 100,
-  },
-  plusButton: {
-    width: 51,
-    height: 51,
-    backgroundColor: '#f2f2f2',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  plusText: {
-    fontSize: 36,
-    lineHeight: 36,
-    color: '#aaa',
-  },
-  xText: {
-    fontSize: 36,
-    lineHeight: 36,
-    color: '#aaa',
-  },
-  plusIcon: {
-    width: 24,
-    height: 24,
-    tintColor: '#aaa',
-  },
-  xIcon: {
-    width: 20,
-    height: 20,
-  },
-  inputFieldBox: {
+  authorDetails: {
     flex: 1,
-    height: 62,
-    backgroundColor: '#f2f2f2',
-    borderRadius: 31,
-    marginHorizontal: 12,
-    justifyContent: 'center',
-    paddingHorizontal: 16,
+  },
+  nameTimeRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 1,
   },
-  inputPlaceholder: {
-    width: 146,
+  authorName: {
     fontSize: 15,
-    lineHeight: 21,
-    fontWeight: '500',
-    fontFamily: 'Pretendard',
-    color: '#aaa',
-    textAlign: 'left',
-    height: 26,
-  },
-  textInput: {
-    fontSize: 15,
-    lineHeight: 21,
-    fontWeight: '400',
-    fontFamily: 'Pretendard',
+    fontWeight: '600',
     color: '#323232',
-    textAlign: 'left',
-    height: 26,
-    flex: 1,
+    fontFamily: 'Pretendard',
+    lineHeight: 22,
     marginRight: 8,
-    marginTop: -2,
-    marginLeft: 7,
   },
-  sendButton: {
-    width: 42,
-    height: 42,
-    justifyContent: 'center',
-    alignItems: 'center',
+  postTime: {
+    fontSize: 12,
+    color: '#AAA',
+    fontFamily: 'Pretendard',
+    lineHeight: 22,
   },
-  attachmentOptions: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 20,
+  postDate: {
+    fontSize: 12,
+    color: '#636363',
+    fontFamily: 'Pretendard',
+    lineHeight: 22,
   },
-  attachmentRow: {
+  postImage: {
+    fontSize: 24,
+  },
+  postContent: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    marginBottom: 20,
   },
-  attachmentItem: {
-    alignItems: 'center',
+  contentLeft: {
     flex: 1,
+    marginRight: 12,
   },
-  attachmentIconContainer: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#f2f2f2',
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
+  postTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    lineHeight: 22,
     marginBottom: 8,
   },
-  attachmentIcon: {
-    width: 45,
-    height: 45,
+  postDescription: {
+    fontSize: 15,
+    color: '#636363',
+    fontFamily: 'Pretendard',
+    lineHeight: 22,
   },
-  attachmentTextContainer: {
-    marginLeft: 5,
+  contentImage: {
+    width: 70,
+    height: 80,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
-  albumTextContainer: {
-    marginLeft: 7,
+  coffeeImage: {
+    width: 70,
+    height: 80,
+    borderRadius: 8,
   },
-  locationTextContainer: {
-    marginLeft: 7,
+  divider: {
+    width: 321,
+    height: 1.5,
+    backgroundColor: '#F2F2F2',
+    marginBottom: 12,
+    alignSelf: 'center',
   },
-  appointmentTextContainer: {
-    marginLeft: 7,
-  },
-  heartFeedbackContainer: {
-    backgroundColor: "rgba(255, 204, 0, 0.22)",
-    width: "100%",
-    height: 79,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
-    paddingHorizontal: 60,
-    borderRadius: 12,
-  },
-  heartFeedbackContent: {
+  postActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
+    marginTop: -8,
   },
-  heartButtonContainer: {
-    marginRight: 10,
-    marginLeft: -40,
-    width: 25,
-    height: 25,
+  actionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 16,
+  },
+  actionIcon: {
+    marginRight: 4,
+  },
+  speechBubbleContainer: {
+    position: 'relative',
+    marginRight: 4,
+  },
+  speechBubble: {
+    // SVG 스타일
+  },
+  dotsContainer: {
+    position: 'absolute',
+    top: 7,
+    left: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dot: {
+    width: 2.4,
+    height: 2.4,
+    borderRadius: 1.2,
+    backgroundColor: '#AAAAAA',
+    marginRight: 2.4,
+  },
+  actionText: {
+    fontSize: 13,
+    color: '#AAA',
+    fontFamily: 'Pretendard',
+    fontWeight: '500',
+    lineHeight: 28.992,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 120,
+    right: 20,
+    width: 62, // SVG 스펙에 맞춰 62px
+    height: 62, // SVG 스펙에 맞춰 62px
+    borderRadius: 31, // 원형으로 만들기 위해 반지름
+    backgroundColor: '#FF805F', // SVG 색상에 맞춰 변경
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: 'rgba(0, 0, 0, 0.07)', // SVG 그림자 색상에 맞춰 변경
+    shadowOffset: {
+      width: 0,
+      height: 3.5, // SVG 그림자 offset에 맞춰 조정
+    },
+    shadowOpacity: 1,
+    shadowRadius: 4.9, // SVG 그림자 blur에 맞춰 조정
+    elevation: 8,
+  },
+  fabIcon: {
+    width: 28.531, // SVG 스펙에 맞춰
+    height: 28.531, // SVG 스펙에 맞춰
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fabCrossHorizontal: {
+    position: 'absolute',
+    width: 28.531, // SVG 가로선 길이
+    height: 3.241, // SVG stroke-width
+    backgroundColor: '#FFFFFF', // SVG stroke 색상
+    borderRadius: 1.5, // stroke-linecap: round 효과
+  },
+  fabCrossVertical: {
+    position: 'absolute',
+    width: 3.241, // SVG stroke-width
+    height: 28.531, // SVG 세로선 길이
+    backgroundColor: '#FFFFFF', // SVG stroke 색상
+    borderRadius: 1.5, // stroke-linecap: round 효과
   },
 });
