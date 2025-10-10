@@ -7,10 +7,11 @@ import { router } from 'expo-router';
 
 export default function SignupCompleteScreen() {
   useEffect(() => {
-    const t = setTimeout(() => {
-      router.push('/signup-next');
+    const timer = setTimeout(() => {
+      router.replace('/auth/login');
     }, 3000);
-    return () => clearTimeout(t);
+    
+    return () => clearTimeout(timer);
   }, []);
   return (
     <SafeAreaView style={styles.safeAreaView}>
@@ -116,17 +117,17 @@ const styles = StyleSheet.create({
   },
   raccoon: {
     position: 'absolute',
-    bottom: -470,
-    left: -460,
-    width: 1260,
-    height: 1180,
+    bottom: -535,
+    left: -540,
+    width: 1386,
+    height: 1298,
     transform: [{ rotate: '20.818deg' }],
   },
   text: {
     marginLeft: -48.5,
-    top: 253,
+    top: 198,
     fontSize: 18,
-    lineHeight: 27,
+    lineHeight: 27.2,
     color: '#ff805f',
     fontWeight: '600',
     textAlign: 'left',
@@ -149,7 +150,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   view2: {
-    top: 177,
+    top: 121,
     left: 168,
     borderRadius: 73,
     width: 55,
@@ -163,7 +164,7 @@ const styles = StyleSheet.create({
   },
   speechContainer: {
     position: 'absolute',
-    top: 395,
+    top: 365,
     left: 85,
     width: 160,
     height: 80,
@@ -220,10 +221,10 @@ const styles = StyleSheet.create({
   },
   text2: {
     marginLeft: -115.5,
-    top: 290,
+    top: 230,
     fontSize: 24,
     lineHeight: 32,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#323232',
   },
 });

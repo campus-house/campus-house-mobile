@@ -1,3 +1,5 @@
+export { ArrowIcon } from './ArrowIcon';
+
 export { SearchIcon } from './SearchIcon';
 export type { SearchIconProps } from './SearchIcon';
 
@@ -23,4 +25,3 @@ export { EmailOutlineIcon } from './EmailOutlineIcon';
 export type { EmailOutlineIconProps } from './EmailOutlineIcon';
 
 export { BackIcon } from './BackIcon';
-export type { BackIconProps } from './BackIcon';

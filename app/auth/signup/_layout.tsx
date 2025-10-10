@@ -9,9 +9,10 @@ export default function SignupLayout() {
       }}
     >
       <Stack.Screen name="index" />
-      <Stack.Screen name="email-verification" />
+      <Stack.Screen name="school-verification" />
       <Stack.Screen name="identity-verification" />
       <Stack.Screen name="register" />
+      <Stack.Screen name="complete" />
     </Stack>
   );
 }

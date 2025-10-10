@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Image,
   Dimensions,
@@ -16,8 +15,8 @@ import {
 import { router, useNavigation } from 'expo-router';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { COLORS } from '@/constants/colors';
-import { PlusIcon } from '@/components/Icon/PlusIcon';
 import { BackIcon } from '@/components/Icon/BackIcon';
+import PermissionModal from '@/components/Modal/PermissionModal';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -95,84 +94,7 @@ export default function MainScreen() {
   const [showBackButton, setShowBackButton] = useState(false);
   const [scrollOffset, setScrollOffset] = useState(0);
   const [cardPosition, setCardPosition] = useState(screenHeight * 0.6); // 카드의 Y 위치 (화면의 60% 지점에서 시작)
-  const [showAuthModal, setShowAuthModal] = useState(true);
-  const [showAddressModal, setShowAddressModal] = useState(false);
-  const [showAddressSearchModal, setShowAddressSearchModal] = useState(false);
-  const [showNameInputModal, setShowNameInputModal] = useState(false);
-  const [showInfoInputModal, setShowInfoInputModal] = useState(false);
-  const [showRegionModal, setShowRegionModal] = useState(false);
-  const [showDistrictModal, setShowDistrictModal] = useState(false);
-  const [nameInput, setNameInput] = useState('');
-  const [phoneInput, setPhoneInput] = useState('');
-  const [idNumberInput, setIdNumberInput] = useState('');
-  const [infoNameInput, setInfoNameInput] = useState('');
-  const [infoPhoneInput, setInfoPhoneInput] = useState('');
-  const [infoIdNumberInput, setInfoIdNumberInput] = useState('');
-  const [infoIdNumberSecond, setInfoIdNumberSecond] = useState('');
-  const [selectedRegion, setSelectedRegion] = useState('');
-  const [selectedDistrict, setSelectedDistrict] = useState('');
-  const [selectedAuth, setSelectedAuth] = useState('');
-  const [showAuthCompleteModal, setShowAuthCompleteModal] = useState(false);
-  const [showLoadingModal, setShowLoadingModal] = useState(false);
-  const [showVerificationCompleteModal, setShowVerificationCompleteModal] = useState(false);
-  const [showFinalCompleteModal, setShowFinalCompleteModal] = useState(false);
-  const [currentYear, setCurrentYear] = useState(0); // 0: 2019, 1: 2021, 2: 2025
-
-  // 로딩 애니메이션 효과
-  useEffect(() => {
-    if (showLoadingModal) {
-      const interval = setInterval(() => {
-        setCurrentYear((prev) => {
-          if (prev < 2) {
-            return prev + 1;
-          }
-          return prev;
-        });
-      }, 3000);
-
-      return () => {
-        clearInterval(interval);
-      };
-    }
-  }, [showLoadingModal]);
-
-  // 2025에 도달하면 3초 후 완료 화면으로 전환
-  useEffect(() => {
-    if (showLoadingModal && currentYear === 2) {
-      const completeTimeout = setTimeout(() => {
-        setShowLoadingModal(false);
-        setShowVerificationCompleteModal(true);
-      }, 3000);
-
-      return () => {
-        clearTimeout(completeTimeout);
-      };
-    }
-  }, [showLoadingModal, currentYear]);
-
-  // 고슴도치 화면에서 3초 후 최종 완료 화면으로 전환
-  useEffect(() => {
-    if (showVerificationCompleteModal) {
-      const finalTimeout = setTimeout(() => {
-        setShowVerificationCompleteModal(false);
-        setShowFinalCompleteModal(true);
-      }, 3000);
-
-      return () => {
-        clearTimeout(finalTimeout);
-      };
-    }
-  }, [showVerificationCompleteModal]);
-
-  // 주민등록번호 뒷자리 마스킹 함수
-  const getIdNumberSecondDisplay = () => {
-    if (infoIdNumberSecond.length === 0) {
-      return '';
-    }
-    // 첫 번째 글자만 보이고 나머지는 *로 마스킹
-    const firstDigit = infoIdNumberSecond.charAt(0);
-    return `${firstDigit}******`;
-  };
+  const [showPermissionModal, setShowPermissionModal] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
   const pan = useRef(new Animated.ValueXY()).current;
 
@@ -283,6 +205,10 @@ export default function MainScreen() {
     setScrollOffset(currentOffset);
   };
 
+  const handlePermissionNext = () => {
+    setShowPermissionModal(false);
+  };
+
   const renderPost = (post: (typeof samplePosts)[0]) => (
     <TouchableOpacity 
       key={post.id} 
@@ -376,6 +302,12 @@ export default function MainScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#D7F0FF" />
+      
+      {/* 권한 팝업 */}
+      <PermissionModal
+        visible={showPermissionModal}
+        onNext={handlePermissionNext}
+      />
 
       {/* 거주지 인증 모달 */}
       {showAuthModal && (

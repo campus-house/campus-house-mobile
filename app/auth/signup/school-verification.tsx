@@ -4,17 +4,21 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
   Keyboard,
   Platform,
 } from 'react-native';
 import { COLORS } from '@/constants/colors';
-import Svg, { Path } from 'react-native-svg';
+import { TYPOGRAPHY } from '@/constants/typography';
+import { BackIcon } from '@/components/Icon/BackIcon';
 import { LoadingModal } from '@/components/Modal/LoadingModal';
 import { VerificationCompleteModal } from '@/components/Modal/VerificationCompleteModal';
+import { NameInputField } from '@/components/Input/NameInputField';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLayoutScale } from '@/utils/layout';
 
 export default function EmailVerificationScreen() {
+  const { y, insets, figma } = useLayoutScale();
   const [email, setEmail] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
@@ -59,19 +63,17 @@ export default function EmailVerificationScreen() {
   return (
     <View style={styles.container}>
       {/* 뒤로가기 버튼 */}
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Svg width={13} height={23} viewBox="0 0 13 23" fill="none">
-          <Path
-            d="M11.6602 2L2.03634 11.3274C1.83148 11.5259 1.834 11.8554 2.04188 12.0508L11.6602 21.0909"
-            stroke="#AAAAAA"
-            strokeWidth="2.27273"
-            strokeLinecap="round"
-          />
-        </Svg>
+      <TouchableOpacity 
+        style={[styles.backButton, { top: insets.top + y(65 - figma.SAFE_TOP) }]} 
+        onPress={() => router.back()}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        accessibilityLabel="뒤로 가기"
+      >
+        <BackIcon />
       </TouchableOpacity>
 
       {/* 진행 바 */}
-      <View style={styles.progressContainer}>
+      <View style={[styles.progressContainer, { top: insets.top + y(116 - figma.SAFE_TOP) }]}>
         <View style={styles.progressBar}>
           <View style={styles.progressActive} />
           <View style={styles.progressInactive} />
@@ -79,38 +81,37 @@ export default function EmailVerificationScreen() {
       </View>
 
       {/* 메인 콘텐츠 */}
-      <View style={styles.contentContainer}>
+      <View style={[styles.contentContainer, { 
+        paddingTop: insets.top + y(118),
+        paddingLeft: 32,
+        paddingRight: 32,
+        paddingBottom: insets.bottom + 40,
+      }]}>
         {/* 제목 */}
-        <Text style={styles.title}>경희대학교에{'\n'}재학 중임을 인증해주세요.</Text>
+        <Text style={[styles.title, { marginTop: y(18) }]}>경희대학교에{'\n'}재학 중임을 인증해주세요.</Text>
 
         {/* 이메일 입력 섹션 */}
         <View style={styles.inputSection}>
           <Text style={styles.label}>이메일</Text>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.textInput}
-              value={email}
-              onChangeText={handleEmailChange}
-              onFocus={handleFocus}
-              onBlur={handleBlur}
-              placeholder="이메일 입력"
-              placeholderTextColor={COLORS.neutral.grey3}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="done"
-              textContentType="emailAddress"
-              editable={true}
-              selectTextOnFocus={true}
-            />
-            <View style={[styles.inputUnderline, isFocused && styles.inputUnderlineActive]} />
-          </View>
+          <NameInputField
+            placeholder="이메일 입력"
+            value={email}
+            onChangeText={handleEmailChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            autoCapitalize="none"
+            textContentType="emailAddress"
+            editable={true}
+            selectTextOnFocus={true}
+            width={300.934}
+            marginLeft={2}
+          />
         </View>
       </View>
 
       {/* 인증하기 버튼 */}
       <TouchableOpacity
-        style={[styles.verifyButton, isEmailValid && styles.verifyButtonActive]}
+        style={[styles.verifyButton, isEmailValid && styles.verifyButtonActive, { marginBottom: insets.bottom + 18 }]}
         onPress={handleVerify}
         disabled={!isEmailValid}
       >
@@ -133,22 +134,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background.primary,
-    paddingTop: 60,
-    paddingHorizontal: 20,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    marginTop: 20,
-    marginLeft: -10,
+    position: 'absolute',
+    left: 31,
+    zIndex: 10,
+    width: 44,
+    height: 60,
+    padding: 4,
   },
   progressContainer: {
-    marginBottom: 40,
-    marginLeft: -40,
-    marginRight: -20,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 5,
   },
   progressBar: {
     flexDirection: 'row',
@@ -159,7 +158,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 3,
     backgroundColor: COLORS.primary,
-    marginLeft: -20,
   },
   progressInactive: {
     flex: 1,
@@ -168,16 +166,11 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    paddingTop: 20,
   },
   title: {
+    ...TYPOGRAPHY.headline2,
     width: 260,
     color: COLORS.text.primary,
-    fontFamily: 'Pretendard',
-    fontSize: 25,
-    fontStyle: 'normal',
-    fontWeight: '700',
-    lineHeight: 35,
     marginBottom: 30,
     textAlign: 'left',
   },
@@ -186,49 +179,21 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   label: {
+    ...TYPOGRAPHY.caption3,
     color: COLORS.neutral.grey4,
-    fontFamily: 'Pretendard',
-    fontSize: 12,
-    fontStyle: 'normal',
-    fontWeight: '400',
-    lineHeight: 22,
-    marginBottom: 8,
+    marginBottom: 6,
     textAlign: 'left',
-  },
-  inputContainer: {
-    position: 'relative',
-    width: '100%',
-  },
-  textInput: {
-    width: 300.934,
-    color: COLORS.text.primary,
-    fontFamily: 'Pretendard',
-    fontSize: 18.5,
-    fontStyle: 'normal',
-    fontWeight: '400',
-    lineHeight: 22.519,
-    paddingVertical: 8,
-    textAlign: 'left',
-  },
-  inputUnderline: {
-    width: 308,
-    height: 1.5,
-    backgroundColor: COLORS.neutral.grey3,
-    marginTop: 8,
-  },
-  inputUnderlineActive: {
-    backgroundColor: COLORS.text.primary,
   },
   verifyButton: {
-    width: 318,
+    width: 312,
     height: 56,
-    padding: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 8,
     borderRadius: 20,
     backgroundColor: COLORS.neutral.grey4,
-    marginBottom: 60,
     alignSelf: 'center',
   },
   verifyButtonActive: {
