@@ -284,7 +284,15 @@ export default function MainScreen() {
   };
 
   const renderPost = (post: (typeof samplePosts)[0]) => (
-    <View key={post.id} style={styles.postCard}>
+    <TouchableOpacity 
+      key={post.id} 
+      style={styles.postCard}
+      onPress={() => {
+        if (post.title === '도넛 나눔할게요') {
+          router.push('/chat');
+        }
+      }}
+    >
       <View style={styles.postHeader}>
         <View style={styles.authorInfo}>
           <View style={styles.profileImage}>
@@ -362,7 +370,7 @@ export default function MainScreen() {
           <Text style={styles.actionText}>0</Text>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
