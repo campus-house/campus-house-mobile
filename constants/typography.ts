@@ -35,7 +35,7 @@ export const TYPOGRAPHY = {
     fontSize: 17,
     fontFamily: 'Pretendard-Medium',
     lineHeight: 22.5,
-    fontWeight: '400',
+    fontWeight: '500',
   },
   body4: {
     fontSize: 15,

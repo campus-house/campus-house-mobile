@@ -1,1 +1,1 @@
-export { default } from './IdFindScreen';
+export { default } from './AuthMethodSelectionScreen';

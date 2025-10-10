@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Image,
   Dimensions,
@@ -15,8 +14,8 @@ import {
 import { router } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { COLORS } from '@/constants/colors';
-import { PlusIcon } from '@/components/Icon/PlusIcon';
 import { BackIcon } from '@/components/Icon/BackIcon';
+import PermissionModal from '@/components/Modal/PermissionModal';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -93,6 +92,7 @@ export default function MainScreen() {
   const [showBackButton, setShowBackButton] = useState(false);
   const [scrollOffset, setScrollOffset] = useState(0);
   const [cardPosition, setCardPosition] = useState(screenHeight * 0.6); // 카드의 Y 위치 (화면의 60% 지점에서 시작)
+  const [showPermissionModal, setShowPermissionModal] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
   const pan = useRef(new Animated.ValueXY()).current;
 
@@ -151,6 +151,10 @@ export default function MainScreen() {
   const handleScroll = (event: any) => {
     const currentOffset = event.nativeEvent.contentOffset.y;
     setScrollOffset(currentOffset);
+  };
+
+  const handlePermissionNext = () => {
+    setShowPermissionModal(false);
   };
 
   const renderPost = (post: (typeof samplePosts)[0]) => (
@@ -238,6 +242,12 @@ export default function MainScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#D7F0FF" />
+      
+      {/* 권한 팝업 */}
+      <PermissionModal
+        visible={showPermissionModal}
+        onNext={handlePermissionNext}
+      />
 
       {/* Back Button - Only show when card is at top */}
       {showBackButton && (
@@ -279,7 +289,6 @@ export default function MainScreen() {
               d="M4.5 17C4.5 7.61116 12.1112 0 21.5 0H334.5C343.889 0 351.5 7.61116 351.5 17V55C351.5 64.3888 343.889 72 334.5 72H21.5C12.1112 72 4.5 64.3888 4.5 55V17Z"
               fill="#FF805F"
               fillOpacity="0.05"
-              shapeRendering="crispEdges"
             />
           </Svg>
           <View style={styles.notificationContent}>

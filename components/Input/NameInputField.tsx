@@ -1,168 +1,131 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { COLORS } from '@/constants/colors';
 
 interface NameInputFieldProps {
-  isSelected?: boolean;
+  placeholder?: string;
+  value?: string;
+  onChangeText?: (text: string) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  returnKeyType?: 'done' | 'next' | 'search' | 'send' | 'go' | 'default' | 'none';
+  onSubmitEditing?: () => void;
+  editable?: boolean;
+  selectTextOnFocus?: boolean;
+  textContentType?: 'none' | 'URL' | 'addressCity' | 'addressCityAndState' | 'addressState' | 'countryName' | 'creditCardNumber' | 'emailAddress' | 'familyName' | 'fullStreetAddress' | 'givenName' | 'jobTitle' | 'location' | 'middleName' | 'name' | 'namePrefix' | 'nameSuffix' | 'nickname' | 'organizationName' | 'postalCode' | 'streetAddressLine1' | 'streetAddressLine2' | 'telephoneNumber' | 'username' | 'password' | 'newPassword' | 'oneTimeCode';
+  keyboardType?: 'default' | 'number-pad' | 'decimal-pad' | 'numeric' | 'email-address' | 'phone-pad';
+  autoCorrect?: boolean;
+  spellCheck?: boolean;
+  width?: number;
+  marginLeft?: number;
+  errorMessage?: string;
+  hasError?: boolean;
+  maxLength?: number;
 }
 
 export const NameInputField: React.FC<NameInputFieldProps> = ({
-  isSelected: initialIsSelected = false,
+  placeholder = '이름 입력',
+  value = '',
+  onChangeText,
+  onFocus,
+  onBlur,
+  autoCapitalize = 'words',
+  returnKeyType = 'none',
+  onSubmitEditing,
+  editable = true,
+  selectTextOnFocus = true,
+  textContentType = 'name',
+  keyboardType = 'default',
+  autoCorrect = false,
+  spellCheck = false,
+  width = 300,
+  marginLeft = 3,
+  errorMessage,
+  hasError = false,
+  maxLength,
 }) => {
-  const [isSelected, setIsSelected] = useState(initialIsSelected);
-  const [inputText, setInputText] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
 
-  const handlePress = () => {
-    setIsSelected(true);
+  const handleFocus = () => {
+    setIsFocused(true);
+    onFocus?.();
   };
 
-  const handleKeyPress = (key: string) => {
-    if (isSelected) {
-      setInputText((prev) => prev + key);
-    }
-  };
-
-  const handleDelete = () => {
-    if (isSelected && inputText.length > 0) {
-      setInputText((prev) => prev.slice(0, -1));
-    }
+  const handleBlur = () => {
+    setIsFocused(false);
+    onBlur?.();
   };
 
   return (
-    <View style={styles.container}>
-      {/* 입력 필드 영역 */}
-      <TouchableOpacity style={styles.inputContainer} onPress={handlePress}>
-        {/* 이름 라벨 */}
-        <Text style={styles.label}>이름</Text>
-
-        {/* 입력 텍스트 또는 플레이스홀더 */}
-        {isSelected ? (
-          <Text style={styles.inputText}>{inputText}</Text>
-        ) : (
-          <Text style={styles.placeholder}>이름 입력</Text>
-        )}
-
-        {/* 하단 선 */}
-        <View
-          style={[
-            styles.bottomLine,
-            { backgroundColor: isSelected ? COLORS.neutral.black : COLORS.neutral.grey3 },
-          ]}
-        />
-      </TouchableOpacity>
-
-      {/* 테스트용 키보드 */}
-      {isSelected && (
-        <View style={styles.testKeyboard}>
-          <View style={styles.keyRow}>
-            {['김', '이', '박', '최', '정'].map((key) => (
-              <TouchableOpacity
-                key={key}
-                style={styles.testKey}
-                onPress={() => handleKeyPress(key)}
-              >
-                <Text style={styles.testKeyText}>{key}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View style={styles.keyRow}>
-            {['영', '수', '민', '지', '현'].map((key) => (
-              <TouchableOpacity
-                key={key}
-                style={styles.testKey}
-                onPress={() => handleKeyPress(key)}
-              >
-                <Text style={styles.testKeyText}>{key}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <TouchableOpacity style={styles.deleteKey} onPress={handleDelete}>
-            <Text style={styles.deleteKeyText}>삭제</Text>
-          </TouchableOpacity>
-        </View>
+    <View style={[styles.inputContainer, { marginLeft }]}>
+      <TextInput
+        style={[styles.textInput, { width }, isFocused && styles.textInputFocused, hasError && styles.textInputError]}
+        value={value}
+        onChangeText={onChangeText}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        placeholder={isFocused || value.length > 0 ? '' : placeholder}
+        placeholderTextColor={COLORS.neutral.grey3}
+        autoCapitalize={autoCapitalize}
+        returnKeyType={returnKeyType}
+        onSubmitEditing={onSubmitEditing}
+        editable={editable}
+        selectTextOnFocus={selectTextOnFocus}
+        textContentType={textContentType}
+        keyboardType={keyboardType}
+        autoCorrect={autoCorrect}
+        spellCheck={spellCheck}
+        maxLength={maxLength}
+      />
+      <View style={[styles.inputUnderline, { width: width + 8 }, isFocused && styles.inputUnderlineFocused, hasError && styles.inputUnderlineError]} />
+      {hasError && errorMessage && (
+        <Text style={styles.errorText}>{errorMessage}</Text>
       )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    alignItems: 'center',
-  },
   inputContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
+    position: 'relative',
   },
-  label: {
-    color: COLORS.neutral.grey4,
-    textAlign: 'center',
-    fontFamily: 'Pretendard',
-    fontSize: 12,
-    fontStyle: 'normal',
-    fontWeight: '500',
-    lineHeight: 22,
-    marginBottom: 4,
-  },
-  placeholder: {
-    width: 300.934,
-    color: COLORS.neutral.grey3,
+  textInput: {
+    color: COLORS.text.primary,
     fontFamily: 'Pretendard',
     fontSize: 18.5,
     fontStyle: 'normal',
     fontWeight: '400',
     lineHeight: 22.519,
-    textAlign: 'center',
-    marginBottom: 8,
+    paddingVertical: 4,
+    paddingLeft: 3,
+    textAlign: 'left',
   },
-  inputText: {
-    width: 300.934,
-    color: COLORS.neutral.black,
-    fontFamily: 'Pretendard',
-    fontSize: 18.5,
-    fontStyle: 'normal',
-    fontWeight: '400',
-    lineHeight: 22.519,
-    textAlign: 'center',
-    marginBottom: 8,
+  textInputFocused: {
+    color: COLORS.text.primary,
   },
-  bottomLine: {
-    width: 308,
+  textInputError: {
+    color: COLORS.primary,
+  },
+  inputUnderline: {
     height: 1.5,
+    backgroundColor: COLORS.neutral.grey3,
+    marginTop: 4,
   },
-  testKeyboard: {
-    marginTop: 20,
+  inputUnderlineFocused: {
+    backgroundColor: COLORS.text.primary,
   },
-  keyRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  testKey: {
-    width: 40,
-    height: 40,
-    backgroundColor: COLORS.neutral.grey2,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 4,
-  },
-  testKeyText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  deleteKey: {
-    width: 80,
-    height: 40,
+  inputUnderlineError: {
     backgroundColor: COLORS.primary,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
   },
-  deleteKeyText: {
-    color: COLORS.text.inverse,
-    fontSize: 14,
-    fontWeight: '600',
+  errorText: {
+    color: COLORS.primary,
+    fontFamily: 'Pretendard',
+    fontSize: 13,
+    fontStyle: 'normal',
+    fontWeight: '400',
+    lineHeight: 22,
+    marginTop: 7,
+    textAlign: 'left',
   },
 });
