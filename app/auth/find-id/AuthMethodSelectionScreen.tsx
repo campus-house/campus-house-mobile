@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { router } from 'expo-router';
 import { COLORS } from '@/constants/colors';
 import { TYPOGRAPHY } from '@/constants/typography';
 import { BackIcon } from '@/components/Icon/BackIcon';
 import { LoginButton } from '@/components/Button/MainButton';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLayoutScale } from '@/utils/layout';
 import PhoneAuthDetailScreen from './PhoneAuthDetailScreen';
 import EmailAuthScreen from './EmailAuthScreen';
@@ -246,9 +244,6 @@ const styles = StyleSheet.create({
   authOptionText: {
     ...TYPOGRAPHY.body1,
     marginBottom: 6,
-  },
-  authOptionTextSelected: {
-    color: COLORS.primary,
   },
   authOptionDescription: {
     ...TYPOGRAPHY.caption2,

@@ -180,7 +180,7 @@ export default function MyPageScreen() {
               {/* 회색 잠금 뱃지 */}
               <View style={styles.badgeItem}>
                 <View style={[styles.badgeCircle, { backgroundColor: '#d9d9d9' }]}>
-                  <Image source={require('@/assets/images/lock.png')} style={[styles.badgeLock, { width: 64, height: 64 }]} resizeMode="contain" />
+                  <Image source={require('@/assets/images/small_lock.png')} style={[styles.badgeLock, { width: 64, height: 64 }]} resizeMode="contain" />
                 </View>
               </View>
             </View>
@@ -224,7 +224,7 @@ export default function MyPageScreen() {
                 <View style={styles.activityItemContent}>
                   <View style={styles.activityLeft}>
                     <View style={styles.activityIconBox}>
-                      <Image source={require('@/assets/images/스크랩.png')} style={[styles.activityIcon, { width: 17, height: 17 }]} resizeMode="contain" />
+                      <Image source={require('@/assets/images/scrap.png')} style={[styles.activityIcon, { width: 17, height: 17 }]} resizeMode="contain" />
                     </View>
                   </View>
                   <Text style={[styles.activityItemText, { marginLeft: -150 }]}>스크랩한 글</Text>

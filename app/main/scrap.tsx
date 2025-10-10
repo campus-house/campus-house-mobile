@@ -394,7 +394,7 @@ export default function ScrapScreen() {
 
           {/* 고슴도치 이미지 */}
           <Image
-            source={require('@/assets/images/고슴.png')}
+            source={require('@/assets/images/hedgehog.png')}
             style={styles.aiHedgehogImage}
             resizeMode="contain"
           />
@@ -452,7 +452,7 @@ export default function ScrapScreen() {
 
             {/* 공부핑 이미지 */}
             <Image
-              source={require('@/assets/images/공부핑.png')}
+              source={require('@/assets/images/study_ping.png')}
               style={styles.studyPingImage}
               resizeMode="contain"
             />

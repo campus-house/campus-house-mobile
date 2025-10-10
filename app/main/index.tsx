@@ -16,7 +16,6 @@ import { router, useNavigation } from 'expo-router';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { COLORS } from '@/constants/colors';
 import { BackIcon } from '@/components/Icon/BackIcon';
-import PermissionModal from '@/components/Modal/PermissionModal';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -94,7 +93,84 @@ export default function MainScreen() {
   const [showBackButton, setShowBackButton] = useState(false);
   const [scrollOffset, setScrollOffset] = useState(0);
   const [cardPosition, setCardPosition] = useState(screenHeight * 0.6); // 카드의 Y 위치 (화면의 60% 지점에서 시작)
-  const [showPermissionModal, setShowPermissionModal] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(true);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [showAddressSearchModal, setShowAddressSearchModal] = useState(false);
+  const [showNameInputModal, setShowNameInputModal] = useState(false);
+  const [showInfoInputModal, setShowInfoInputModal] = useState(false);
+  const [showRegionModal, setShowRegionModal] = useState(false);
+  const [showDistrictModal, setShowDistrictModal] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const [phoneInput, setPhoneInput] = useState('');
+  const [idNumberInput, setIdNumberInput] = useState('');
+  const [infoNameInput, setInfoNameInput] = useState('');
+  const [infoPhoneInput, setInfoPhoneInput] = useState('');
+  const [infoIdNumberInput, setInfoIdNumberInput] = useState('');
+  const [infoIdNumberSecond, setInfoIdNumberSecond] = useState('');
+  const [selectedRegion, setSelectedRegion] = useState('');
+  const [selectedDistrict, setSelectedDistrict] = useState('');
+  const [selectedAuth, setSelectedAuth] = useState('');
+  const [showAuthCompleteModal, setShowAuthCompleteModal] = useState(false);
+  const [showLoadingModal, setShowLoadingModal] = useState(false);
+  const [showVerificationCompleteModal, setShowVerificationCompleteModal] = useState(false);
+  const [showFinalCompleteModal, setShowFinalCompleteModal] = useState(false);
+  const [currentYear, setCurrentYear] = useState(0); // 0: 2019, 1: 2021, 2: 2025
+
+  // 로딩 애니메이션 효과
+  useEffect(() => {
+    if (showLoadingModal) {
+      const interval = setInterval(() => {
+        setCurrentYear((prev) => {
+          if (prev < 2) {
+            return prev + 1;
+          }
+          return prev;
+        });
+      }, 3000);
+
+      return () => {
+        clearInterval(interval);
+      };
+    }
+  }, [showLoadingModal]);
+
+  // 2025에 도달하면 3초 후 완료 화면으로 전환
+  useEffect(() => {
+    if (showLoadingModal && currentYear === 2) {
+      const completeTimeout = setTimeout(() => {
+        setShowLoadingModal(false);
+        setShowVerificationCompleteModal(true);
+      }, 3000);
+
+      return () => {
+        clearTimeout(completeTimeout);
+      };
+    }
+  }, [showLoadingModal, currentYear]);
+
+  // 고슴도치 화면에서 3초 후 최종 완료 화면으로 전환
+  useEffect(() => {
+    if (showVerificationCompleteModal) {
+      const finalTimeout = setTimeout(() => {
+        setShowVerificationCompleteModal(false);
+        setShowFinalCompleteModal(true);
+      }, 3000);
+
+      return () => {
+        clearTimeout(finalTimeout);
+      };
+    }
+  }, [showVerificationCompleteModal]);
+
+  // 주민등록번호 뒷자리 마스킹 함수
+  const getIdNumberSecondDisplay = () => {
+    if (infoIdNumberSecond.length === 0) {
+      return '';
+    }
+    // 첫 번째 글자만 보이고 나머지는 *로 마스킹
+    const firstDigit = infoIdNumberSecond.charAt(0);
+    return `${firstDigit}******`;
+  };
   const scrollViewRef = useRef<ScrollView>(null);
   const pan = useRef(new Animated.ValueXY()).current;
 
@@ -205,9 +281,6 @@ export default function MainScreen() {
     setScrollOffset(currentOffset);
   };
 
-  const handlePermissionNext = () => {
-    setShowPermissionModal(false);
-  };
 
   const renderPost = (post: (typeof samplePosts)[0]) => (
     <TouchableOpacity 
@@ -303,11 +376,40 @@ export default function MainScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#D7F0FF" />
       
-      {/* 권한 팝업 */}
-      <PermissionModal
-        visible={showPermissionModal}
-        onNext={handlePermissionNext}
-      />
+      {/* 거주지 인증 모달 */}
+      {showAuthModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.authModal}>
+            {/* 자물쇠 아이콘 */}
+            <Image
+              source={require('@/assets/images/big_lock.png')}
+              style={styles.lockIcon}
+              resizeMode="contain"
+            />
+
+            {/* 리워드 배너 */}
+            <View style={styles.rewardBanner}>
+              <Text style={styles.rewardText}>인증시 800c리워드 지급</Text>
+            </View>
+
+            {/* 설명 텍스트 */}
+            <Text style={styles.authDescription}>거주지를 인증하고</Text>
+            <Text style={styles.authDescription}>유저들이랑 소통해요</Text>
+
+            {/* 인증 버튼 */}
+            <TouchableOpacity
+              style={styles.authButton}
+              onPress={() => {
+                setShowAuthModal(false);
+                setShowAddressModal(true);
+                setShowAddressSearchModal(true);
+              }}
+            >
+              <Text style={styles.authButtonText}>거주지 인증하러 가기</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* 거주지 인증 모달 */}
       {showAuthModal && (
@@ -315,7 +417,7 @@ export default function MainScreen() {
           <View style={styles.authModal}>
             {/* 자물쇠 아이콘 */}
             <Image
-              source={require('@/assets/images/자물쇠.png')}
+              source={require('@/assets/images/big_lock.png')}
               style={styles.lockIcon}
               resizeMode="contain"
             />
@@ -356,7 +458,7 @@ export default function MainScreen() {
                 setShowAddressSearchModal(false);
               }}
             >
-              <BackIcon size={16} color={COLORS.neutral.grey4} />
+              <BackIcon />
             </TouchableOpacity>
 
             {/* 제목 */}
@@ -375,7 +477,7 @@ export default function MainScreen() {
             >
               <Text style={styles.addressPlaceholder}>거주하고 있는 주소 찾기</Text>
               <Image
-                source={require('@/assets/images/돋보기.png')}
+                source={require('@/assets/images/magnifier.png')}
                 style={styles.searchIcon}
                 resizeMode="contain"
               />
@@ -432,7 +534,7 @@ export default function MainScreen() {
                 setNameInput('');
               }}
             >
-              <BackIcon size={16} color={COLORS.neutral.grey4} />
+              <BackIcon />
             </TouchableOpacity>
 
             {/* 제목 */}
@@ -500,7 +602,7 @@ export default function MainScreen() {
                 setInfoIdNumberSecond('');
               }}
             >
-              <BackIcon size={16} color={COLORS.neutral.grey4} />
+              <BackIcon />
             </TouchableOpacity>
 
             {/* 제목 */}
@@ -653,7 +755,7 @@ export default function MainScreen() {
                 onPress={() => setSelectedAuth('카카오')}
               >
                 <Image
-                  source={require('@/assets/images/카카오.png')}
+                  source={require('@/assets/images/kakao_logo.png')}
                   style={styles.authImage}
                   resizeMode="cover"
                 />
@@ -671,7 +773,7 @@ export default function MainScreen() {
                 onPress={() => setSelectedAuth('네이버')}
               >
                 <Image
-                  source={require('@/assets/images/네이버.png')}
+                  source={require('@/assets/images/naver_logo.png')}
                   style={styles.authImage}
                   resizeMode="cover"
                 />
@@ -689,7 +791,7 @@ export default function MainScreen() {
                 onPress={() => setSelectedAuth('토스')}
               >
                 <Image
-                  source={require('@/assets/images/토스.png')}
+                  source={require('@/assets/images/toss.png')}
                   style={styles.authImage}
                   resizeMode="cover"
                 />
@@ -868,7 +970,7 @@ export default function MainScreen() {
                 setShowInfoInputModal(true);
               }}
             >
-              <BackIcon size={16} color={COLORS.neutral.grey4} />
+              <BackIcon />
             </TouchableOpacity>
 
             {/* 제목 */}
@@ -912,7 +1014,7 @@ export default function MainScreen() {
                 setShowAuthCompleteModal(true);
               }}
             >
-              <BackIcon size={16} color={COLORS.neutral.grey4} />
+              <BackIcon />
             </TouchableOpacity>
 
             {/* 제목 */}
@@ -1101,7 +1203,7 @@ export default function MainScreen() {
 
             {/* 고슴도치 이미지 */}
             <Image
-              source={require('@/assets/images/고슴.png')}
+              source={require('@/assets/images/hedgehog.png')}
               style={styles.hedgehogImage}
               resizeMode="contain"
             />
@@ -1121,7 +1223,7 @@ export default function MainScreen() {
 
             {/* 마을 이미지 */}
             <Image
-              source={require('@/assets/images/마을.png')}
+              source={require('@/assets/images/village.png')}
               style={styles.villageImage}
               resizeMode="cover"
             />
@@ -1133,7 +1235,7 @@ export default function MainScreen() {
       {showBackButton && (
         <View style={styles.backButtonContainer}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <BackIcon size={16} color={COLORS.neutral.grey4} />
+            <BackIcon />
           </TouchableOpacity>
         </View>
       )}
