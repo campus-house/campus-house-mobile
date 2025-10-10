@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,9 +10,10 @@ import {
   Dimensions,
   PanResponder,
   Animated,
+  TextInput,
 } from 'react-native';
-import { router } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
+import { router, useNavigation } from 'expo-router';
+import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { COLORS } from '@/constants/colors';
 import { BackIcon } from '@/components/Icon/BackIcon';
 import PermissionModal from '@/components/Modal/PermissionModal';
@@ -89,12 +90,63 @@ const samplePosts = [
 ];
 
 export default function MainScreen() {
+  const navigation = useNavigation();
   const [showBackButton, setShowBackButton] = useState(false);
   const [scrollOffset, setScrollOffset] = useState(0);
   const [cardPosition, setCardPosition] = useState(screenHeight * 0.6); // 카드의 Y 위치 (화면의 60% 지점에서 시작)
   const [showPermissionModal, setShowPermissionModal] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
   const pan = useRef(new Animated.ValueXY()).current;
+
+  // 모달이 표시될 때 탭바 숨기기
+  useEffect(() => {
+    if (
+      showAddressModal ||
+      showNameInputModal ||
+      showInfoInputModal ||
+      showAuthCompleteModal ||
+      showLoadingModal ||
+      showVerificationCompleteModal ||
+      showFinalCompleteModal
+    ) {
+      navigation.setOptions({
+        tabBarStyle: { display: 'none' },
+      });
+    } else {
+      navigation.setOptions({
+        tabBarStyle: {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 76,
+          width: 393,
+          backgroundColor: '#FFF',
+          borderTopLeftRadius: 25,
+          borderTopRightRadius: 25,
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+          shadowColor: '#000',
+          shadowOffset: {
+            width: -1.5,
+            height: -4.5,
+          },
+          shadowOpacity: 0.03,
+          shadowRadius: 4,
+          elevation: 5,
+        },
+      });
+    }
+  }, [
+    showAddressModal,
+    showNameInputModal,
+    showInfoInputModal,
+    showAuthCompleteModal,
+    showLoadingModal,
+    showVerificationCompleteModal,
+    showFinalCompleteModal,
+    navigation,
+  ]);
 
   const panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
@@ -158,7 +210,15 @@ export default function MainScreen() {
   };
 
   const renderPost = (post: (typeof samplePosts)[0]) => (
-    <View key={post.id} style={styles.postCard}>
+    <TouchableOpacity 
+      key={post.id} 
+      style={styles.postCard}
+      onPress={() => {
+        if (post.title === '도넛 나눔할게요') {
+          router.push('/chat');
+        }
+      }}
+    >
       <View style={styles.postHeader}>
         <View style={styles.authorInfo}>
           <View style={styles.profileImage}>
@@ -236,7 +296,7 @@ export default function MainScreen() {
           <Text style={styles.actionText}>0</Text>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -248,6 +308,826 @@ export default function MainScreen() {
         visible={showPermissionModal}
         onNext={handlePermissionNext}
       />
+
+      {/* 거주지 인증 모달 */}
+      {showAuthModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.authModal}>
+            {/* 자물쇠 아이콘 */}
+            <Image
+              source={require('@/assets/images/자물쇠.png')}
+              style={styles.lockIcon}
+              resizeMode="contain"
+            />
+
+            {/* 리워드 배너 */}
+            <View style={styles.rewardBanner}>
+              <Text style={styles.rewardText}>인증시 800c리워드 지급</Text>
+            </View>
+
+            {/* 설명 텍스트 */}
+            <Text style={styles.authDescription}>거주지를 인증하고</Text>
+            <Text style={styles.authDescription}>유저들이랑 소통해요</Text>
+
+            {/* 인증 버튼 */}
+            <TouchableOpacity
+              style={styles.authButton}
+              onPress={() => {
+                setShowAuthModal(false);
+                setShowAddressModal(true);
+                setShowAddressSearchModal(true);
+              }}
+            >
+              <Text style={styles.authButtonText}>거주지 인증하러 가기</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* 주소 입력 모달 */}
+      {showAddressModal && (
+        <View style={styles.addressModalOverlay}>
+          <View style={styles.addressModal}>
+            {/* 뒤로가기 버튼 */}
+            <TouchableOpacity
+              style={styles.addressBackButton}
+              onPress={() => {
+                setShowAddressModal(false);
+                setShowAddressSearchModal(false);
+              }}
+            >
+              <BackIcon size={16} color={COLORS.neutral.grey4} />
+            </TouchableOpacity>
+
+            {/* 제목 */}
+            <Text style={styles.addressHeaderTitle}>주소 불러오기</Text>
+
+            {/* 질문 */}
+            <Text style={styles.addressQuestion}>어디에 거주 중이신가요?</Text>
+
+            {/* 주소 검색 입력 필드 */}
+            <TouchableOpacity
+              style={styles.addressInputContainer}
+              onPress={() => {
+                setShowAddressModal(false);
+                setShowAddressSearchModal(true);
+              }}
+            >
+              <Text style={styles.addressPlaceholder}>거주하고 있는 주소 찾기</Text>
+              <Image
+                source={require('@/assets/images/돋보기.png')}
+                style={styles.searchIcon}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+
+            {/* 안내 문구 */}
+            <Text style={styles.addressNotice}>
+              *입력하신 정보는 정부24 주소 연동 이외에{'\n'}일절 사용되지 않아요.
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* 주소 검색 결과 모달 */}
+      {showAddressSearchModal && (
+        <View style={styles.addressSearchModalOverlay}>
+          <View style={styles.addressSearchModal}>
+            {/* 제목 */}
+            <Text style={styles.searchModalTitle}>
+              <Text style={styles.searchModalTitleOrange}>안전하게</Text>
+              <Text style={styles.searchModalTitleBlack}>
+                {' '}
+                살았던 집의 주소를 불러올 수 있어요!
+              </Text>
+            </Text>
+
+            {/* 설명 */}
+            <Text style={styles.searchModalDescription}>정부24에서 간편하게 정보를 조회해요.</Text>
+
+            {/* 주소 불러오기 버튼 */}
+            <TouchableOpacity
+              style={styles.addressSearchButton}
+              onPress={() => {
+                setShowAddressSearchModal(false);
+                setShowAddressModal(false);
+                setShowNameInputModal(true);
+              }}
+            >
+              <Text style={styles.addressSearchButtonText}>주소 불러오기</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* 이름 입력 모달 */}
+      {showNameInputModal && (
+        <View style={styles.addressModalOverlay}>
+          <View style={styles.addressModal}>
+            {/* 뒤로가기 버튼 */}
+            <TouchableOpacity
+              style={styles.addressBackButton}
+              onPress={() => {
+                setShowNameInputModal(false);
+                setNameInput('');
+              }}
+            >
+              <BackIcon size={16} color={COLORS.neutral.grey4} />
+            </TouchableOpacity>
+
+            {/* 제목 */}
+            <Text style={styles.addressHeaderTitle}>주소 불러오기</Text>
+
+            {/* 질문 */}
+            <Text style={styles.nameInputQuestion}>이름을 입력해주세요</Text>
+
+            {/* 안내 */}
+            <Text style={styles.nameInputGuide}>이름</Text>
+
+            {/* 이름 입력 필드 */}
+            <View style={styles.nameInputContainer}>
+              <TextInput
+                style={styles.nameInput}
+                placeholder="이름 입력"
+                placeholderTextColor="#CDCDCD"
+                value={nameInput}
+                onChangeText={setNameInput}
+              />
+            </View>
+
+            {/* 하단 줄 */}
+            <View
+              style={[styles.nameInputLine, nameInput.length > 0 && styles.nameInputLineActive]}
+            />
+
+            {/* 안내 문구 */}
+            <Text style={styles.nameInputNotice}>
+              *입력하신 정보는 정부24 주소 연동 이외에{'\n'}일절 사용되지 않아요.
+            </Text>
+
+            {/* 다음 버튼 */}
+            <TouchableOpacity
+              style={[styles.nextButton, nameInput.length > 0 && styles.nextButtonActive]}
+              onPress={() => {
+                if (nameInput.length > 0) {
+                  setShowNameInputModal(false);
+                  setShowInfoInputModal(true);
+                }
+              }}
+            >
+              <Text
+                style={[styles.nextButtonText, nameInput.length > 0 && styles.nextButtonTextActive]}
+              >
+                다음
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* 정보 입력 모달 */}
+      {showInfoInputModal && (
+        <View style={styles.addressModalOverlay}>
+          <View style={styles.addressModal}>
+            {/* 뒤로가기 버튼 */}
+            <TouchableOpacity
+              style={styles.addressBackButton}
+              onPress={() => {
+                setShowInfoInputModal(false);
+                setInfoNameInput('');
+                setInfoPhoneInput('');
+                setInfoIdNumberInput('');
+                setInfoIdNumberSecond('');
+              }}
+            >
+              <BackIcon size={16} color={COLORS.neutral.grey4} />
+            </TouchableOpacity>
+
+            {/* 제목 */}
+            <Text style={styles.addressHeaderTitle}>주소 불러오기</Text>
+
+            {/* 질문 */}
+            <Text style={styles.infoInputQuestion}>정보를 입력해주세요</Text>
+
+            {/* 안내 */}
+            <Text style={styles.infoInputGuide}>
+              *입력하신 정보는 정부24 주소 연동 이외에{'\n'}일절 사용되지 않아요.
+            </Text>
+
+            {/* 지역 필드 */}
+            <TouchableOpacity
+              style={styles.infoFieldContainer}
+              onPress={() => setShowRegionModal(true)}
+            >
+              <Text
+                style={[styles.infoFieldLabel, selectedRegion && styles.infoFieldLabelSelected]}
+              >
+                {selectedRegion || '지역'}
+              </Text>
+              <Svg width="11" height="7" viewBox="0 0 11 7" fill="none" style={styles.dropdownIcon}>
+                <Path
+                  d="M1 1.5L5.3536 5.85352L9.70703 1.5"
+                  stroke="#CDCDCD"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </Svg>
+            </TouchableOpacity>
+            <View style={[styles.infoFieldLine, selectedRegion && styles.infoInputLineActive]} />
+
+            {/* 시/군/구 필드 */}
+            <TouchableOpacity
+              style={styles.infoFieldContainer2}
+              onPress={() => setShowDistrictModal(true)}
+            >
+              <Text
+                style={[styles.infoFieldLabel, selectedDistrict && styles.infoFieldLabelSelected]}
+              >
+                {selectedDistrict || '시/군/구 선택'}
+              </Text>
+              <Svg width="11" height="7" viewBox="0 0 11 7" fill="none" style={styles.dropdownIcon}>
+                <Path
+                  d="M1 1.5L5.3536 5.85352L9.70703 1.5"
+                  stroke="#CDCDCD"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
+              </Svg>
+            </TouchableOpacity>
+            <View style={[styles.infoFieldLine2, selectedDistrict && styles.infoInputLineActive]} />
+
+            {/* 이름 필드 */}
+            <View style={styles.infoInputContainer}>
+              <TextInput
+                style={[styles.infoInput, infoNameInput.length > 0 && styles.infoInputActive]}
+                placeholder="이름"
+                placeholderTextColor="#CDCDCD"
+                value={infoNameInput}
+                onChangeText={setInfoNameInput}
+              />
+            </View>
+            <View
+              style={[styles.infoInputLine, infoNameInput.length > 0 && styles.infoInputLineActive]}
+            />
+
+            {/* 휴대폰 번호 필드 */}
+            <View style={styles.infoInputContainer2}>
+              <TextInput
+                style={[styles.infoInput, infoPhoneInput.length > 0 && styles.infoInputActivePhone]}
+                placeholder="휴대폰 11자리 입력하기"
+                placeholderTextColor="#CDCDCD"
+                value={infoPhoneInput}
+                onChangeText={setInfoPhoneInput}
+                keyboardType="numeric"
+                maxLength={11}
+              />
+            </View>
+            <View
+              style={[
+                styles.infoInputLine2,
+                infoPhoneInput.length > 0 && styles.infoInputLineActive,
+              ]}
+            />
+
+            {/* 주민등록번호 필드 */}
+            <View style={styles.infoInputContainer3}>
+              <View style={styles.idNumberRow}>
+                <TextInput
+                  style={[
+                    styles.idNumberInput1,
+                    infoIdNumberInput.length > 0 && styles.infoInputActive,
+                  ]}
+                  placeholder="생년월일 6자리"
+                  placeholderTextColor="#CDCDCD"
+                  value={infoIdNumberInput}
+                  onChangeText={setInfoIdNumberInput}
+                  keyboardType="numeric"
+                  maxLength={6}
+                />
+                <Svg width="18" height="2" viewBox="0 0 18 2" style={styles.dashIcon}>
+                  <Path d="M1.37891 1H17.3789" stroke="#AAAAAA" strokeLinecap="round" />
+                </Svg>
+                <TextInput
+                  style={[
+                    styles.idNumberSecond,
+                    infoIdNumberSecond.length > 0 && {
+                      color: '#323232',
+                      fontSize: 20,
+                      fontWeight: '400',
+                      fontFamily: 'Pretendard',
+                      lineHeight: 22.519,
+                    },
+                  ]}
+                  placeholder="*******"
+                  placeholderTextColor="#CDCDCD"
+                  value={getIdNumberSecondDisplay()}
+                  onChangeText={setInfoIdNumberSecond}
+                  keyboardType="numeric"
+                  maxLength={7}
+                  secureTextEntry={false}
+                />
+              </View>
+            </View>
+            <View style={styles.idNumberLines}>
+              <View
+                style={[
+                  styles.idNumberLine1,
+                  infoIdNumberInput.length > 0 && styles.infoInputLineActive,
+                ]}
+              />
+              <View
+                style={[
+                  styles.idNumberLine2,
+                  infoIdNumberSecond.length > 0 && styles.infoInputLineActive,
+                ]}
+              />
+            </View>
+
+            {/* 인증수단 선택 */}
+            <Text style={styles.authMethodTitle}>인증수단을 선택해주세요</Text>
+
+            {/* 인증 옵션들 */}
+            <View style={styles.authOptionsContainer}>
+              <TouchableOpacity
+                style={styles.authOptionWithText}
+                onPress={() => setSelectedAuth('카카오')}
+              >
+                <Image
+                  source={require('@/assets/images/카카오.png')}
+                  style={styles.authImage}
+                  resizeMode="cover"
+                />
+                <Text
+                  style={[
+                    styles.authOptionTextNew,
+                    selectedAuth === '카카오' && styles.authOptionTextSelected,
+                  ]}
+                >
+                  카카오
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.authOptionWithText}
+                onPress={() => setSelectedAuth('네이버')}
+              >
+                <Image
+                  source={require('@/assets/images/네이버.png')}
+                  style={styles.authImage}
+                  resizeMode="cover"
+                />
+                <Text
+                  style={[
+                    styles.authOptionTextNew,
+                    selectedAuth === '네이버' && styles.authOptionTextSelected,
+                  ]}
+                >
+                  네이버
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.authOptionWithText}
+                onPress={() => setSelectedAuth('토스')}
+              >
+                <Image
+                  source={require('@/assets/images/토스.png')}
+                  style={styles.authImage}
+                  resizeMode="cover"
+                />
+                <Text
+                  style={[
+                    styles.authOptionTextNew,
+                    selectedAuth === '토스' && styles.authOptionTextSelected,
+                  ]}
+                >
+                  토스
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* 인증하기 버튼 */}
+            <TouchableOpacity
+              style={[
+                styles.infoSubmitButton,
+                selectedRegion &&
+                  selectedDistrict &&
+                  infoNameInput &&
+                  infoPhoneInput &&
+                  infoIdNumberInput &&
+                  infoIdNumberSecond &&
+                  selectedAuth &&
+                  styles.infoSubmitButtonActive,
+              ]}
+              onPress={() => {
+                if (
+                  selectedRegion &&
+                  selectedDistrict &&
+                  infoNameInput &&
+                  infoPhoneInput &&
+                  infoIdNumberInput &&
+                  infoIdNumberSecond &&
+                  selectedAuth
+                ) {
+                  setShowInfoInputModal(false);
+                  setShowAuthCompleteModal(true);
+                }
+              }}
+            >
+              <Text
+                style={[
+                  styles.infoSubmitButtonText,
+                  selectedRegion &&
+                    selectedDistrict &&
+                    infoNameInput &&
+                    infoPhoneInput &&
+                    infoIdNumberInput &&
+                    infoIdNumberSecond &&
+                    selectedAuth &&
+                    styles.infoSubmitButtonTextActive,
+                ]}
+              >
+                인증하기
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* 지역 선택 모달 */}
+      {showRegionModal && (
+        <View style={styles.regionModalOverlay}>
+          <View style={styles.regionModal}>
+            <Text style={styles.regionModalTitle}>지역을 선택해주세요</Text>
+
+            <TouchableOpacity
+              style={styles.regionOption}
+              onPress={() => {
+                setSelectedRegion('서울특별시');
+                setShowRegionModal(false);
+              }}
+            >
+              <Text style={styles.regionOptionText}>서울특별시</Text>
+            </TouchableOpacity>
+            <View style={styles.regionOptionLine} />
+
+            <TouchableOpacity
+              style={styles.regionOption}
+              onPress={() => {
+                setSelectedRegion('경기도');
+                setShowRegionModal(false);
+              }}
+            >
+              <Text style={styles.regionOptionTextSelected}>경기도</Text>
+            </TouchableOpacity>
+            <View style={styles.regionOptionLine} />
+
+            <TouchableOpacity
+              style={styles.regionOption}
+              onPress={() => {
+                setSelectedRegion('인천');
+                setShowRegionModal(false);
+              }}
+            >
+              <Text style={styles.regionOptionText}>인천</Text>
+            </TouchableOpacity>
+            <View style={styles.regionOptionLine} />
+
+            <TouchableOpacity
+              style={styles.regionOption}
+              onPress={() => {
+                setSelectedRegion('강원도');
+                setShowRegionModal(false);
+              }}
+            >
+              <Text style={styles.regionOptionText}>강원도</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* 시/군/구 선택 모달 */}
+      {showDistrictModal && (
+        <View style={styles.regionModalOverlay}>
+          <View style={styles.regionModal}>
+            <Text style={styles.regionModalTitle}>시/군/구를 선택해주세요</Text>
+
+            <TouchableOpacity
+              style={styles.regionOption}
+              onPress={() => {
+                setSelectedDistrict('기흥구');
+                setShowDistrictModal(false);
+              }}
+            >
+              <Text style={styles.regionOptionText}>기흥구</Text>
+            </TouchableOpacity>
+            <View style={styles.regionOptionLine} />
+
+            <TouchableOpacity
+              style={styles.regionOption}
+              onPress={() => {
+                setSelectedDistrict('영통구');
+                setShowDistrictModal(false);
+              }}
+            >
+              <Text style={styles.regionOptionText}>영통구</Text>
+            </TouchableOpacity>
+            <View style={styles.regionOptionLine} />
+
+            <TouchableOpacity
+              style={styles.regionOption}
+              onPress={() => {
+                setSelectedDistrict('수지구');
+                setShowDistrictModal(false);
+              }}
+            >
+              <Text style={styles.regionOptionText}>수지구</Text>
+            </TouchableOpacity>
+            <View style={styles.regionOptionLine} />
+
+            <TouchableOpacity
+              style={styles.regionOption}
+              onPress={() => {
+                setSelectedDistrict('팔달구');
+                setShowDistrictModal(false);
+              }}
+            >
+              <Text style={styles.regionOptionText}>팔달구</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* 간편 인증하기 모달 */}
+      {showAuthCompleteModal && (
+        <View style={styles.authCompleteModalOverlay}>
+          <View style={styles.authCompleteModal}>
+            {/* 뒤로가기 버튼 */}
+            <TouchableOpacity
+              style={styles.authCompleteBackButton}
+              onPress={() => {
+                setShowAuthCompleteModal(false);
+                setShowInfoInputModal(true);
+              }}
+            >
+              <BackIcon size={16} color={COLORS.neutral.grey4} />
+            </TouchableOpacity>
+
+            {/* 제목 */}
+            <Text style={styles.authCompleteHeaderTitle}>간편 인증하기</Text>
+
+            {/* 메인 텍스트 */}
+            <Text style={styles.authCompleteMainText}>앱에서 인증해 주세요</Text>
+
+            {/* 설명 텍스트 */}
+            <Text style={styles.authCompleteDescription}>
+              앱에서 인증 후 완료 버튼을 눌러주세요.
+            </Text>
+
+            {/* 문제 발생 시 텍스트 */}
+            <Text style={styles.authCompleteIssueText}>인증 문자가 오지 않아요</Text>
+
+            {/* 완료 버튼 */}
+            <TouchableOpacity
+              style={styles.authCompleteButton}
+              onPress={() => {
+                setShowAuthCompleteModal(false);
+                setCurrentYear(0); // 애니메이션 초기화
+                setShowLoadingModal(true);
+              }}
+            >
+              <Text style={styles.authCompleteButtonText}>앱에서 인증을 완료했어요</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* 로딩 모달 */}
+      {showLoadingModal && (
+        <View style={styles.loadingModalOverlay}>
+          <View style={styles.loadingModal}>
+            {/* 뒤로가기 버튼 */}
+            <TouchableOpacity
+              style={styles.loadingBackButton}
+              onPress={() => {
+                setShowLoadingModal(false);
+                setShowAuthCompleteModal(true);
+              }}
+            >
+              <BackIcon size={16} color={COLORS.neutral.grey4} />
+            </TouchableOpacity>
+
+            {/* 제목 */}
+            <Text style={styles.loadingHeaderTitle}>간편 인증하기</Text>
+
+            {/* 불러오는 중 텍스트와 점 */}
+            <View style={styles.loadingTextContainer}>
+              <Text style={styles.loadingText}>불러오는 중</Text>
+              <View style={styles.loadingDotsContainer}>
+                <Svg width="5" height="4" viewBox="0 0 5 4" fill="none">
+                  <Circle cx="2.47883" cy="2.07258" r="1.57258" fill="#FF805F" />
+                </Svg>
+                <Svg width="5" height="4" viewBox="0 0 5 4" fill="none" style={{ marginLeft: 4 }}>
+                  <Circle cx="2.47883" cy="2.07258" r="1.57258" fill="#FF805F" />
+                </Svg>
+                <Svg width="5" height="4" viewBox="0 0 5 4" fill="none" style={{ marginLeft: 4 }}>
+                  <Circle cx="2.47883" cy="2.07258" r="1.57258" fill="#FF805F" />
+                </Svg>
+              </View>
+            </View>
+
+            {/* 페이지를 벗어나지 말아주세요 */}
+            <Text style={styles.loadingWarningText}>페이지를 벗어나지 말아주세요!</Text>
+
+            {/* 타임라인 */}
+            <View style={styles.timelineContainer}>
+              {/* 2019 */}
+              <View style={styles.timelineItem}>
+                <View style={styles.timelineIconContainer}>
+                  {currentYear === 0 ? (
+                    <>
+                      <Svg
+                        width="31"
+                        height="31"
+                        viewBox="0 0 31 31"
+                        fill="none"
+                        style={{ position: 'absolute' }}
+                      >
+                        <Circle cx="15.5" cy="15.5" r="14.26" stroke="#FF805F" strokeWidth="2.48" />
+                      </Svg>
+                      <Svg width="19" height="19" viewBox="0 0 19 19" fill="none">
+                        <Circle cx="9.3" cy="9.3" r="9.3" fill="#FF805F" />
+                      </Svg>
+                    </>
+                  ) : (
+                    <Svg width="17" height="17" viewBox="0 0 17 17" fill="none">
+                      <Circle cx="8.5007" cy="8.7546" r="8.2546" fill="#FF805F" />
+                    </Svg>
+                  )}
+                </View>
+                <Text style={[styles.timelineYear, currentYear === 0 && styles.timelineYearActive]}>
+                  2019
+                </Text>
+              </View>
+
+              {/* 점선 */}
+              <View style={styles.timelineDots}>
+                {[0, 1, 2].map((i) => (
+                  <Svg
+                    key={`dots1-${i}`}
+                    width="5"
+                    height="5"
+                    viewBox="0 0 5 5"
+                    fill="none"
+                    style={{ marginVertical: 2 }}
+                  >
+                    <Circle
+                      cx="2.5939"
+                      cy="2.32242"
+                      r="2.00015"
+                      fill={currentYear >= 1 ? '#FF805F' : '#CDCDCD'}
+                    />
+                  </Svg>
+                ))}
+              </View>
+
+              {/* 2021 */}
+              <View style={styles.timelineItem}>
+                <View style={styles.timelineIconContainer}>
+                  {currentYear === 1 ? (
+                    <>
+                      <Svg
+                        width="31"
+                        height="31"
+                        viewBox="0 0 31 31"
+                        fill="none"
+                        style={{ position: 'absolute' }}
+                      >
+                        <Circle cx="15.5" cy="15.5" r="14.26" stroke="#FF805F" strokeWidth="2.48" />
+                      </Svg>
+                      <Svg width="19" height="19" viewBox="0 0 19 19" fill="none">
+                        <Circle cx="9.3" cy="9.3" r="9.3" fill="#FF805F" />
+                      </Svg>
+                    </>
+                  ) : currentYear > 1 ? (
+                    <Svg width="17" height="17" viewBox="0 0 17 17" fill="none">
+                      <Circle cx="8.5007" cy="8.7546" r="8.2546" fill="#FF805F" />
+                    </Svg>
+                  ) : (
+                    <Svg width="17" height="17" viewBox="0 0 17 17" fill="none">
+                      <Circle cx="8.5007" cy="8.7546" r="8.2546" fill="#CDCDCD" />
+                    </Svg>
+                  )}
+                </View>
+                <Text style={[styles.timelineYear, currentYear === 1 && styles.timelineYearActive]}>
+                  2021
+                </Text>
+              </View>
+
+              {/* 점선 */}
+              <View style={styles.timelineDots}>
+                {[0, 1, 2].map((i) => (
+                  <Svg
+                    key={`dots2-${i}`}
+                    width="5"
+                    height="5"
+                    viewBox="0 0 5 5"
+                    fill="none"
+                    style={{ marginVertical: 2 }}
+                  >
+                    <Circle
+                      cx="2.5939"
+                      cy="2.50015"
+                      r="2.00015"
+                      fill={currentYear >= 2 ? '#FF805F' : '#CDCDCD'}
+                    />
+                  </Svg>
+                ))}
+              </View>
+
+              {/* 2025 */}
+              <View style={styles.timelineItem}>
+                <View style={styles.timelineIconContainer}>
+                  {currentYear === 2 ? (
+                    <>
+                      <Svg
+                        width="31"
+                        height="31"
+                        viewBox="0 0 31 31"
+                        fill="none"
+                        style={{ position: 'absolute' }}
+                      >
+                        <Circle cx="15.5" cy="15.5" r="14.26" stroke="#FF805F" strokeWidth="2.48" />
+                      </Svg>
+                      <Svg width="19" height="19" viewBox="0 0 19 19" fill="none">
+                        <Circle cx="9.3" cy="9.3" r="9.3" fill="#FF805F" />
+                      </Svg>
+                    </>
+                  ) : (
+                    <Svg width="17" height="17" viewBox="0 0 17 17" fill="none">
+                      <Circle cx="8.5007" cy="8.7546" r="8.2546" fill="#CDCDCD" />
+                    </Svg>
+                  )}
+                </View>
+                <Text style={[styles.timelineYear, currentYear === 2 && styles.timelineYearActive]}>
+                  2025
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* 인증 완료 모달 */}
+      {showVerificationCompleteModal && (
+        <View style={styles.verificationCompleteModalOverlay}>
+          <View style={styles.verificationCompleteModal}>
+            {/* 불러오는 중 텍스트와 점 */}
+            <View style={styles.completeLoadingTextContainer}>
+              <Text style={styles.completeLoadingText}>불러오는 중</Text>
+              <View style={styles.completeLoadingDotsContainer}>
+                <Svg width="4" height="4" viewBox="0 0 4 4" fill="none">
+                  <Circle cx="1.8968" cy="1.57258" r="1.57258" fill="#FF805F" />
+                </Svg>
+                <Svg width="4" height="4" viewBox="0 0 4 4" fill="none" style={{ marginLeft: 4 }}>
+                  <Circle cx="1.8968" cy="1.57258" r="1.57258" fill="#FF805F" />
+                </Svg>
+                <Svg width="4" height="4" viewBox="0 0 4 4" fill="none" style={{ marginLeft: 4 }}>
+                  <Circle cx="1.8968" cy="1.57258" r="1.57258" fill="#FF805F" />
+                </Svg>
+              </View>
+            </View>
+
+            {/* 잠시만 기다려주세요 */}
+            <Text style={styles.completeWarningText}>잠시만 기다려주세요!</Text>
+
+            {/* 고슴도치 이미지 */}
+            <Image
+              source={require('@/assets/images/고슴.png')}
+              style={styles.hedgehogImage}
+              resizeMode="contain"
+            />
+          </View>
+        </View>
+      )}
+
+      {/* 최종 인증 완료 모달 */}
+      {showFinalCompleteModal && (
+        <View style={styles.finalCompleteModalOverlay}>
+          <View style={styles.finalCompleteModal}>
+            {/* 인증 완료 텍스트 */}
+            <Text style={styles.finalCompleteTitle}>인증 완료</Text>
+
+            {/* 환영 메시지 */}
+            <Text style={styles.finalWelcomeText}>캠퍼스하우스에 오신걸 환영해요!</Text>
+
+            {/* 마을 이미지 */}
+            <Image
+              source={require('@/assets/images/마을.png')}
+              style={styles.villageImage}
+              resizeMode="cover"
+            />
+          </View>
+        </View>
+      )}
 
       {/* Back Button - Only show when card is at top */}
       {showBackButton && (
@@ -707,5 +1587,985 @@ const styles = StyleSheet.create({
     height: 28.531, // SVG 세로선 길이
     backgroundColor: '#FFFFFF', // SVG stroke 색상
     borderRadius: 1.5, // stroke-linecap: round 효과
+  },
+  // 거주지 인증 모달 스타일
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  addressModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#666666',
+    zIndex: 1000,
+  },
+  authModal: {
+    width: 253,
+    height: 346.55,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    alignItems: 'center',
+    paddingVertical: 30,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  lockIcon: {
+    width: 92.719,
+    height: 114.663,
+    marginBottom: 20,
+  },
+  rewardBanner: {
+    width: 166.136,
+    height: 29.91,
+    backgroundColor: '#FF805F',
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  rewardText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'Pretendard',
+  },
+  authDescription: {
+    color: '#636363',
+    fontSize: 16,
+    fontWeight: '500',
+    fontFamily: 'Pretendard',
+    lineHeight: 23,
+    textAlign: 'center',
+    marginBottom: 5,
+  },
+  authButton: {
+    width: 253,
+    height: 57,
+    backgroundColor: '#FF805F',
+    borderBottomLeftRadius: 22,
+    borderBottomRightRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  authButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Pretendard',
+    lineHeight: 27.2,
+    textAlign: 'center',
+  },
+  // 주소 입력 모달 스타일
+  addressModal: {
+    width: 393,
+    height: 852,
+    backgroundColor: '#FCFCFC',
+    position: 'relative',
+  },
+  addressHeader: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    width: 393,
+    height: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+  },
+  addressBackButton: {
+    position: 'absolute',
+    left: 20,
+    top: 70,
+    padding: 8,
+    zIndex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 32,
+  },
+  addressHeaderTitle: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 78,
+    color: '#323232',
+    fontSize: 14,
+    fontWeight: '500',
+    fontFamily: 'Pretendard',
+    lineHeight: 17.76,
+    textAlign: 'center',
+  },
+  addressQuestion: {
+    position: 'absolute',
+    left: 37,
+    right: 37,
+    top: 180,
+    color: '#323232',
+    fontSize: 22,
+    fontWeight: '600',
+    fontFamily: 'Pretendard',
+    lineHeight: 26,
+    textAlign: 'left',
+  },
+  addressInputContainer: {
+    position: 'absolute',
+    left: 37,
+    top: 240,
+    width: 323,
+    height: 58,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  addressPlaceholder: {
+    color: '#FF805F',
+    fontSize: 15,
+    fontWeight: '500',
+    fontFamily: 'Pretendard',
+    lineHeight: 22,
+    flex: 1,
+  },
+  searchIcon: {
+    width: 24,
+    height: 24,
+    marginLeft: 10,
+  },
+  addressNotice: {
+    position: 'absolute',
+    left: 37,
+    top: 320,
+    color: '#AAAAAA',
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Pretendard',
+    lineHeight: 19,
+    width: 320,
+  },
+  homeIndicator: {
+    position: 'absolute',
+    left: 0,
+    top: 818,
+    width: 393,
+    height: 34,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  homeIndicatorBar: {
+    width: 134,
+    height: 5,
+    backgroundColor: '#636363',
+    borderRadius: 100,
+  },
+  // 주소 검색 결과 모달 스타일
+  addressSearchModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+    zIndex: 1001,
+  },
+  addressSearchModal: {
+    width: 393,
+    height: 212,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 26.5,
+    borderTopRightRadius: 26.5,
+    paddingTop: 30,
+    paddingHorizontal: 33,
+    paddingBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  searchModalTitle: {
+    marginBottom: 10,
+  },
+  searchModalTitleOrange: {
+    color: '#FF805F',
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: 'Pretendard',
+    lineHeight: 17.756,
+  },
+  searchModalTitleBlack: {
+    color: '#323232',
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: 'Pretendard',
+    lineHeight: 17.756,
+  },
+  searchModalDescription: {
+    color: '#AAA',
+    fontSize: 16,
+    fontWeight: '400',
+    fontFamily: 'Pretendard',
+    lineHeight: 17.756,
+    marginBottom: 30,
+    width: 259,
+  },
+  addressSearchButton: {
+    width: 327,
+    height: 52,
+    backgroundColor: '#FF805F',
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  addressSearchButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16.5,
+    fontWeight: '600',
+    fontFamily: 'Pretendard',
+  },
+  // 이름 입력 모달 스타일
+  nameInputQuestion: {
+    position: 'absolute',
+    left: 37,
+    right: 37,
+    top: 180,
+    color: '#323232',
+    fontSize: 26,
+    fontWeight: '600',
+    fontFamily: 'Pretendard',
+    lineHeight: 30,
+    textAlign: 'left',
+  },
+  nameInputGuide: {
+    position: 'absolute',
+    left: 37,
+    top: 250,
+    color: '#636363',
+    fontSize: 12,
+    fontWeight: '500',
+    fontFamily: 'Pretendard',
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  nameInputContainer: {
+    position: 'absolute',
+    left: 37,
+    top: 280,
+    width: 300.934,
+  },
+  nameInput: {
+    color: '#323232',
+    fontSize: 18.5,
+    fontWeight: '400',
+    fontFamily: 'Pretendard',
+    lineHeight: 22.519,
+    paddingVertical: 10,
+    paddingHorizontal: 0,
+  },
+  nameInputLine: {
+    position: 'absolute',
+    left: 37,
+    top: 320,
+    width: 308,
+    height: 1.5,
+    backgroundColor: '#CDCDCD',
+  },
+  nameInputLineActive: {
+    backgroundColor: '#323232',
+  },
+  nameInputNotice: {
+    position: 'absolute',
+    left: 37,
+    top: 335,
+    color: '#AAAAAA',
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Pretendard',
+    lineHeight: 17.756,
+    width: 297.125,
+  },
+  nextButton: {
+    position: 'absolute',
+    left: 37,
+    bottom: 100,
+    width: 318,
+    height: 56,
+    backgroundColor: '#AAA',
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+  },
+  nextButtonActive: {
+    backgroundColor: '#FF805F',
+  },
+  nextButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16.5,
+    fontWeight: '700',
+    fontFamily: 'Pretendard',
+  },
+  nextButtonTextActive: {
+    color: '#FFFFFF',
+  },
+  // 정보 입력 모달 스타일
+  infoInputQuestion: {
+    position: 'absolute',
+    left: 37,
+    right: 37,
+    top: 140,
+    color: '#323232',
+    fontSize: 25.246,
+    fontWeight: '600',
+    fontFamily: 'Pretendard',
+    lineHeight: 30,
+    textAlign: 'left',
+  },
+  infoInputGuide: {
+    position: 'absolute',
+    left: 37,
+    top: 180,
+    color: '#AAA',
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Pretendard',
+    lineHeight: 17.756,
+    width: 320,
+  },
+  infoFieldContainer: {
+    position: 'absolute',
+    left: 37,
+    top: 255,
+    width: 135,
+    height: 35,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  infoFieldContainer2: {
+    position: 'absolute',
+    left: 200,
+    top: 255,
+    width: 135,
+    height: 35,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  infoFieldLabel: {
+    color: '#CDCDCD',
+    fontSize: 20,
+    fontWeight: '400',
+    fontFamily: 'Pretendard',
+    lineHeight: 22.519,
+  },
+  dropdownIcon: {
+    marginLeft: 10,
+  },
+  infoFieldLine: {
+    position: 'absolute',
+    left: 37,
+    top: 290,
+    width: 134,
+    height: 1.2,
+    backgroundColor: '#CDCDCD',
+  },
+  infoFieldLine2: {
+    position: 'absolute',
+    left: 200,
+    top: 290,
+    width: 134,
+    height: 1.2,
+    backgroundColor: '#CDCDCD',
+  },
+  infoInputContainer: {
+    position: 'absolute',
+    left: 37,
+    top: 320,
+    width: 320,
+    height: 30,
+  },
+  infoInputContainer2: {
+    position: 'absolute',
+    left: 37,
+    top: 390,
+    width: 320,
+    height: 30,
+  },
+  infoInputContainer3: {
+    position: 'absolute',
+    left: 37,
+    top: 458,
+    width: 320,
+    height: 30,
+  },
+  infoInputLabel: {
+    color: '#636363',
+    fontSize: 12,
+    fontWeight: '500',
+    fontFamily: 'Pretendard',
+    lineHeight: 22,
+    marginBottom: 5,
+  },
+  infoInput: {
+    color: '#CDCDCD',
+    fontSize: 20,
+    fontWeight: '400',
+    fontFamily: 'Pretendard',
+    lineHeight: 22.519,
+    paddingVertical: 5,
+    paddingHorizontal: 0,
+  },
+  infoInputActive: {
+    color: '#323232',
+    fontSize: 20,
+    fontWeight: '400',
+    fontFamily: 'Pretendard',
+    lineHeight: 22.519,
+  },
+  infoInputActivePhone: {
+    color: '#323232',
+    fontSize: 20,
+    fontWeight: '400',
+    fontFamily: 'Pretendard',
+    lineHeight: 22.519,
+  },
+  infoInputLine: {
+    position: 'absolute',
+    left: 37,
+    top: 355,
+    width: 330,
+    height: 1.23,
+    backgroundColor: '#CDCDCD',
+  },
+  infoInputLine2: {
+    position: 'absolute',
+    left: 37,
+    top: 425,
+    width: 330,
+    height: 1.2,
+    backgroundColor: '#CDCDCD',
+  },
+  infoInputLineActive: {
+    backgroundColor: '#323232',
+  },
+  idNumberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  idNumberInput1: {
+    color: '#CDCDCD',
+    fontSize: 20,
+    fontWeight: '400',
+    fontFamily: 'Pretendard',
+    lineHeight: 22.519,
+    paddingVertical: 5,
+    paddingHorizontal: 0,
+    width: 131,
+  },
+  dashIcon: {
+    marginHorizontal: 8,
+  },
+  idNumberSecond: {
+    color: '#CDCDCD',
+    fontSize: 20,
+    fontWeight: '400',
+    fontFamily: 'Pretendard',
+    lineHeight: 22.519,
+    width: 127,
+    paddingVertical: 5,
+    paddingHorizontal: 0,
+  },
+  idNumberLines: {
+    position: 'absolute',
+    left: 37,
+    top: 493,
+    flexDirection: 'row',
+  },
+  idNumberLine1: {
+    width: 131,
+    height: 1.2,
+    backgroundColor: '#CDCDCD',
+    marginRight: 24,
+  },
+  idNumberLine2: {
+    width: 131,
+    height: 1.2,
+    backgroundColor: '#CDCDCD',
+  },
+  authMethodTitle: {
+    position: 'absolute',
+    left: 37,
+    top: 545,
+    color: '#323232',
+    fontSize: 18,
+    fontWeight: '500',
+    fontFamily: 'Pretendard',
+    lineHeight: 21.105,
+    textAlign: 'left',
+  },
+  authOptionsContainer: {
+    position: 'absolute',
+    left: 37,
+    top: 600,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: 300,
+  },
+  authOption: {
+    width: 90,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    backgroundColor: '#F5F5F5',
+  },
+  authOptionText: {
+    color: '#636363',
+    fontSize: 16.459,
+    fontWeight: '400',
+    fontFamily: 'Pretendard',
+    lineHeight: 24.709,
+  },
+  authOptionImage: {
+    width: 55.961,
+    height: 57.058,
+    borderRadius: 23,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  authImage: {
+    width: 55.961,
+    height: 57.058,
+    borderRadius: 23,
+  },
+  authOptionWithText: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  authOptionTextNew: {
+    color: '#636363',
+    fontSize: 16.459,
+    fontWeight: '400',
+    fontFamily: 'Pretendard',
+    lineHeight: 24.709,
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  authOptionTextSelected: {
+    color: '#FF805F',
+  },
+  infoSubmitButton: {
+    position: 'absolute',
+    left: 37,
+    bottom: 50,
+    width: 318,
+    height: 56,
+    backgroundColor: '#AAA',
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  infoSubmitButtonActive: {
+    backgroundColor: '#FF805F',
+  },
+  infoSubmitButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16.5,
+    fontWeight: '700',
+    fontFamily: 'Pretendard',
+  },
+  infoSubmitButtonTextActive: {
+    color: '#FFFFFF',
+  },
+  // 지역 선택 관련 스타일
+  infoFieldLabelSelected: {
+    color: '#323232',
+    fontSize: 20,
+    fontWeight: '400',
+    fontFamily: 'Pretendard',
+    lineHeight: 22.519,
+  },
+  regionModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+    zIndex: 1002,
+  },
+  regionModal: {
+    width: 393,
+    height: 393,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 26.5,
+    borderTopRightRadius: 26.5,
+    paddingTop: 40,
+    paddingHorizontal: 33,
+    paddingBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  regionModalTitle: {
+    color: '#323232',
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: 'Pretendard',
+    lineHeight: 17.756,
+    marginBottom: 30,
+    width: 339,
+  },
+  regionOption: {
+    width: 342,
+    paddingVertical: 15,
+  },
+  regionOptionText: {
+    color: '#636363',
+    fontSize: 18,
+    fontWeight: '500',
+    fontFamily: 'Pretendard',
+    lineHeight: 17.756,
+    textAlign: 'left',
+    alignSelf: 'stretch',
+  },
+  regionOptionTextSelected: {
+    color: '#636363',
+    fontSize: 18,
+    fontWeight: '500',
+    fontFamily: 'Pretendard',
+    lineHeight: 17.756,
+    textAlign: 'left',
+    alignSelf: 'stretch',
+  },
+  regionOptionLine: {
+    width: 342,
+    height: 1,
+    backgroundColor: '#F2F2F2',
+    marginVertical: 5,
+  },
+  // 간편 인증하기 모달 스타일
+  authCompleteModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#FFFFFF',
+    zIndex: 1003,
+  },
+  authCompleteModal: {
+    width: 393,
+    height: 852,
+    backgroundColor: '#FFFFFF',
+    position: 'relative',
+  },
+  authCompleteBackButton: {
+    position: 'absolute',
+    left: 20,
+    top: 70,
+    padding: 8,
+    zIndex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 32,
+  },
+  authCompleteHeaderTitle: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 78,
+    color: '#323232',
+    fontSize: 14,
+    fontWeight: '500',
+    fontFamily: 'Pretendard',
+    lineHeight: 17.76,
+    textAlign: 'center',
+  },
+  authCompleteMainText: {
+    position: 'absolute',
+    left: 37,
+    right: 37,
+    top: 140,
+    color: '#323232',
+    fontSize: 24.706,
+    fontWeight: '600',
+    fontFamily: 'Pretendard',
+    lineHeight: 30,
+    textAlign: 'left',
+    paddingTop: 5,
+  },
+  authCompleteDescription: {
+    position: 'absolute',
+    left: 37,
+    right: 37,
+    top: 190,
+    color: '#AAA',
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Pretendard',
+    lineHeight: 17.756,
+    textAlign: 'left',
+    width: 259,
+  },
+  authCompleteIssueText: {
+    position: 'absolute',
+    left: 37,
+    right: 37,
+    top: 230,
+    color: '#FF805F',
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'Pretendard',
+    lineHeight: 22,
+    textAlign: 'left',
+    textDecorationLine: 'underline',
+  },
+  authCompleteButton: {
+    position: 'absolute',
+    left: 37,
+    bottom: 50,
+    width: 318,
+    height: 56,
+    backgroundColor: '#FF805F',
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  authCompleteButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16.5,
+    fontWeight: '700',
+    fontFamily: 'Pretendard',
+  },
+  // 로딩 모달 스타일
+  loadingModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#FFFFFF',
+    zIndex: 1004,
+  },
+  loadingModal: {
+    width: 393,
+    height: 852,
+    backgroundColor: '#FFFFFF',
+    position: 'relative',
+    paddingTop: 0,
+  },
+  loadingBackButton: {
+    position: 'absolute',
+    left: 20,
+    top: 70,
+    padding: 8,
+    zIndex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 32,
+  },
+  loadingHeaderTitle: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 78,
+    color: '#323232',
+    fontSize: 14,
+    fontWeight: '500',
+    fontFamily: 'Pretendard',
+    lineHeight: 17.76,
+    textAlign: 'center',
+  },
+  loadingTextContainer: {
+    position: 'absolute',
+    left: 37,
+    top: 180,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#FF805F',
+    fontFamily: 'Pretendard',
+    fontSize: 18,
+    fontWeight: '500',
+    lineHeight: 22,
+    marginRight: 8,
+  },
+  loadingDotsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  loadingWarningText: {
+    position: 'absolute',
+    left: 37,
+    top: 235,
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 24,
+    fontWeight: '600',
+    lineHeight: 30,
+    paddingTop: 5,
+  },
+  timelineContainer: {
+    position: 'absolute',
+    left: 37,
+    top: 320,
+    alignItems: 'flex-start',
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  timelineIconContainer: {
+    width: 31,
+    height: 31,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  timelineYear: {
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 20,
+    fontWeight: '400',
+    lineHeight: 21,
+  },
+  timelineYearActive: {
+    fontWeight: '700',
+  },
+  timelineDots: {
+    marginLeft: 12,
+    marginVertical: 8,
+  },
+  // 인증 완료 모달 스타일
+  verificationCompleteModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#FFFFFF',
+    zIndex: 1005,
+  },
+  verificationCompleteModal: {
+    width: 393,
+    height: 852,
+    backgroundColor: '#FFFFFF',
+    position: 'relative',
+    paddingTop: 0,
+    alignItems: 'center',
+  },
+  completeLoadingTextContainer: {
+    position: 'absolute',
+    left: 37,
+    top: 200,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  completeLoadingText: {
+    color: '#FF805F',
+    fontFamily: 'Pretendard',
+    fontSize: 18,
+    fontWeight: '500',
+    lineHeight: 22,
+    marginRight: 8,
+  },
+  completeLoadingDotsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  completeWarningText: {
+    position: 'absolute',
+    left: 37,
+    top: 250,
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 24.706,
+    fontWeight: '600',
+    lineHeight: 30,
+    paddingTop: 5,
+  },
+  hedgehogImage: {
+    position: 'absolute',
+    width: 300,
+    height: 200,
+    bottom: 100,
+  },
+  // 최종 인증 완료 모달 스타일
+  finalCompleteModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#FFFFFF',
+    zIndex: 1006,
+  },
+  finalCompleteModal: {
+    width: 393,
+    height: 852,
+    backgroundColor: '#FFFFFF',
+    position: 'relative',
+    paddingTop: 0,
+    alignItems: 'center',
+  },
+  finalCompleteTitle: {
+    position: 'absolute',
+    left: 37,
+    top: 220,
+    color: '#FF805F',
+    fontFamily: 'Pretendard',
+    fontSize: 18,
+    fontWeight: '600',
+    lineHeight: 20,
+    paddingTop: 5,
+  },
+  finalWelcomeText: {
+    position: 'absolute',
+    left: 37,
+    top: 260,
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 24,
+    fontWeight: '500',
+    lineHeight: 35,
+  },
+  villageImage: {
+    position: 'absolute',
+    width: 393,
+    height: 400,
+    bottom: 0,
   },
 });

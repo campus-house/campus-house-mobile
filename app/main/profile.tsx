@@ -1,24 +1,13 @@
-import { View, Text, StyleSheet } from 'react-native';
-import { COLORS } from '@/constants/colors';
+import React from 'react';
+import { router } from 'expo-router';
+import { useEffect } from 'react';
 
-export default function ProfileScreen() {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>마이페이지 화면</Text>
-    </View>
-  );
+export default function ProfileMainScreen() {
+  useEffect(() => {
+    // 마이페이지 탭을 누르면 새로운 마이페이지로 이동
+    router.replace('/mypage');
+  }, []);
+
+  return null;
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.background.primary,
-  },
-  title: {
-    fontSize: 24,
-    fontFamily: 'Pretendard-Bold',
-    color: COLORS.text.primary,
-  },
-});
