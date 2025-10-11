@@ -1,20 +1,21 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { COLORS } from '@/constants/colors';
-import Svg, { Path } from 'react-native-svg';
+import { TYPOGRAPHY } from '@/constants/typography';
+import { BackIcon } from '@/components/Icon/BackIcon';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLayoutScale } from '@/utils/layout';
+import { FormInputField } from '@/components/Input/FormInputField';
 
 export default function RegisterScreen() {
+  const { y, insets, figma } = useLayoutScale();
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const [isUserIdFocused, setIsUserIdFocused] = useState(false);
-  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
-  const [isConfirmFocused, setIsConfirmFocused] = useState(false);
-
   // Validation helpers
-  const isUserIdDuplicate = useMemo(() => userId === 'rex2354', [userId]);
+  const isUserIdDuplicate = useMemo(() => userId === 'im_mio1', [userId]);
   const isUserIdAvailable = useMemo(
     () => userId.length > 0 && !isUserIdDuplicate,
     [userId, isUserIdDuplicate],
@@ -23,48 +24,52 @@ export default function RegisterScreen() {
     () => /[a-zA-Z]/.test(password) && /[0-9]/.test(password),
     [password],
   );
-  const isConfirmMatch = useMemo(
-    () => confirmPassword.length > 0 && confirmPassword === password,
-    [confirmPassword, password],
+  const isPasswordMatch = useMemo(
+    () => confirmPassword.length > 0 && password === confirmPassword,
+    [password, confirmPassword],
   );
-
-  const isFormValid = isUserIdAvailable && isPasswordValid && isConfirmMatch;
+  const isPasswordMismatch = useMemo(
+    () => confirmPassword.length > 0 && password !== confirmPassword,
+    [password, confirmPassword],
+  );
+  const isFormValid = isUserIdAvailable && isPasswordValid && isPasswordMatch;
 
   const handleNext = () => {
     if (!isFormValid) {
       return;
     }
-    router.push('/signup-complete');
+    router.push('/auth/signup/complete');
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      keyboardShouldPersistTaps="handled"
-    >
+    <View style={styles.container}>
       {/* Back button */}
       <TouchableOpacity
-        style={styles.backButton}
+        style={[styles.backButton, { top: insets.top + y(65 - figma.SAFE_TOP) }]}
         onPress={() => router.back()}
-        hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
-        activeOpacity={0.7}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        accessibilityLabel="뒤로 가기"
       >
-        <Svg width={10} height={19.091} viewBox="0 0 13 23" fill="none">
-          <Path
-            d="M11 2L1.37618 11.3274C1.17132 11.5259 1.17384 11.8554 1.38173 12.0508L11 21.0909"
-            stroke="#AAAAAA"
-            strokeWidth={2.27273}
-            strokeLinecap="round"
-          />
-        </Svg>
+        <BackIcon />
       </TouchableOpacity>
 
-      {/* Top progress bar: left half orange, right half grey */}
-      <View style={styles.progressRow}>
-        <View style={styles.progressLeft} />
-        <View style={styles.progressRight} />
+      {/* Progress bar */}
+      <View style={[styles.progressContainer, { top: insets.top + y(116 - figma.SAFE_TOP) }]}>
+        <View style={styles.progressBar}>
+          <View style={styles.progressActive} />
+          <View style={styles.progressInactive} />
+        </View>
       </View>
+
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={{
+          paddingTop: insets.top + y(65),
+          paddingHorizontal: 35,
+          paddingBottom: insets.bottom + 40,
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
 
       {/* Title */}
       <Text style={styles.title}>회원가입</Text>
@@ -72,108 +77,58 @@ export default function RegisterScreen() {
       {/* 아이디 */}
       <View style={styles.inputSection}>
         <Text style={styles.label}>아이디</Text>
-        <TextInput
+        <FormInputField
+          placeholder="아이디를 입력해주세요"
           value={userId}
           onChangeText={setUserId}
-          onFocus={() => setIsUserIdFocused(true)}
-          onBlur={() => setIsUserIdFocused(false)}
-          placeholder={isUserIdFocused || userId ? '' : '아이디를 입력해주세요'}
-          placeholderTextColor={COLORS.neutral.grey3}
-          style={[styles.textInput]}
-          autoCapitalize="none"
-          autoCorrect={false}
+          hasError={userId.length > 0 && isUserIdDuplicate}
+          hasSuccess={userId.length > 0 && isUserIdAvailable}
+          errorMessage="이미 존재하는 아이디입니다."
+          successMessage="사용 가능한 아이디 입니다!"
         />
-        <View
-          style={[
-            styles.inputUnderline,
-            (isUserIdFocused || userId) && styles.inputUnderlineFocused,
-          ]}
-        />
-        {userId.length > 0 && (
-          <View style={styles.helperContainer}>
-            {isUserIdDuplicate ? (
-              <Text style={styles.helperError}>이미 존재하는 아이디입니다.</Text>
-            ) : (
-              <Text style={styles.helperSuccess}>사용 가능한 아이디 입니다!</Text>
-            )}
-          </View>
-        )}
       </View>
 
       {/* 비밀번호 */}
       <View style={styles.inputSection}>
         <Text style={styles.label}>비밀번호</Text>
-        <TextInput
+        <FormInputField
+          placeholder="비밀번호"
           value={password}
           onChangeText={setPassword}
-          onFocus={() => setIsPasswordFocused(true)}
-          onBlur={() => setIsPasswordFocused(false)}
-          placeholder={isPasswordFocused || password ? '' : '비밀번호'}
-          placeholderTextColor={COLORS.neutral.grey3}
-          style={styles.textInput}
-          autoCapitalize="none"
-          autoCorrect={false}
-          secureTextEntry
-          textContentType="oneTimeCode"
-          autoComplete="off"
+          hasError={password.length > 0 && !isPasswordValid}
+          hasSuccess={password.length > 0 && isPasswordValid}
+          errorMessage="영문과 숫자만 혼합하여 입력해 주세요"
+          successMessage="사용 가능한 비밀번호 입니다!"
+          secureTextEntry={true}
         />
-        <View
-          style={[
-            styles.inputUnderline,
-            (isPasswordFocused || password) && styles.inputUnderlineFocused,
-          ]}
-        />
-        {password.length > 0 && (
-          <View style={styles.helperContainer}>
-            {isPasswordValid ? (
-              <Text style={styles.helperSuccess}>사용 가능한 비밀번호 입니다!</Text>
-            ) : (
-              <Text style={styles.helperError}>영문과 숫자만 혼합하여 입력해 주세요</Text>
-            )}
-          </View>
-        )}
       </View>
 
       {/* 비밀번호 재입력 */}
-      <View style={styles.inputSection}>
-        <Text style={styles.label}>비밀번호 확인</Text>
-        <TextInput
+      <View style={styles.confirmPasswordSection}>
+        <FormInputField
+          placeholder="비밀번호 재입력"
           value={confirmPassword}
           onChangeText={setConfirmPassword}
-          onFocus={() => setIsConfirmFocused(true)}
-          onBlur={() => setIsConfirmFocused(false)}
-          placeholder={isConfirmFocused || confirmPassword ? '' : '비밀번호 재입력'}
-          placeholderTextColor={COLORS.neutral.grey3}
-          style={styles.textInput}
-          autoCapitalize="none"
-          autoCorrect={false}
-          secureTextEntry
-          textContentType="oneTimeCode"
-          autoComplete="off"
+          hasError={isPasswordMismatch}
+          hasSuccess={isPasswordMatch}
+          errorMessage="비밀번호가 일치하지 않습니다."
+          successMessage="비밀번호가 일치합니다!"
+          secureTextEntry={true}
         />
-        <View
-          style={[
-            styles.inputUnderline,
-            (isConfirmFocused || confirmPassword) && styles.inputUnderlineFocused,
-          ]}
-        />
-        {confirmPassword.length > 0 && !isConfirmMatch && (
-          <View style={styles.helperContainer}>
-            <Text style={styles.helperError}>비밀번호가 일치하지 않습니다!</Text>
-          </View>
-        )}
       </View>
+
+      </ScrollView>
 
       {/* 로그인 버튼 */}
       <TouchableOpacity
-        style={[styles.loginButton, isFormValid && styles.loginButtonActive]}
+        style={[styles.loginButton, isFormValid && styles.loginButtonActive, { marginBottom: insets.bottom + 18 }]}
         activeOpacity={0.8}
         onPress={handleNext}
         disabled={!isFormValid}
       >
         <Text style={styles.loginButtonText}>로그인</Text>
       </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -182,34 +137,35 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background.primary,
   },
-  contentContainer: {
-    padding: 20,
-    paddingTop: 80,
+  scrollContainer: {
+    flex: 1,
   },
   backButton: {
     position: 'absolute',
-    top: 76,
-    left: 28,
+    left: 31,
     zIndex: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 10,
-    height: 19.091,
-    flexShrink: 0,
+    width: 44,
+    height: 60,
+    padding: 4,
   },
-  progressRow: {
-    width: '100%',
-    height: 3,
+  progressContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 5,
+  },
+  progressBar: {
     flexDirection: 'row',
-    marginTop: 50,
+    alignItems: 'center',
+    width: '100%',
   },
-  progressLeft: {
-    width: '70%',
+  progressActive: {
+    flex: 1,
     height: 3,
     backgroundColor: COLORS.primary,
   },
-  progressRight: {
-    width: '30%',
+  progressInactive: {
+    flex: 1,
     height: 3,
     backgroundColor: COLORS.neutral.grey2,
   },
@@ -219,60 +175,30 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: '700',
     lineHeight: 34,
-    marginTop: 32,
-    marginBottom: 40,
+    marginTop: 55,
+    marginBottom: 52,
   },
   inputSection: {
+    marginBottom: 38,
+  },
+  confirmPasswordSection: {
     marginBottom: 30,
   },
   label: {
-    color: COLORS.neutral.grey4,
-    fontFamily: 'Pretendard',
-    fontSize: 12,
-    fontWeight: '500',
-    lineHeight: 22,
-    marginBottom: 8,
-  },
-  textInput: {
-    color: COLORS.text.primary,
-    fontFamily: 'Pretendard',
-    fontSize: 18.5,
-    fontWeight: '400',
-    lineHeight: 22.5,
-    paddingVertical: 8,
-  },
-  inputUnderline: {
-    width: '100%',
-    height: 1.5,
-    backgroundColor: COLORS.neutral.grey3,
-    marginTop: 8,
-  },
-  inputUnderlineFocused: {
-    backgroundColor: COLORS.text.primary,
-  },
-  helperContainer: {
-    marginTop: 6,
-  },
-  helperError: {
-    color: COLORS.primary,
-    fontFamily: 'Pretendard',
-    fontSize: 13,
-    lineHeight: 22,
-  },
-  helperSuccess: {
-    color: '#86D382',
-    fontFamily: 'Pretendard',
-    fontSize: 13,
-    lineHeight: 22,
+    ...TYPOGRAPHY.caption3,
+    color: '#AAA',
+    marginBottom: 4,
   },
   loginButton: {
-    width: '100%',
+    width: 312,
     height: 56,
-    backgroundColor: COLORS.neutral.grey4,
-    borderRadius: 16,
-    alignItems: 'center',
+    padding: 8,
     justifyContent: 'center',
-    marginTop: 140,
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 20,
+    backgroundColor: COLORS.neutral.grey4,
+    alignSelf: 'center',
   },
   loginButtonActive: {
     backgroundColor: COLORS.primary,

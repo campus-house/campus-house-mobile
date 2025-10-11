@@ -93,7 +93,7 @@ yarn-error.*
 .DS_Store
 .AppleDouble
 .LSOverride
-**/Icon
+Icon?  # macOS 커스텀 폴더 아이콘 파일 (Icon?로 변경하여 components/Icon/ 폴더는 제외)
 ._*
 .DocumentRevisions-V100
 .fseventsd

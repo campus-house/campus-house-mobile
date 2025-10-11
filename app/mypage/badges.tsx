@@ -60,7 +60,7 @@ export default function BadgesScreen() {
           {/* Lock badge */}
           <View style={styles.badgeItem}>
             <View style={[styles.badgeCircle, { backgroundColor: '#d9d9d9' }]}> 
-              <Image source={require('@/assets/images/lock.png')} style={{ width: 84, height: 84 }} resizeMode="contain" />
+              <Image source={require('@/assets/images/small_lock.png')} style={{ width: 84, height: 84 }} resizeMode="contain" />
             </View>
             <Text style={[styles.caption, { color: '#aaa' }]}>첫 댓글</Text>
           </View>

@@ -1,6 +1,3 @@
-// 로그인 버튼
-// 사용 위치: login.tsx
-// 버튼 텍스트: "로그인하기"
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { COLORS } from '@/constants/colors';
@@ -34,7 +31,7 @@ const styles = StyleSheet.create({
   button: {
     width: '100%',
     height: 56,
-    padding: 8.1887,
+    padding: 8,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 20,
