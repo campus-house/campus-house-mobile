@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Vector124 from '@/components/Vector124';
 import Vector123 from '@/components/Vector123';
@@ -7,10 +7,12 @@ import Vector119 from '@/components/Vector119';
 import { useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
+import { useProfile } from '@/contexts/ProfileContext';
 
 export default function MyPageScreen() {
   const navigation: any = useNavigation();
   const { width: screenWidth } = Dimensions.get('window');
+  const { name, intro } = useProfile();
 
   useEffect(() => {
     const parent = navigation?.getParent?.();
@@ -49,14 +51,19 @@ export default function MyPageScreen() {
           
           {/* 우측 아이콘들 */}
           <View style={styles.headerIcons}>
-            <TouchableOpacity style={[styles.iconButton, styles.bellWrapper]}>
+            <TouchableOpacity style={[styles.iconButton, styles.bellWrapper]} onPress={() => router.push('/mypage/alerts')}>
               <Image source={require('@/assets/images/bell.png')} style={[styles.headerIcon, { width: 20, height: 20 }]} resizeMode="contain" />
               <View style={styles.bellBadge} />
             </TouchableOpacity>
             <TouchableOpacity style={[styles.iconButton, styles.bellWrapper]}>
               <Image source={require('@/assets/images/shop.png')} style={[styles.headerIcon, { width: 30, height: 30 }]} resizeMode="contain" />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.iconButton, styles.bellWrapper]}>
+            <TouchableOpacity
+              style={[styles.iconButton, styles.bellWrapper, { zIndex: 10000 }]}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              onPress={() => router.push('/mypage/settings')}
+            >
               <Image source={require('@/assets/images/setting.png')} style={[styles.headerIcon, { width: 30, height: 30 }]} resizeMode="contain" />
             </TouchableOpacity>
           </View>
@@ -126,18 +133,26 @@ export default function MyPageScreen() {
         </View>
 
         {/* 프로필 정보 섹션 */}
-        <View style={styles.profileSection}>
+        <View style={[styles.profileSection, { pointerEvents: 'box-none' }]}>
           {/* 사진처럼 흰색 카드 컨테이너 */}
-          <View style={styles.profileWhiteCard}>
-            <View style={styles.profileCard}>
+          <View style={[styles.profileWhiteCard, { pointerEvents: 'box-none' }]}>
+            <View style={[styles.profileCard, { pointerEvents: 'box-none' }]}>
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>방미오</Text>
+              <Text style={styles.profileName}>{name}</Text>
               <Text style={styles.profileHandle}>@bangmioo_1</Text>
-              <Text style={styles.profileDescription}>이번에 이사온 미오라고해요!! ^~^</Text>
+              <Text style={styles.profileDescription}>{intro}</Text>
             </View>
-            <TouchableOpacity style={styles.editButton}>
-              <Text style={styles.editButtonText}>프로필 편집</Text>
-            </TouchableOpacity>
+            {/* 프로필 편집 - 카드 우측의 회색 pill 버튼 (터치 가능) */}
+            <View style={{ pointerEvents: 'auto' }}>
+              <TouchableOpacity
+                style={styles.editPill}
+                activeOpacity={0.85}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                onPress={() => router.push('/mypage/profile_edit')}
+              >
+                <Text style={styles.editButtonText}>프로필 편집</Text>
+              </TouchableOpacity>
+            </View>
             </View>
           </View>
         </View>
@@ -147,7 +162,7 @@ export default function MyPageScreen() {
           <View style={styles.badgeCard}>
             <View style={styles.badgeHeader}>
               <Text style={styles.badgeTitle}>나의 뱃지</Text>
-              <TouchableOpacity style={styles.badgeArrow} onPress={() => (navigation as any)?.navigate?.('mypage/badges')}>
+              <TouchableOpacity style={styles.badgeArrow} onPress={() => router.push('/mypage/badges')}>
                 <Image source={require('@/assets/images/arrowright.png')} style={styles.arrowIcon} resizeMode="contain" />
               </TouchableOpacity>
             </View>
@@ -194,7 +209,7 @@ export default function MyPageScreen() {
             
             <View style={styles.activityList}>
               {/* 내가 작성한 글 */}
-              <TouchableOpacity style={styles.activityItem}>
+              <TouchableOpacity style={styles.activityItem} onPress={() => router.push({ pathname: '/mypage/posts', params: { list: 'mine' } })}>
                 <View style={styles.activityItemContent}>
                   <View style={styles.activityLeft}>
                     <View style={styles.activityIconBox}>
@@ -220,7 +235,7 @@ export default function MyPageScreen() {
               </TouchableOpacity>
               
               {/* 스크랩한 글 */}
-              <TouchableOpacity style={styles.activityItem}>
+              <TouchableOpacity style={styles.activityItem} onPress={() => router.push({ pathname: '/mypage/posts', params: { list: 'scrap' } })}>
                 <View style={styles.activityItemContent}>
                   <View style={styles.activityLeft}>
                     <View style={styles.activityIconBox}>
@@ -233,7 +248,7 @@ export default function MyPageScreen() {
               </TouchableOpacity>
               
               {/* 후기 작성하기 */}
-              <TouchableOpacity style={styles.activityItem}>
+              <TouchableOpacity style={styles.activityItem} onPress={() => router.push('/mypage/review')}>
                 <View style={styles.activityItemContent}>
                   <View style={styles.activityLeft}>
                     <View style={styles.activityIconBox}>
@@ -241,7 +256,7 @@ export default function MyPageScreen() {
                     </View>
                   </View>
                   <Text style={[styles.activityItemText, { marginLeft: -135 }]}>후기 작성하기</Text>
-                  <TouchableOpacity onPress={() => (navigation as any)?.navigate?.('mypage/review')}>
+                  <TouchableOpacity onPress={() => router.push('/mypage/review')}>
                     <Image source={require('@/assets/images/arrowright.png')} style={styles.activityArrow} resizeMode="contain" />
                   </TouchableOpacity>
                 </View>
@@ -300,7 +315,10 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 10,
     backgroundColor: 'transparent',
-    zIndex: 100,
+    zIndex: 5000,
+    elevation: 12,
+    position: 'relative',
+    pointerEvents: 'auto',
   },
   addressContainer: {
     flex: 1,
@@ -358,6 +376,7 @@ const styles = StyleSheet.create({
     height: 770,
     marginTop: 20,
     overflow: 'visible',
+    pointerEvents: 'box-none',
   },
   backgroundWalls: {
     position: 'absolute',
@@ -365,6 +384,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    pointerEvents: 'none',
   },
   leftWallContainer: {
     position: 'absolute',
@@ -395,6 +415,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 1000,
     transform: [{ translateX: 90 }],
+    // 라쿤 레이어가 아래 UI 터치를 막지 않도록 비활성화
+    pointerEvents: 'none',
   },
   characterImage: {
     width: 825,
@@ -618,6 +640,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
+    marginLeft: 5,
+  },
+  editPill: {
+    backgroundColor: '#f2f2f2',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginLeft: 5,
+    alignSelf: 'flex-start',
   },
   editButtonText: {
     width: 53,
