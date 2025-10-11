@@ -221,7 +221,7 @@ export default function QuestionsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <BackIcon size={16} color={COLORS.neutral.grey4} />
+          <BackIcon />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>질문게시판</Text>
       </View>

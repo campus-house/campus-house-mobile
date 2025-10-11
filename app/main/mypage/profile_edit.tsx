@@ -2,17 +2,19 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useProfile } from '@/contexts/ProfileContext';
-
 export default function ProfileEditScreen() {
   const router = useRouter();
-  const { name: profileName, intro: profileIntro, updateProfile } = useProfile();
+  
+  // 하드코딩된 프로필 데이터
+  const profileName = '방미오';
+  const profileIntro = '이번에 이사온 미오라고해요!! ^~^';
+  
   const [name, setName] = useState(profileName);
   const [intro, setIntro] = useState(profileIntro);
   const showPlaceholder = intro.length === 0;
 
   const handleSave = () => {
-    updateProfile(name, intro);
+    // 하드코딩으로 변경했으므로 저장 로직 생략
     router.back();
   };
 
@@ -72,5 +74,7 @@ const styles = StyleSheet.create({
   input: { fontSize: 16, color: '#323232', fontFamily: 'Pretendard' },
   placeholder: { position: 'absolute', left: 16, top: 18, width: 129, fontSize: 16, lineHeight: 23, fontWeight: '500', fontFamily: 'Pretendard', color: '#aaa', textAlign: 'left' },
 });
+
+
 
 

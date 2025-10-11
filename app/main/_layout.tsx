@@ -46,7 +46,7 @@ export default function MainLayout() {
         >
           {/* 커뮤니티 탭 */}
           <Tabs.Screen
-            name="index"
+            name="community"
             options={{
               title: '커뮤',
               tabBarIcon: ({ focused, color }) => <CommunityIcon focused={focused} color={color} />,
@@ -55,7 +55,7 @@ export default function MainLayout() {
 
           {/* 지도 탭 */}
           <Tabs.Screen
-            name="map"
+            name="map/index"
             options={{
               title: '지도',
               tabBarIcon: ({ focused, color }) => <MapIcon focused={focused} color={color} />,
@@ -64,7 +64,7 @@ export default function MainLayout() {
 
           {/* 스크랩 탭 */}
           <Tabs.Screen
-            name="scrap"
+            name="scrap/index"
             options={{
               title: '스크랩',
               tabBarIcon: ({ focused, color }) => <ScrapIcon focused={focused} color={color} />,
@@ -73,7 +73,7 @@ export default function MainLayout() {
 
           {/* 마이페이지 탭 */}
           <Tabs.Screen
-            name="profile"
+            name="mypage"
             options={{
               title: '마이페이지',
               tabBarIcon: ({ focused, color }) => <ProfileIcon focused={focused} color={color} />,
@@ -87,6 +87,25 @@ export default function MainLayout() {
               href: null, // 이 탭을 하단바에서 숨김
             }}
           />
+
+          {/* MapScreen 파일 숨기기 */}
+          <Tabs.Screen
+            name="map/MapScreen"
+            options={{
+              href: null, // MapScreen을 하단바에서 숨김
+            }}
+          />
+
+          {/* ScrapScreen 파일 숨기기 */}
+          <Tabs.Screen
+            name="scrap/ScrapScreen"
+            options={{
+              href: null,
+            }}
+          />
+
+
+
         </Tabs>
       </View>
     </>

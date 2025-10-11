@@ -37,7 +37,7 @@ export default function LoginScreen() {
 
   const handleLogin = () => {
     console.log('로그인 시도:', { id, password });
-    router.replace('/main');
+    router.replace('/main/mypage');
   };
 
   const goToFindId = () => router.push('/auth/find-id');
