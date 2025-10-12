@@ -81,7 +81,7 @@ export default function CharacterSelection() {
 
         // 환영 화면 표시 후 3초 뒤에 메인 화면으로 이동
         setTimeout(() => {
-          router.replace('/main');
+          router.replace('/main/mypage');
         }, 3000);
       }, 3000);
     }
