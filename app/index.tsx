@@ -1,1 +1,1 @@
-export { default } from './SocialLoginScreen';
+export { default } from './auth/SocialLoginScreen';

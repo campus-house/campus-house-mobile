@@ -88,14 +88,6 @@ export default function MainLayout() {
             }}
           />
 
-          {/* questions 탭 숨기기 */}
-          <Tabs.Screen
-            name="questions"
-            options={{
-              href: null, // 이 탭을 하단바에서 숨김
-            }}
-          />
-
           {/* MapScreen 파일 숨기기 */}
           <Tabs.Screen
             name="map/MapScreen"
@@ -111,9 +103,6 @@ export default function MainLayout() {
               href: null,
             }}
           />
-
-
-
         </Tabs>
       </View>
     </>

@@ -1,5 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, useWindowDimensions } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  useWindowDimensions,
+} from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '@/constants/colors';
@@ -17,15 +25,21 @@ const BTN = { H: 57, GAP: 14 };
 
 // Vertical gaps from spec
 const GAP_TITLE_TO_BTN1 = 252.51; // title bottom -> first button top
-const GAP_GOOGLE_TO_LINKS = 35;   // Google button bottom -> links top
+const GAP_GOOGLE_TO_LINKS = 35; // Google button bottom -> links top
 
 export default function SocialLoginScreen() {
   const { y, insets, figma } = useLayoutScale();
   const [showPermissionModal, setShowPermissionModal] = useState(true);
 
-  const handleKakaoLogin = () => { router.push('/main'); };
-  const handleNaverLogin = () => { router.push('/main'); };
-  const handleGoogleLogin = () => { router.push('/main'); };
+  const handleKakaoLogin = () => {
+    router.push('/main/mypage');
+  };
+  const handleNaverLogin = () => {
+    router.push('/main/mypage');
+  };
+  const handleGoogleLogin = () => {
+    router.push('/main/mypage');
+  };
   const goToIdLogin = () => router.push('/auth/login');
   const goToSignup = () => router.push('/auth/signup');
   const handlePermissionNext = () => {
@@ -59,15 +73,23 @@ export default function SocialLoginScreen() {
 
         {/* Buttons */}
         <KakaoLoginButton style={{ height: BTN.H, width: '100%' }} onPress={handleKakaoLogin} />
-        <NaverLoginButton style={{ height: BTN.H, width: '100%', marginTop: y(BTN.GAP) }} onPress={handleNaverLogin} />
-        <GoogleLoginButton style={{ height: BTN.H, width: '100%', marginTop: y(BTN.GAP) }} onPress={handleGoogleLogin} />
+        <NaverLoginButton
+          style={{ height: BTN.H, width: '100%', marginTop: y(BTN.GAP) }}
+          onPress={handleNaverLogin}
+        />
+        <GoogleLoginButton
+          style={{ height: BTN.H, width: '100%', marginTop: y(BTN.GAP) }}
+          onPress={handleGoogleLogin}
+        />
 
         {/* Bottom links */}
         <View style={{ height: y(GAP_GOOGLE_TO_LINKS) }} />
         <View style={styles.linksRow}>
           <View style={[styles.linkCol, styles.linkColLeft]}>
             <TouchableOpacity onPress={goToIdLogin} style={[styles.linkBtn, { marginRight: 1 }]}>
-              <Text style={styles.linkText} numberOfLines={1}>아이디 로그인</Text>
+              <Text style={styles.linkText} numberOfLines={1}>
+                아이디 로그인
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -76,7 +98,9 @@ export default function SocialLoginScreen() {
 
           <View style={[styles.linkCol, styles.linkColRight]}>
             <TouchableOpacity onPress={goToSignup} style={styles.linkBtn}>
-              <Text style={styles.linkText} numberOfLines={1}>회원가입</Text>
+              <Text style={styles.linkText} numberOfLines={1}>
+                회원가입
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -100,16 +124,16 @@ const styles = StyleSheet.create({
   },
   linkCol: {
     flex: 1,
-    alignItems: 'center',     // vertical centering
+    alignItems: 'center', // vertical centering
     flexDirection: 'row',
   },
   linkColLeft: {
-    paddingRight: 31,          // exact gap from divider
-    justifyContent: 'flex-end' // push text toward divider
+    paddingRight: 31, // exact gap from divider
+    justifyContent: 'flex-end', // push text toward divider
   },
   linkColRight: {
-    paddingLeft: 30,           // exact gap from divider
-    justifyContent: 'flex-start' // push text toward divider
+    paddingLeft: 30, // exact gap from divider
+    justifyContent: 'flex-start', // push text toward divider
   },
   linkBtn: {
     paddingHorizontal: 0,
@@ -132,4 +156,3 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.neutral.grey4,
   },
 });
-

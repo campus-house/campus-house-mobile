@@ -104,7 +104,7 @@ export default function MainScreen() {
       setShowAuthIntro(true);
     }
   }, [authCompleted]);
-  
+
   const scrollViewRef = useRef<ScrollView>(null);
   const pan = useRef(new Animated.ValueXY()).current;
 
@@ -161,8 +161,8 @@ export default function MainScreen() {
   };
 
   const renderPost = (post: (typeof samplePosts)[0]) => (
-    <TouchableOpacity 
-      key={post.id} 
+    <TouchableOpacity
+      key={post.id}
       style={styles.postCard}
       onPress={() => {
         if (post.title === '도넛 나눔할게요') {
@@ -287,7 +287,7 @@ export default function MainScreen() {
         {/* Notification Card */}
         <TouchableOpacity
           style={styles.notificationCardContainer}
-          onPress={() => router.push('/main/questions')}
+          onPress={() => router.push('/main/community/questions')}
         >
           <Svg width="356" height="80" viewBox="0 0 356 80" style={styles.notificationCardSvg}>
             <Path
@@ -359,7 +359,7 @@ export default function MainScreen() {
 
       {/* Step1 인증 인트로 오버레이 - 맨 마지막에 렌더링 */}
       {showAuthIntro && (
-        <Step1_IntroScreen 
+        <Step1_IntroScreen
           onStart={() => {
             setShowAuthIntro(false);
             router.push('/main/community/auth/Step2_AddressScreen');
