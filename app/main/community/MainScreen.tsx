@@ -104,7 +104,7 @@ export default function MainScreen() {
       setShowAuthIntro(true);
     }
   }, [authCompleted]);
-  
+
   const scrollViewRef = useRef<ScrollView>(null);
   const pan = useRef(new Animated.ValueXY()).current;
 
@@ -161,8 +161,8 @@ export default function MainScreen() {
   };
 
   const renderPost = (post: (typeof samplePosts)[0]) => (
-    <TouchableOpacity 
-      key={post.id} 
+    <TouchableOpacity
+      key={post.id}
       style={styles.postCard}
       onPress={() => {
         if (post.title === '도넛 나눔할게요') {
@@ -253,6 +253,71 @@ export default function MainScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#D7F0FF" />
+
+      {/* Sky hero with simple header, clouds and background images */}
+      <View style={styles.heroContainer} pointerEvents="box-none">
+        {/* background hills/grass - 맨 뒤 */}
+        <Image
+          source={require('@/assets/images/grasshouse.png')}
+          style={styles.grass}
+          resizeMode="contain"
+        />
+
+        {/* clouds - 배경보다 앞에, 사진처럼 4개 배치 */}
+        <Image
+          source={require('@/assets/images/image 210.png')}
+          style={styles.cloud1}
+          resizeMode="contain"
+        />
+        <Image
+          source={require('@/assets/images/image 207.png')}
+          style={styles.cloud2}
+          resizeMode="contain"
+        />
+        <Image
+          source={require('@/assets/images/image 212.png')}
+          style={styles.cloud3}
+          resizeMode="contain"
+        />
+        <Image
+          source={require('@/assets/images/image 211.png')}
+          style={styles.cloud4}
+          resizeMode="contain"
+        />
+
+        {/* raccoons */}
+        <Image
+          source={require('@/assets/images/racoon-real.png')}
+          style={styles.raccoonOne}
+          resizeMode="contain"
+        />
+        <Image
+          source={require('@/assets/images/racoon-real.png')}
+          style={styles.raccoonTwo}
+          resizeMode="contain"
+        />
+        {/* speech bubble to the right of the first raccoon */}
+        <Image
+          source={require('@/assets/images/speechbubble.png')}
+          style={styles.speechBubbleRaccoonOne}
+          resizeMode="contain"
+        />
+        <Text style={styles.speechTextRaccoonOne}>{`어떤 생각을\n하고 있나요?`}</Text>
+
+        {/* header row - 맨 앞 */}
+        <View style={styles.heroHeader} pointerEvents="none">
+          <View style={styles.headerLeft}>
+            <Image
+              source={require('@/assets/images/apart.png')}
+              style={styles.apartmentIcon}
+              resizeMode="contain"
+            />
+            <Text style={styles.apartmentTitle} numberOfLines={1}>
+              아이파크
+            </Text>
+          </View>
+        </View>
+      </View>
 
       {/* Back Button */}
       {showBackButton && (
@@ -347,6 +412,32 @@ export default function MainScreen() {
         </ScrollView>
       </Animated.View>
 
+      {/* 독립적인 채팅/동네로 가기 버튼들 - 최상위 레이어에 배치 */}
+      <View style={styles.floatingActions} pointerEvents="box-none">
+        <TouchableOpacity
+          style={styles.pill}
+          onPress={() => {
+            router.push('/chatting/chat-list');
+          }}
+          activeOpacity={0.8}
+        >
+          <Image
+            source={require('@/assets/images/comumu.png')}
+            style={styles.pillIcon}
+            resizeMode="contain"
+          />
+          <Text style={styles.pillText}>채팅하기</Text>
+        </TouchableOpacity>
+        <View style={[styles.pill, { marginTop: 10 }]}>
+          <Image
+            source={require('@/assets/images/houselogo3.png')}
+            style={styles.pillIcon}
+            resizeMode="contain"
+          />
+          <Text style={styles.pillText}>동네로 가기</Text>
+        </View>
+      </View>
+
       {/* Floating Action Button */}
       {showBackButton && (
         <TouchableOpacity style={styles.fab} onPress={() => router.push('/main/community/write')}>
@@ -359,7 +450,7 @@ export default function MainScreen() {
 
       {/* Step1 인증 인트로 오버레이 - 맨 마지막에 렌더링 */}
       {showAuthIntro && (
-        <Step1_IntroScreen 
+        <Step1_IntroScreen
           onStart={() => {
             setShowAuthIntro(false);
             router.push('/main/community/auth/Step2_AddressScreen');
@@ -375,6 +466,118 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#D7F0FF',
   },
+  heroContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 420,
+  },
+  heroHeader: {
+    marginTop: 69,
+    paddingHorizontal: 30,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  apartmentIcon: { width: 36, height: 36, marginRight: 8 },
+  apartmentTitle: {
+    fontSize: 20,
+    lineHeight: 25,
+    fontWeight: '700',
+    fontFamily: 'Pretendard',
+    color: '#323232',
+  },
+  heroActions: { alignItems: 'flex-end', marginTop: 5 },
+  floatingActions: {
+    position: 'absolute',
+    top: 74,
+    right: 30,
+    alignItems: 'flex-end',
+    zIndex: 99999,
+    elevation: 100,
+  },
+  pill: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 120,
+    justifyContent: 'center',
+  },
+  pillIcon: {
+    width: 16,
+    height: 16,
+    marginRight: 6,
+  },
+  pillText: {
+    fontSize: 13,
+    lineHeight: 14,
+    fontWeight: '500',
+    fontFamily: 'Pretendard',
+    color: '#323232',
+    textAlign: 'center',
+  },
+  cloud1: { position: 'absolute', top: 220, right: 20, width: 180, height: 50 },
+  cloud2: { position: 'absolute', top: 280, left: 30, width: 90, height: 35 },
+  cloud3: { position: 'absolute', top: 290, right: 40, width: 60, height: 15 },
+  cloud4: { position: 'absolute', top: 330, right: 140, width: 50, height: 15 },
+  speechBubbleRaccoonOne: {
+    position: 'absolute',
+    // To the right of raccoonOne (left 40, width 280) with ~20px gap
+    left: 140,
+    bottom: -30,
+    width: 135,
+    height: 85,
+  },
+  speechTextRaccoonOne: {
+    position: 'absolute',
+    left: 155,
+    bottom: -15,
+    width: 100,
+    height: 50,
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '500',
+    fontFamily: 'Pretendard',
+    color: '#636363',
+    textAlign: 'center',
+  },
+  raccoonOne: {
+    position: 'absolute',
+    bottom: -210,
+    left: 40,
+    width: 280,
+    height: 280,
+  },
+  raccoonTwo: {
+    position: 'absolute',
+    bottom: -310,
+    left: 80,
+    width: 280,
+    height: 280,
+  },
+  grass: {
+    position: 'absolute',
+    bottom: -870,
+    left: -200,
+    // 오른쪽 고정 해제: width 증가가 눈에 띄도록 left 기준으로만 배치
+    width: screenWidth + 390,
+    height: 1450,
+  },
+  leftHouse: { position: 'absolute', bottom: -55, left: 21, width: 110, height: 80 },
+  rightHouse: { position: 'absolute', bottom: -60, right: 223, width: 155, height: 115 },
   backButtonContainer: {
     position: 'absolute',
     top: 75,
