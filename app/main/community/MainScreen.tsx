@@ -10,11 +10,16 @@ import {
   Dimensions,
   PanResponder,
   Animated,
+  Pressable,
+  Modal,
+  TextInput,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { BackIcon } from '@/components/Icon/BackIcon';
 import Step1_IntroScreen from './auth/Step1_IntroScreen';
+import ScrollModal from './scrollmodal';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -88,20 +93,43 @@ const samplePosts = [
 ];
 
 export default function MainScreen() {
+  const [composerVisible, setComposerVisible] = useState(false);
+  const [inputText, setInputText] = useState('');
+  const [bubbleText, setBubbleText] = useState('어떤 생각을 하고 있나요?');
+  const computeBubbleSize = (text: string) => {
+    const lines = (text || '').split('\n');
+    const maxChars = Math.max(1, ...lines.map((l) => l.length));
+    const width = Math.min(280, Math.max(140, maxChars * 11 + 40));
+    const height = Math.min(170, Math.max(80, lines.length * 22 + 30));
+    return { width, height };
+  };
+  const [bubbleSize, setBubbleSize] = useState(computeBubbleSize('어떤 생각을 하고 있나요?'));
+  const [bubbleOneSize, setBubbleOneSize] = useState({ width: 150, height: 80 });
+  const [bubbleOneTextWidth, setBubbleOneTextWidth] = useState(0);
+  const inputRef = useRef<TextInput | null>(null);
+
+  useEffect(() => {
+    setBubbleSize(computeBubbleSize(bubbleText));
+  }, [bubbleText]);
+
+  // Dynamic width for the raccoon-behind bubble (single line)
+  useEffect(() => {
+    const padding = 24; // 12 left + 12 right
+    const minWidth = 120;
+    const maxWidth = 260;
+    const width = Math.min(maxWidth, Math.max(minWidth, bubbleOneTextWidth + padding));
+    setBubbleOneSize({ width, height: 80 });
+  }, [bubbleOneTextWidth, bubbleText]);
   const [showBackButton, setShowBackButton] = useState(false);
   const [scrollOffset, setScrollOffset] = useState(0);
   const [cardPosition, setCardPosition] = useState(screenHeight * 0.6);
-  const [showAuthIntro, setShowAuthIntro] = useState(true); // 앱 시작할 때마다 인증 모달 표시
+  const [showAuthIntro, setShowAuthIntro] = useState(false); // 잠금 모달 숨김
   const { authCompleted } = useLocalSearchParams();
 
   // 세션 기반 인증 상태 관리
   useEffect(() => {
-    // 인증 완료 후 돌아온 경우 모달 숨기기
     if (authCompleted === 'true') {
       setShowAuthIntro(false);
-    } else {
-      // 컴포넌트가 마운트될 때마다 인증 상태 초기화
-      setShowAuthIntro(true);
     }
   }, [authCompleted]);
 
@@ -285,6 +313,53 @@ export default function MainScreen() {
           resizeMode="contain"
         />
 
+        {/* speech bubble behind raccoon (dynamic width to fit text) */}
+        <Pressable
+          onPress={() => {
+            setComposerVisible(true);
+            setTimeout(() => inputRef.current?.focus(), 10);
+          }}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          <View
+            style={[
+              styles.speechBubbleOneWrap,
+              { width: bubbleOneSize.width, height: bubbleOneSize.height },
+            ]}
+            pointerEvents="none"
+          >
+            <Image
+              source={require('@/assets/images/speechbubble.png')}
+              style={styles.speechBubbleOneImg}
+              resizeMode="stretch"
+            />
+            <Text style={styles.speechBubbleOneText} numberOfLines={1}>
+              {bubbleText}
+            </Text>
+            {/* hidden measurer to compute text width */}
+            <Text
+              style={styles.measureText}
+              onLayout={(e) => setBubbleOneTextWidth(e.nativeEvent.layout.width)}
+            >
+              {bubbleText}
+            </Text>
+          </View>
+        </Pressable>
+
+        {/* keep only the latest speech bubble; older ones removed */}
+
+        {/* '생각' 버튼 - 상단 라쿤 오른쪽에 배치, 누르면 오버레이 컴포저 표시 */}
+        <Pressable
+          style={styles.thinkButton}
+          onPress={() => {
+            setComposerVisible(true);
+            setTimeout(() => inputRef.current?.focus(), 10);
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={styles.thinkButtonText}>생각</Text>
+        </Pressable>
+
         {/* raccoons */}
         <Image
           source={require('@/assets/images/racoon-real.png')}
@@ -296,13 +371,6 @@ export default function MainScreen() {
           style={styles.raccoonTwo}
           resizeMode="contain"
         />
-        {/* speech bubble to the right of the first raccoon */}
-        <Image
-          source={require('@/assets/images/speechbubble.png')}
-          style={styles.speechBubbleRaccoonOne}
-          resizeMode="contain"
-        />
-        <Text style={styles.speechTextRaccoonOne}>{`어떤 생각을\n하고 있나요?`}</Text>
 
         {/* header row - 맨 앞 */}
         <View style={styles.heroHeader} pointerEvents="none">
@@ -319,98 +387,72 @@ export default function MainScreen() {
         </View>
       </View>
 
-      {/* Back Button */}
-      {showBackButton && (
-        <View style={styles.backButtonContainer}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <BackIcon />
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Draggable Card */}
-      <Animated.View
-        style={[
-          styles.draggableCard,
-          {
-            top: cardPosition,
-            transform: pan.getTranslateTransform(),
-          },
-        ]}
-      >
-        {/* Draggable Header */}
-        <View
-          style={[styles.header, showBackButton && { marginTop: 80 }]}
-          {...panResponder.panHandlers}
-        >
-          {!showBackButton && <View style={styles.dragHandle} />}
-          <Text style={[styles.headerTitle, showBackButton && styles.headerTitleFullScreen]}>
-            질문 게시판
-          </Text>
-        </View>
-
-        {/* Notification Card */}
-        <TouchableOpacity
-          style={styles.notificationCardContainer}
-          onPress={() => router.push('/main/questions')}
-        >
-          <Svg width="356" height="80" viewBox="0 0 356 80" style={styles.notificationCardSvg}>
-            <Path
-              d="M4.5 17C4.5 7.61116 12.1112 0 21.5 0H334.5C343.889 0 351.5 7.61116 351.5 17V55C351.5 64.3888 343.889 72 334.5 72H21.5C12.1112 72 4.5 64.3888 4.5 55V17Z"
-              fill="#FF805F"
-              fillOpacity="0.05"
+      {/* Overlay composer - show on bubble press. Keep original bubble visible underneath */}
+      <Modal transparent visible={composerVisible} animationType="fade">
+        <Pressable style={styles.overlayBackdrop} onPress={() => setComposerVisible(false)}>
+          <View style={styles.overlayCenter} pointerEvents="none">
+            <Image
+              source={require('@/assets/images/racoon-real.png')}
+              style={styles.overlayRaccoon}
+              resizeMode="contain"
             />
-          </Svg>
-          <View style={styles.notificationContent}>
-            <Svg width="25" height="23" viewBox="0 0 25 23" style={styles.notificationIcon}>
-              <Path
-                d="M18.8616 2.47949L11.8447 6.52643V15.5413L18.8616 19.5916V2.47949Z"
-                fill="#FF805F"
+            <View
+              style={[
+                styles.overlayBubbleWrap,
+                { width: bubbleSize.width, height: bubbleSize.height },
+              ]}
+            >
+              <Image
+                source={require('@/assets/images/speechbubble.png')}
+                style={styles.overlayBubbleImg}
+                resizeMode="stretch"
               />
-              <Path
-                d="M0.167969 9.89754C0.167969 8.63921 1.18804 7.61914 2.44636 7.61914H3.85965V14.3924H2.44636C1.18804 14.3924 0.167969 13.3723 0.167969 12.114V9.89754Z"
-                fill="#C3C3C3"
-              />
-              <Path
-                d="M18.6088 3.36888C18.6088 1.79577 19.884 0.520508 21.4571 0.520508C23.0302 0.520508 24.3055 1.79576 24.3055 3.36887V18.7028C24.3055 20.2759 23.0302 21.5512 21.4571 21.5512C19.884 21.5512 18.6088 20.2759 18.6088 18.7028V3.36888Z"
-                fill="#FF592E"
-              />
-              <Path
-                d="M5.92334 15.1611H9.56417V21.4809C9.56417 22.3197 8.88412 22.9998 8.04524 22.9998H7.44227C6.60339 22.9998 5.92334 22.3197 5.92334 21.4809V15.1611Z"
-                fill="#C3C3C3"
-              />
-              <Path d="M5.92029 15.4775H9.55812V16.6171H5.92029V15.4775Z" fill="#8C8C8C" />
-              <Path
-                d="M2.98633 8.00428C2.98633 7.1654 3.66638 6.48535 4.50526 6.48535H12.496V15.5259H4.50526C3.66638 15.5259 2.98633 14.8458 2.98633 14.0069V8.00428Z"
-                fill="#FF805F"
-              />
-            </Svg>
-            <Text style={styles.notificationText}>똑똑! 새로운 질문이 들어왔어요!</Text>
+              <Text numberOfLines={2} style={styles.overlayBubbleText}>
+                {bubbleText}
+              </Text>
+            </View>
           </View>
-        </TouchableOpacity>
+        </Pressable>
+        <SafeAreaView style={styles.composerSafe}>
+          <View style={styles.composerBar}>
+            <View style={styles.greenCircle}>
+              <Image
+                source={require('@/assets/images/racoon-real.png')}
+                style={{
+                  width: 231,
+                  height: 231,
+                  transform: [{ translateX: 28 }, { translateY: 18 }],
+                }}
+                resizeMode="cover"
+              />
+            </View>
+            <TextInput
+              ref={inputRef}
+              style={styles.composerInputText}
+              value={inputText}
+              onChangeText={(t) => {
+                setInputText(t);
+                setBubbleText(t.length ? t : '어떤 생각을 하고 있나요?');
+              }}
+              placeholder="어떤 생각을 하고 있나요?"
+              placeholderTextColor="#aaa"
+              multiline
+            />
+            <Pressable onPress={() => setComposerVisible(false)}>
+              <Text style={styles.composerDone}>완료</Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      </Modal>
 
-        {/* Gray Line */}
-        <View style={styles.grayLine} />
-
-        {/* Apartment News Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>아파트소식</Text>
-        </View>
-
-        {/* Posts */}
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.postsContainer}
-          showsVerticalScrollIndicator={false}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          bounces={true}
-          scrollEnabled={true}
-          nestedScrollEnabled={true}
-        >
-          <View style={styles.communityPosts}>{samplePosts.map(renderPost)}</View>
-        </ScrollView>
-      </Animated.View>
+      <ScrollModal
+        showBackButton={showBackButton}
+        cardPosition={cardPosition}
+        pan={pan}
+        panResponder={panResponder}
+        onScroll={handleScroll}
+        posts={samplePosts as any}
+      />
 
       {/* 독립적인 채팅/동네로 가기 버튼들 - 최상위 레이어에 배치 */}
       <View style={styles.floatingActions} pointerEvents="box-none">
@@ -533,40 +575,166 @@ const styles = StyleSheet.create({
   cloud2: { position: 'absolute', top: 280, left: 30, width: 90, height: 35 },
   cloud3: { position: 'absolute', top: 290, right: 40, width: 60, height: 15 },
   cloud4: { position: 'absolute', top: 330, right: 140, width: 50, height: 15 },
-  speechBubbleRaccoonOne: {
+  speechBubbleOneWrap: {
     position: 'absolute',
-    // To the right of raccoonOne (left 40, width 280) with ~20px gap
-    left: 140,
-    bottom: -30,
-    width: 135,
-    height: 85,
+    left: 130,
+    bottom: -390,
+    height: 80,
+    zIndex: 3000,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  speechTextRaccoonOne: {
+  speechBubbleOneImg: {
     position: 'absolute',
-    left: 155,
-    bottom: -15,
-    width: 100,
-    height: 50,
+    inset: 0 as any,
+    width: '100%',
+    height: '100%',
+  },
+  speechBubbleOneText: {
     fontSize: 13,
     lineHeight: 16,
     fontWeight: '500',
     fontFamily: 'Pretendard',
     color: '#636363',
     textAlign: 'center',
+    paddingHorizontal: 12,
+    marginTop: -3,
+  },
+  measureText: {
+    position: 'absolute',
+    opacity: 0,
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '500',
+    fontFamily: 'Pretendard',
+    paddingHorizontal: 12,
+  },
+  // removed old extra bubble styles
+  // '생각' 버튼 UI
+  thinkButton: {
+    position: 'absolute',
+    left: 280,
+    bottom: -190,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 3,
+    zIndex: 4000,
+  },
+  thinkButtonText: {
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: '600',
+    fontFamily: 'Pretendard',
+    color: '#323232',
+  },
+  overlayBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  overlayCenter: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  overlayRaccoon: {
+    width: 500,
+    height: 500,
+    marginBottom: 40,
+    transform: [{ translateX: 50 }, { translateY: 10 }],
+  },
+  overlayBubble: {
+    position: 'absolute',
+    width: 170,
+    height: 100,
+    top: '30%',
+  },
+  overlayBubbleWrap: {
+    position: 'absolute',
+    top: '30%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  overlayBubbleImg: {
+    position: 'absolute',
+    inset: 0 as any,
+    width: '100%',
+    height: '100%',
+  },
+  overlayBubbleText: {
+    position: 'absolute',
+    top: 16,
+    left: 21,
+    right: 12,
+    height: 'auto',
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '500',
+    fontFamily: 'Pretendard',
+    color: '#636363',
+    textAlign: 'left',
+  },
+  composerSafe: {
+    justifyContent: 'flex-end',
+  },
+  composerBar: {
+    height: 65,
+    backgroundColor: '#fff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginHorizontal: 15,
+    borderRadius: 24,
+    marginBottom: -530,
+  },
+  greenCircle: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#86d382',
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  composerInputText: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 21,
+    fontFamily: 'Pretendard',
+    color: '#aaa',
+    marginTop: -5,
+  },
+  composerDone: {
+    fontSize: 18,
+    lineHeight: 21,
+    fontWeight: '600',
+    fontFamily: 'Pretendard',
+    color: '#636363',
+    marginLeft: 10,
   },
   raccoonOne: {
     position: 'absolute',
     bottom: -210,
     left: 40,
-    width: 280,
-    height: 280,
+    width: 370,
+    height: 370,
   },
   raccoonTwo: {
     position: 'absolute',
     bottom: -310,
     left: 80,
-    width: 280,
-    height: 280,
+    width: 370,
+    height: 370,
   },
   grass: {
     position: 'absolute',
