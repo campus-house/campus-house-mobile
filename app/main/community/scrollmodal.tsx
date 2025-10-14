@@ -51,9 +51,7 @@ export default function ScrollModal({
       key={post.id}
       style={styles.postCard}
       onPress={() => {
-        if (post.title === '도넛 나눔할게요') {
-          router.push('/chat');
-        }
+        router.push('/apartment-news-detail');
       }}
     >
       <View style={styles.postHeader}>
