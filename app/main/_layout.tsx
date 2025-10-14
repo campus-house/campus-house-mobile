@@ -104,8 +104,19 @@ export default function MainLayout() {
             }}
           />
 
-
-
+          {/* 실거주자 후기 화면 숨기기 */}
+          <Tabs.Screen
+            name="resident-review"
+            options={{
+              href: null, // 하단바에서 숨김
+            }}
+          />
+          <Tabs.Screen
+            name="review-detail"
+            options={{
+              href: null, // 하단바에서 숨김
+            }}
+          />
         </Tabs>
       </View>
     </>
