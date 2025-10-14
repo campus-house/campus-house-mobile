@@ -81,6 +81,10 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Expo Prebuild (네이티브 폴더는 prebuild로 생성)
+ios/
+android/
+
 # Metro
 .metro-health-check*
 
