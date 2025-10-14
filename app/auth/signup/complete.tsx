@@ -8,9 +8,9 @@ import { router } from 'expo-router';
 export default function SignupCompleteScreen() {
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.replace('/auth/login');
+      router.replace('/auth/signup/character-selection');
     }, 3000);
-    
+
     return () => clearTimeout(timer);
   }, []);
   return (

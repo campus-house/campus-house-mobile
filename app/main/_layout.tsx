@@ -10,7 +10,7 @@ export default function MainLayout() {
     bottom: 0,
     left: 0,
     right: 0,
-    height: 76,
+    height: 105,
     width: 393,
     backgroundColor: '#FFF',
     borderTopLeftRadius: 25,
@@ -22,6 +22,8 @@ export default function MainLayout() {
     shadowOpacity: 0.03,
     shadowRadius: 4,
     elevation: 5,
+    justifyContent: 'space-evenly' as const,
+    paddingHorizontal: 14,
   };
   return (
     <>
@@ -33,6 +35,12 @@ export default function MainLayout() {
             tabBarStyle: baseTabBarStyle,
             tabBarActiveTintColor: '#FF805F',
             tabBarInactiveTintColor: '#636363',
+            tabBarItemStyle: {
+              flex: 1,
+            },
+            tabBarIconStyle: {
+              marginTop: 14,
+            },
             tabBarLabelStyle: {
               fontFamily: 'Pretendard',
               fontSize: 12,
@@ -80,14 +88,6 @@ export default function MainLayout() {
             }}
           />
 
-          {/* questions 탭 숨기기 */}
-          <Tabs.Screen
-            name="questions"
-            options={{
-              href: null, // 이 탭을 하단바에서 숨김
-            }}
-          />
-
           {/* MapScreen 파일 숨기기 */}
           <Tabs.Screen
             name="map/MapScreen"
@@ -101,6 +101,20 @@ export default function MainLayout() {
             name="scrap/ScrapScreen"
             options={{
               href: null,
+            }}
+          />
+
+          {/* 실거주자 후기 화면 숨기기 */}
+          <Tabs.Screen
+            name="resident-review"
+            options={{
+              href: null, // 하단바에서 숨김
+            }}
+          />
+          <Tabs.Screen
+            name="review-detail"
+            options={{
+              href: null, // 하단바에서 숨김
             }}
           />
         </Tabs>

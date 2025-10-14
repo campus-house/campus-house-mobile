@@ -1,44 +1,19 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Vector124 from '@/components/Vector124';
 import Vector123 from '@/components/Vector123';
 import Vector119 from '@/components/Vector119';
-import { useNavigation } from '@react-navigation/native';
 import { router } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
 
 export default function MyPageScreen() {
-  const navigation: any = useNavigation();
   const { width: screenWidth } = Dimensions.get('window');
   
   // 하드코딩된 프로필 데이터
   const name = '방미오';
   const intro = '이번에 이사온 미오라고해요!! ^~^';
 
-  useEffect(() => {
-    const parent = navigation?.getParent?.();
-    parent?.setOptions?.({
-      tabBarStyle: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 76,
-        backgroundColor: '#FFF',
-        borderTopLeftRadius: 25,
-        borderTopRightRadius: 25,
-        shadowColor: '#000',
-        shadowOffset: { width: -1.5, height: -4.5 },
-        shadowOpacity: 0.03,
-        shadowRadius: 4,
-        elevation: 5,
-        display: 'flex',
-        zIndex: 999,
-      },
-    });
-    parent?.setOptions?.({ tabBarVisible: true });
-  }, [navigation]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
