@@ -15,6 +15,16 @@ import Svg, { Path, Circle } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
 
+// 댓글 타입 정의
+type Comment = {
+  id: number;
+  author: string;
+  profileImage: any;
+  time: string;
+  content: string;
+  replies?: Comment[];
+};
+
 export default function ApartmentNewsDetail() {
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
@@ -22,6 +32,40 @@ export default function ApartmentNewsDetail() {
   const [bookmarkCount, setBookmarkCount] = useState(0);
   const [commentInputVisible, setCommentInputVisible] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const [comments, setComments] = useState<Comment[]>([
+    {
+      id: 1,
+      author: '말하는감자',
+      profileImage: require('@/assets/images/squirrel4x.png'),
+      time: '10분 전',
+      content: '저요!!!!!!!!!!!!!',
+    },
+    {
+      id: 2,
+      author: '찹쌀떡',
+      profileImage: require('@/assets/images/ramjui.png'),
+      time: '5분 전',
+      content: '저 지금 가겠습니다.',
+      replies: [
+        {
+          id: 3,
+          author: '안단팥빵',
+          profileImage: require('@/assets/images/squirrel4x.png'),
+          time: '2분 전',
+          content: '저도 같이 가도 괜찮을까요~~~~?',
+          replies: [
+            {
+              id: 4,
+              author: '빵미오',
+              profileImage: require('@/assets/images/squirrel4x.png'),
+              time: '1분 전',
+              content: '넵넵 좋습니다 ㅎ.ㅎ 세 분 남았어요!',
+            },
+          ],
+        },
+      ],
+    },
+  ]);
 
   const handleLike = () => {
     setIsLiked(!isLiked);
@@ -32,6 +76,96 @@ export default function ApartmentNewsDetail() {
     setIsBookmarked(!isBookmarked);
     setBookmarkCount(isBookmarked ? bookmarkCount - 1 : bookmarkCount + 1);
   };
+
+  const handleCommentSubmit = () => {
+    if (commentText.trim()) {
+      const newComment: Comment = {
+        id: Date.now(),
+        author: '나',
+        profileImage: require('@/assets/images/ramjui.png'),
+        time: '방금 전',
+        content: commentText.trim(),
+      };
+
+      setComments((prev) => [...prev, newComment]);
+      setCommentText('');
+      setCommentInputVisible(false);
+    }
+  };
+
+  const renderComment = (comment: Comment, isReply = false, isNestedReply = false) => (
+    <View key={comment.id}>
+      <View
+        style={
+          isReply
+            ? isNestedReply
+              ? styles.commentReplyWrapper2
+              : styles.commentReplyWrapper
+            : styles.commentItem
+        }
+      >
+        {isReply && (
+          <View style={styles.replyArrowContainer}>
+            <Svg width="20" height="24" viewBox="0 0 20 24" fill="none">
+              <Path
+                d="M1.34375 1.11328V16.7462C1.34375 18.4158 2.69721 19.7692 4.36678 19.7692H18.6895"
+                stroke="#AAAAAA"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+              />
+              <Path
+                d="M15.8428 16L18.6775 19.2397C19.0438 19.6583 18.9981 20.2954 18.5757 20.6575L15.8428 23"
+                stroke="#AAAAAA"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+              />
+            </Svg>
+          </View>
+        )}
+        <View
+          style={
+            isReply
+              ? isNestedReply
+                ? styles.commentItem3
+                : styles.commentItem2
+              : styles.commentItem
+          }
+        >
+          <View
+            style={
+              isReply
+                ? isNestedReply
+                  ? styles.commentAvatarContainer2
+                  : styles.commentAvatarContainer
+                : styles.commentAvatarContainer
+            }
+          >
+            <Image source={comment.profileImage} style={styles.commentAvatar} />
+          </View>
+          <View style={styles.commentContent}>
+            <View style={styles.commentHeader}>
+              <View style={styles.commentHeaderLeft}>
+                <Text style={styles.commentAuthor}>{comment.author}</Text>
+                <Text style={styles.commentTime}>{comment.time}</Text>
+              </View>
+            </View>
+            <View style={styles.commentTextRow}>
+              <Text style={styles.commentText}>{comment.content}</Text>
+              {!isReply && (
+                <TouchableOpacity
+                  style={styles.replyButton}
+                  onPress={() => setCommentInputVisible(true)}
+                >
+                  <Text style={styles.replyButtonText}>댓글 달기</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+      </View>
+      {comment.replies && comment.replies.map((reply) => renderComment(reply, true, true))}
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -150,150 +284,24 @@ export default function ApartmentNewsDetail() {
             <View style={styles.commentsHeader}>
               <View style={styles.commentsTitleContainer}>
                 <Text style={styles.commentsTitle}>댓글</Text>
-                <Text style={styles.commentsCount}>4</Text>
+                <Text style={styles.commentsCount}>{comments.length}</Text>
               </View>
             </View>
 
             {/* 댓글 목록 */}
             <View style={styles.commentsList}>
-              {/* 댓글 1 - 말하는감자 */}
-              <View style={styles.commentItem}>
-                <View style={styles.commentAvatarContainer}>
-                  <Image
-                    source={require('@/assets/images/squirrel4x.png')}
-                    style={styles.commentAvatar}
-                  />
-                </View>
-                <View style={styles.commentContent}>
-                  <View style={styles.commentHeader}>
-                    <View style={styles.commentHeaderLeft}>
-                      <Text style={styles.commentAuthor}>말하는감자</Text>
-                      <Text style={styles.commentTime}>10분 전</Text>
+              {comments.map((comment, index) => (
+                <View key={comment.id}>
+                  {renderComment(comment)}
+                  {index < comments.length - 1 && (
+                    <View style={styles.commentDividerContainer}>
+                      <Svg width="394" height="2" viewBox="0 0 394 2" fill="none">
+                        <Path d="M-10.6562 1L405.709 1.10367" stroke="#F2F2F2" strokeWidth="1" />
+                      </Svg>
                     </View>
-                  </View>
-                  <View style={styles.commentTextRow}>
-                    <Text style={styles.commentText}>저요!!!!!!!!!!!!!</Text>
-                    <TouchableOpacity
-                      style={styles.replyButton}
-                      onPress={() => setCommentInputVisible(true)}
-                    >
-                      <Text style={styles.replyButtonText}>댓글 달기</Text>
-                    </TouchableOpacity>
-                  </View>
+                  )}
                 </View>
-              </View>
-
-              {/* 구분선 */}
-              <View style={styles.commentDividerContainer}>
-                <Svg width="394" height="2" viewBox="0 0 394 2" fill="none">
-                  <Path d="M-10.6562 1L405.709 1.10367" stroke="#F2F2F2" strokeWidth="1" />
-                </Svg>
-              </View>
-
-              {/* 댓글 2 - 찹쌀떡 */}
-              <View style={styles.commentItem2}>
-                <View style={styles.commentAvatarContainer2}>
-                  <Image
-                    source={require('@/assets/images/squirrel4x.png')}
-                    style={styles.commentAvatar}
-                  />
-                </View>
-                <View style={styles.commentContent}>
-                  <View style={styles.commentHeader}>
-                    <View style={styles.commentHeaderLeft}>
-                      <Text style={styles.commentAuthor}>찹쌀떡</Text>
-                      <Text style={styles.commentTime}>5분 전</Text>
-                    </View>
-                  </View>
-                  <View style={styles.commentTextRow}>
-                    <Text style={styles.commentText}>저 지금 가겠습니다.</Text>
-                    <TouchableOpacity
-                      style={styles.replyButton}
-                      onPress={() => setCommentInputVisible(true)}
-                    >
-                      <Text style={styles.replyButtonText}>댓글 달기</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            </View>
-
-            {/* 댓글 2 - 안단팥빵 (찹쌀떡에 대한 답글) */}
-            <View style={styles.commentReplyWrapper}>
-              <View style={styles.replyArrowContainer}>
-                <Svg width="20" height="24" viewBox="0 0 20 24" fill="none">
-                  <Path
-                    d="M1.34375 1.11328V16.7462C1.34375 18.4158 2.69721 19.7692 4.36678 19.7692H18.6895"
-                    stroke="#AAAAAA"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                  />
-                  <Path
-                    d="M15.8428 16L18.6775 19.2397C19.0438 19.6583 18.9981 20.2954 18.5757 20.6575L15.8428 23"
-                    stroke="#AAAAAA"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                  />
-                </Svg>
-              </View>
-              <View style={styles.commentItem2}>
-                <View style={styles.commentAvatarContainer}>
-                  <Image
-                    source={require('@/assets/images/squirrel4x.png')}
-                    style={styles.commentAvatar}
-                  />
-                </View>
-                <View style={styles.commentContent}>
-                  <View style={styles.commentHeader}>
-                    <View style={styles.commentHeaderLeft}>
-                      <Text style={styles.commentAuthor}>안단팥빵</Text>
-                      <Text style={styles.commentTime}>2분 전</Text>
-                    </View>
-                  </View>
-                  <View style={styles.commentTextRow}>
-                    <Text style={styles.commentText}>저도 같이 가도 괜찮을까요~~~~?</Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-
-            {/* 댓글 3 - 빵미오 (안단팥빵에 대한 답글) */}
-            <View style={styles.commentReplyWrapper2}>
-              <View style={styles.replyArrowContainer}>
-                <Svg width="20" height="24" viewBox="0 0 20 24" fill="none">
-                  <Path
-                    d="M1.34375 1.11328V16.7462C1.34375 18.4158 2.69721 19.7692 4.36678 19.7692H18.6895"
-                    stroke="#AAAAAA"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                  />
-                  <Path
-                    d="M15.8428 16L18.6775 19.2397C19.0438 19.6583 18.9981 20.2954 18.5757 20.6575L15.8428 23"
-                    stroke="#AAAAAA"
-                    strokeWidth="1.7"
-                    strokeLinecap="round"
-                  />
-                </Svg>
-              </View>
-              <View style={styles.commentItem3}>
-                <View style={styles.commentAvatarContainer2}>
-                  <Image
-                    source={require('@/assets/images/squirrel4x.png')}
-                    style={styles.commentAvatar}
-                  />
-                </View>
-                <View style={styles.commentContent}>
-                  <View style={styles.commentHeader}>
-                    <View style={styles.commentHeaderLeft}>
-                      <Text style={styles.commentAuthor}>빵미오</Text>
-                      <Text style={styles.commentTime}>1분 전</Text>
-                    </View>
-                  </View>
-                  <View style={styles.commentTextRow}>
-                    <Text style={styles.commentText}>넵넵 좋습니다 ㅎ.ㅎ 세 분 남았어요!</Text>
-                  </View>
-                </View>
-              </View>
+              ))}
             </View>
 
             {/* 구분선 */}
@@ -318,7 +326,7 @@ export default function ApartmentNewsDetail() {
               onChangeText={setCommentText}
               multiline
             />
-            <TouchableOpacity style={styles.sendButton}>
+            <TouchableOpacity style={styles.sendButton} onPress={handleCommentSubmit}>
               <Svg width="28" height="42" viewBox="0 0 28 42" fill="none">
                 <Path
                   d="M25.6311 19.0528C26.0886 19.2745 25.8985 20.0227 25.381 20.037L4.14152 20.6233C3.90407 20.6299 3.70947 20.4533 3.68172 20.2061L2.39009 8.70309C2.34437 8.29587 2.7542 7.96861 3.10003 8.13617L25.6311 19.0528Z"

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   StatusBar,
   Image,
   Dimensions,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -16,6 +17,16 @@ import { COLORS } from '@/constants/colors';
 import { BackIcon } from '@/components/Icon/BackIcon';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+// 댓글 데이터 타입
+type Comment = {
+  id: number;
+  author: string;
+  profileImage: any;
+  time: string;
+  content: string;
+  replies?: Comment[];
+};
 
 // 샘플 데이터
 const sampleQuestions = [
@@ -30,6 +41,33 @@ const sampleQuestions = [
     comments: 3,
     likes: 12,
     bookmarks: 0,
+    commentList: [
+      {
+        id: 1,
+        author: '찹쌀떡',
+        profileImage: require('@/assets/images/ramjui.png'),
+        time: '5분 전',
+        content: '저 지금 가겠습니다.',
+        replies: [
+          {
+            id: 2,
+            author: '안단팥빵',
+            profileImage: require('@/assets/images/squirrel4x.png'),
+            time: '2분 전',
+            content: '저도 같이 가도 괜찮을까요~~~~?',
+            replies: [
+              {
+                id: 3,
+                author: '빵미오',
+                profileImage: require('@/assets/images/squirrel4x.png'),
+                time: '1분 전',
+                content: '넵넵 좋습니다 ㅎ.ㅎ 세 분 남았어요!',
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
     id: 2,
@@ -70,6 +108,24 @@ const sampleQuestions = [
 ];
 
 export default function QuestionsScreen() {
+  const [showCommentInput, setShowCommentInput] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [selectedQuestionId, setSelectedQuestionId] = useState<number | null>(null);
+
+  const handleCommentPress = (questionId: number) => {
+    setSelectedQuestionId(questionId);
+    setShowCommentInput(true);
+  };
+
+  const handleCommentSubmit = () => {
+    if (commentText.trim()) {
+      // 댓글 추가 로직
+      setCommentText('');
+      setShowCommentInput(false);
+      setSelectedQuestionId(null);
+    }
+  };
+
   const renderQuestion = (question: (typeof sampleQuestions)[0]) => (
     <View key={question.id} style={styles.questionCard}>
       <View style={styles.questionHeader}>
@@ -325,6 +381,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
     paddingTop: 20,
+    paddingBottom: 100,
   },
   sectionTitle: {
     fontSize: 20,
@@ -347,6 +404,7 @@ const styles = StyleSheet.create({
   },
   previousQuestionsContainer: {
     marginTop: 20,
+    paddingBottom: 50,
   },
   questionCard: {
     width: 347,

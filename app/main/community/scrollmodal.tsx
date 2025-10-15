@@ -165,7 +165,7 @@ export default function ScrollModal({
 
         <TouchableOpacity
           style={styles.notificationCardContainer}
-          onPress={() => router.push('/main/questions')}
+          onPress={() => router.push('/main/community/questions')}
         >
           <Svg width="356" height="80" viewBox="0 0 356 80" style={styles.notificationCardSvg}>
             <Path
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 17,
   },
-  grayLine: { width: 393, height: 5, backgroundColor: '#F2F2F2', marginTop: 20, marginBottom: 30 },
+  grayLine: { width: 393, height: 5, backgroundColor: '#F2F2F2', marginTop: 10, marginBottom: 30 },
   sectionHeader: { paddingHorizontal: 20, marginBottom: 20 },
   sectionTitle: {
     color: '#323232',
