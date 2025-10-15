@@ -2,11 +2,46 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
 export default function AlertsScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
+  
+  // 하단바 스타일을 마이페이지와 동일하게 설정
+  useFocusEffect(
+    React.useCallback(() => {
+      const parent = navigation.getParent?.();
+      parent?.setOptions({ 
+        tabBarStyle: {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 105,
+          width: 393,
+          backgroundColor: '#FFF',
+          borderTopLeftRadius: 25,
+          borderTopRightRadius: 25,
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+          shadowColor: '#000',
+          shadowOffset: { width: -1.5, height: -4.5 },
+          shadowOpacity: 0.03,
+          shadowRadius: 4,
+          elevation: 5,
+          justifyContent: 'space-evenly',
+          paddingHorizontal: 14,
+        }
+      });
+      return () => {
+        parent?.setOptions({ tabBarStyle: undefined });
+      };
+    }, [navigation])
+  );
+  
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Image source={require('@/assets/images/backbutton.png')} style={{ width: 19, height: 19 }} resizeMode="contain" />
@@ -35,15 +70,15 @@ export default function AlertsScreen() {
         <Text style={styles.timeText}>3시간 전</Text>
       </View>
 
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#fff', paddingTop: 50, paddingBottom: 100 },
   header: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
   backBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 16, lineHeight: 32, fontWeight: '600', fontFamily: 'Pretendard', color: '#323232', textAlign: 'center' },
+  title: { fontSize: 16, lineHeight: 32, fontWeight: '600', fontFamily: 'Pretendard', color: '#323232', textAlign: 'center', marginLeft: -5 },
 
   row: {
     backgroundColor: '#fff',
@@ -59,7 +94,7 @@ const styles = StyleSheet.create({
   thumb: { width: 51, height: 51, borderRadius: 8 },
   subtle: { fontSize: 13, lineHeight: 18, color: '#aaa', fontFamily: 'Pretendard' },
   rowTitle: { width: 136, fontSize: 15, lineHeight: 18, fontWeight: '600', fontFamily: 'Pretendard', color: '#323232', textAlign: 'left', marginTop: 4 },
-  timeText: { fontSize: 13, lineHeight: 18, color: '#aaa', fontFamily: 'Pretendard' },
+  timeText: { fontSize: 13, lineHeight: 18, color: '#aaa', fontFamily: 'Pretendard', marginLeft: -50, marginTop: -15 },
 });
 
 
