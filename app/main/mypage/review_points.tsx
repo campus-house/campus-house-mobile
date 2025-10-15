@@ -118,24 +118,25 @@ export default function ReviewPointsScreen() {
           />
           <Text style={styles.counter}>{content.length}/{maxLen}자</Text>
         </View>
-      </ScrollView>
 
-      <TouchableOpacity
-        style={[styles.footerButton, isReady && styles.footerButtonActive]}
-        activeOpacity={0.8}
-        onPress={() => {
-          if (!isReady) return;
-          router.push({
-            pathname: '/mypage/review_success',
-            params: {
-              content,
-              rating: String(incomingRating),
-            },
-          });
-        }}
-      >
-        <Text style={styles.footerButtonText}>완료</Text>
-      </TouchableOpacity>
+        {/* 완료 버튼을 스크롤 영역 안으로 이동 */}
+        <TouchableOpacity
+          style={[styles.footerButton, isReady && styles.footerButtonActive]}
+          activeOpacity={0.8}
+          onPress={() => {
+            if (!isReady) return;
+            router.push({
+              pathname: '/main/mypage/review_success',
+              params: {
+                content,
+                rating: String(incomingRating),
+              },
+            });
+          }}
+        >
+          <Text style={styles.footerButtonText}>완료</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -269,7 +270,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#aaa',
     borderRadius: 16,
     marginHorizontal: 24,
-    marginBottom: 20,
+    marginTop: 70,
+    marginBottom: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },

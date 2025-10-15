@@ -348,17 +348,7 @@ export default function MainScreen() {
 
         {/* keep only the latest speech bubble; older ones removed */}
 
-        {/* '생각' 버튼 - 상단 라쿤 오른쪽에 배치, 누르면 오버레이 컴포저 표시 */}
-        <Pressable
-          style={styles.thinkButton}
-          onPress={() => {
-            setComposerVisible(true);
-            setTimeout(() => inputRef.current?.focus(), 10);
-          }}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Text style={styles.thinkButtonText}>생각</Text>
-        </Pressable>
+        {/* (이전 위치의 '생각' 버튼 제거) */}
 
         {/* raccoons */}
         <Image
@@ -478,6 +468,17 @@ export default function MainScreen() {
           />
           <Text style={styles.pillText}>동네로 가기</Text>
         </View>
+        {/* '생각' 버튼을 동네로 가기 버튼 바로 아래로 배치, pill과 동일한 좌우 간격 */}
+        <Pressable
+          style={[styles.pill, { marginTop: 10 }]}
+          onPress={() => {
+            setComposerVisible(true);
+            setTimeout(() => inputRef.current?.focus(), 10);
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={styles.pillText}>생각</Text>
+        </Pressable>
       </View>
 
       {/* Floating Action Button */}
@@ -540,8 +541,9 @@ const styles = StyleSheet.create({
     top: 74,
     right: 30,
     alignItems: 'flex-end',
-    zIndex: 99999,
-    elevation: 100,
+    // 스크롤 카드(draggableCard) 뒤로 보내어 첫 화면에서는 가리도록 낮은 zIndex/elevation 사용
+    zIndex: 0,
+    elevation: 0,
   },
   pill: {
     backgroundColor: '#fff',
@@ -598,7 +600,7 @@ const styles = StyleSheet.create({
     color: '#636363',
     textAlign: 'center',
     paddingHorizontal: 12,
-    marginTop: -3,
+    marginTop: -8,
   },
   measureText: {
     position: 'absolute',
@@ -623,8 +625,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 6,
-    elevation: 3,
-    zIndex: 4000,
+    elevation: 0,
+    zIndex: 0,
   },
   thinkButtonText: {
     fontSize: 13,
@@ -672,7 +674,7 @@ const styles = StyleSheet.create({
   },
   overlayBubbleText: {
     position: 'absolute',
-    top: 16,
+    top: 21,
     left: 21,
     right: 12,
     height: 'auto',
@@ -694,7 +696,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginHorizontal: 15,
     borderRadius: 24,
-    marginBottom: -530,
+    marginBottom: -550,
   },
   greenCircle: {
     width: 46,
@@ -766,6 +768,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
+    zIndex: 10,
     shadowColor: 'rgba(194, 224, 242, 0.20)',
     shadowOffset: {
       width: 0,

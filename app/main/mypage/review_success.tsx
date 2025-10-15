@@ -4,9 +4,11 @@ import ChatRewardModal from '@/components/ChatRewardModal';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
 export default function ReviewSuccessScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const params = useLocalSearchParams();
   const content = (params.content as string) || '';
   const rating = Number(params.rating ?? 0);
@@ -16,10 +18,43 @@ export default function ReviewSuccessScreen() {
     today.getDate()
   ).padStart(2, '0')}`;
 
+  // 하단바 스타일을 메인과 동일하게 설정
+  useFocusEffect(
+    React.useCallback(() => {
+      const parent = navigation.getParent?.();
+      parent?.setOptions({ 
+        tabBarStyle: {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 105,
+          width: 393,
+          backgroundColor: '#FFF',
+          borderTopLeftRadius: 25,
+          borderTopRightRadius: 25,
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+          shadowColor: '#000',
+          shadowOffset: { width: -1.5, height: -4.5 },
+          shadowOpacity: 0.03,
+          shadowRadius: 4,
+          elevation: 5,
+          justifyContent: 'space-evenly',
+          paddingHorizontal: 14,
+        }
+      });
+      return () => {
+        parent?.setOptions({ tabBarStyle: undefined });
+      };
+    }, [navigation])
+  );
+
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       <LinearGradient
-        colors={['#ffe8de', '#ffffff']}
+        colors={['#ffe8de', '#ffffff', '#ffffff']}
+        locations={[0, 0.5, 1]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFill}
@@ -166,7 +201,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginHorizontal: 24,
     marginTop: 20,
-    marginBottom: 24,
+    marginBottom: 100,
     alignItems: 'center',
     justifyContent: 'center',
   },

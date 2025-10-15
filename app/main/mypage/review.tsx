@@ -3,9 +3,11 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useRouter } from 'expo-router';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
 export default function ReviewScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const [rating, setRating] = useState<number>(0);
   const [isTypeOpen, setIsTypeOpen] = useState<boolean>(false);
   const [isPeriodOpen, setIsPeriodOpen] = useState<boolean>(false);
@@ -13,11 +15,22 @@ export default function ReviewScreen() {
   const [selectedPeriod, setSelectedPeriod] = useState<string>('거주 기간을 선택해 주세요');
   const [typeSelectY, setTypeSelectY] = useState<number>(0);
   const [periodSelectY, setPeriodSelectY] = useState<number>(0);
+  
+  // 이 화면에서만 하단바를 배경 뒤로 숨기기
+  useFocusEffect(
+    React.useCallback(() => {
+      const parent = navigation.getParent?.();
+      parent?.setOptions({ tabBarStyle: { display: 'none' } });
+      return () => {
+        parent?.setOptions({ tabBarStyle: undefined });
+      };
+    }, [navigation])
+  );
   const [scrollY, setScrollY] = useState<number>(0);
   const isReady = rating > 0 && selectedType !== '거주 유형을 선택해 주세요' && selectedPeriod !== '거주 기간을 선택해 주세요';
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
       {/* Header back */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
@@ -136,7 +149,7 @@ export default function ReviewScreen() {
           </TouchableOpacity>
 
           {/* 완료 버튼 (회색 배경 안) */}
-          <TouchableOpacity style={[styles.footerButton, isReady && styles.footerButtonActive]} activeOpacity={0.8} onPress={() => { if (isReady) router.push({ pathname: '/mypage/review_points', params: { rating: String(rating) } }); }}>
+          <TouchableOpacity style={[styles.footerButton, isReady && styles.footerButtonActive]} activeOpacity={0.8} onPress={() => { if (isReady) router.push({ pathname: '/main/mypage/review_points', params: { rating: String(rating) } }); }}>
             <Text style={styles.footerButtonText}>완료</Text>
           </TouchableOpacity>
         </View>
@@ -153,7 +166,7 @@ const styles = StyleSheet.create({
   titleWrap: {
     width: 220,
     marginTop: 12,
-    marginLeft: 24,
+    marginLeft: 34,
     fontSize: 23,
     lineHeight: 31,
     fontWeight: '600',
@@ -165,13 +178,14 @@ const styles = StyleSheet.create({
 
   searchBar: {
     marginTop: 18,
-    marginHorizontal: 24,
+    marginHorizontal: 34,
     height: 55,
     backgroundColor: '#f2f2f2',
-    borderRadius: 12,
+    borderRadius: 28,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
+    marginBottom: 40,
   },
   searchPlaceholder: {
     flex: 1,
@@ -186,13 +200,14 @@ const styles = StyleSheet.create({
   findIcon: { width: 22, height: 22, tintColor: '#aaa' },
 
   mapCard: {
-    marginTop: 18,
-    marginHorizontal: 24,
+    marginTop: -22,
+    marginHorizontal: 34,
     height: 210,
     borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: '#f3f3f3',
     position: 'relative',
+    marginBottom: 40,
   },
   mapImage: { width: '100%', height: '100%' },
   orangeCircle: {
@@ -244,12 +259,12 @@ const styles = StyleSheet.create({
   },
 
   satisfactionBlock: {
-    marginTop: 24,
+    marginTop: -16,
     backgroundColor: '#f6f6f6',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingVertical: 24,
-    paddingHorizontal: 24,
+    paddingHorizontal: 34,
     marginHorizontal: 0,
     minHeight: 700,
   },
@@ -262,7 +277,7 @@ const styles = StyleSheet.create({
     color: '#323232',
     textAlign: 'left',
     alignSelf: 'flex-start',
-    marginLeft: 145,
+    marginLeft: 140,
   },
   starsRow: { height: 16 },
   starsContainer: {
