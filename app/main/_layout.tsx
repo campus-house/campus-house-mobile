@@ -103,6 +103,20 @@ export default function MainLayout() {
               href: null,
             }}
           />
+
+          {/* 실거주자 후기 화면 숨기기 */}
+          <Tabs.Screen
+            name="resident-review"
+            options={{
+              href: null, // 하단바에서 숨김
+            }}
+          />
+          <Tabs.Screen
+            name="review-detail"
+            options={{
+              href: null, // 하단바에서 숨김
+            }}
+          />
         </Tabs>
       </View>
     </>
@@ -120,10 +134,10 @@ function CommunityIcon({ focused, color }: { focused: boolean; color: string }) 
         />
       </Svg>
       <View style={{ position: 'absolute', top: 8, left: 0, right: 0, alignItems: 'center' }}>
-        <Svg width="17" height="5" viewBox="0 0 17 5" fill="none">
-          <Circle cx="2.64385" cy="2.2835" r="1.81475" fill="white" />
-          <Circle cx="8.69292" cy="2.2835" r="1.81475" fill="white" />
-          <Circle cx="14.7425" cy="2.2835" r="1.81475" fill="white" />
+        <Svg width="20" height="6" viewBox="0 0 20 6" fill="none">
+          <Circle cx="3" cy="3" r="2" fill="white" />
+          <Circle cx="10" cy="3" r="2" fill="white" />
+          <Circle cx="17" cy="3" r="2" fill="white" />
         </Svg>
       </View>
     </View>
