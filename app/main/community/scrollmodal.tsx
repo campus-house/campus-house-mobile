@@ -51,9 +51,7 @@ export default function ScrollModal({
       key={post.id}
       style={styles.postCard}
       onPress={() => {
-        if (post.title === '도넛 나눔할게요') {
-          router.push('/chat');
-        }
+        router.push('/apartment-news-detail');
       }}
     >
       <View style={styles.postHeader}>
@@ -167,7 +165,7 @@ export default function ScrollModal({
 
         <TouchableOpacity
           style={styles.notificationCardContainer}
-          onPress={() => router.push('/main/questions')}
+          onPress={() => router.push('/main/community/questions')}
         >
           <Svg width="356" height="80" viewBox="0 0 356 80" style={styles.notificationCardSvg}>
             <Path
@@ -238,6 +236,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
+    zIndex: 10,
     shadowColor: 'rgba(194, 224, 242, 0.20)',
     shadowOffset: { width: 0, height: -12 },
     shadowOpacity: 1,
@@ -306,7 +305,7 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 17,
   },
-  grayLine: { width: 393, height: 5, backgroundColor: '#F2F2F2', marginTop: 20, marginBottom: 30 },
+  grayLine: { width: 393, height: 5, backgroundColor: '#F2F2F2', marginTop: 10, marginBottom: 30 },
   sectionHeader: { paddingHorizontal: 20, marginBottom: 20 },
   sectionTitle: {
     color: '#323232',

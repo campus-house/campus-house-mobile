@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Vector124 from '@/components/Vector124';
 import Vector123 from '@/components/Vector123';
 import Vector119 from '@/components/Vector119';
@@ -9,6 +10,40 @@ import Svg, { Path, Circle } from 'react-native-svg';
 
 export default function MyPageScreen() {
   const { width: screenWidth } = Dimensions.get('window');
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+  
+  // 하단바 스타일을 메인과 동일하게 설정
+  useFocusEffect(
+    React.useCallback(() => {
+      const parent = navigation.getParent?.();
+      parent?.setOptions({ 
+        tabBarStyle: {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 105,
+          width: 393,
+          backgroundColor: '#FFF',
+          borderTopLeftRadius: 25,
+          borderTopRightRadius: 25,
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+          shadowColor: '#000',
+          shadowOffset: { width: -1.5, height: -4.5 },
+          shadowOpacity: 0.03,
+          shadowRadius: 4,
+          elevation: 5,
+          justifyContent: 'space-evenly',
+          paddingHorizontal: 14,
+        }
+      });
+      return () => {
+        parent?.setOptions({ tabBarStyle: undefined });
+      };
+    }, [navigation])
+  );
   
   // 하드코딩된 프로필 데이터
   const name = '방미오';
@@ -16,24 +51,30 @@ export default function MyPageScreen() {
 
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+    <View style={styles.root}>
+      {/* 상단을 좌/우 배경대로 덮는 스플릿 노란 배경 (안전영역 포함) */}
+      <View style={[styles.topBackgroundWalls, { top: 0, height: insets.top + 240 }]} pointerEvents="none">
+        <View style={styles.leftTopBackground}><Vector124 /></View>
+        <View style={styles.rightTopBackground}><Vector123 /></View>
+      </View>
+      <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 60, paddingBottom: 100 }}>
         {/* 상단 헤더 영역 */}
         <View style={styles.headerSection}>
           {/* 주소 정보 */}
           <View style={styles.addressContainer}>
-            <Text style={styles.addressTitle}>아이파크 803호</Text>
+            <Text style={styles.addressTitle} numberOfLines={1} ellipsizeMode="clip">아이파크 803호</Text>
             <Text style={styles.addressSubtitle}>영통구 효원로 407</Text>
           </View>
           
           {/* 우측 아이콘들 */}
           <View style={styles.headerIcons}>
             <TouchableOpacity style={[styles.iconButton, styles.bellWrapper]} onPress={() => router.push('/main/mypage/alerts')}>
-              <Image source={require('@/assets/images/bell.png')} style={[styles.headerIcon, { width: 20, height: 20 }]} resizeMode="contain" />
+              <Image source={require('@/assets/images/bell.png')} style={[styles.headerIcon, { width: 22, height: 22 }]} resizeMode="contain" />
               <View style={styles.bellBadge} />
             </TouchableOpacity>
             <TouchableOpacity style={[styles.iconButton, styles.bellWrapper]}>
-              <Image source={require('@/assets/images/shop.png')} style={[styles.headerIcon, { width: 30, height: 30 }]} resizeMode="contain" />
+              <Image source={require('@/assets/images/shop.png')} style={[styles.headerIcon, { width: 37, height: 37 }]} resizeMode="contain" />
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.iconButton, styles.bellWrapper, { zIndex: 10000 }]}
@@ -41,7 +82,7 @@ export default function MyPageScreen() {
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               onPress={() => router.push('/main/mypage/settings')}
             >
-              <Image source={require('@/assets/images/setting.png')} style={[styles.headerIcon, { width: 30, height: 30 }]} resizeMode="contain" />
+              <Image source={require('@/assets/images/setting.png')} style={[styles.headerIcon, { width: 37, height: 37 }]} resizeMode="contain" />
             </TouchableOpacity>
           </View>
         </View>
@@ -108,6 +149,9 @@ export default function MyPageScreen() {
             </View>
           </View>
         </View>
+
+        {/* 초록 배경과 아래 영역의 경계를 부드럽게 만드는 라운드 전환 */}
+        <View style={styles.roundedTransition} />
 
         {/* 프로필 정보 섹션 */}
         <View style={[styles.profileSection, { pointerEvents: 'box-none' }]}>
@@ -242,18 +286,49 @@ export default function MyPageScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
     flex: 1,
     backgroundColor: '#f9f9f9',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: 'transparent',
     paddingBottom: 0,
   },
   scrollView: {
     flex: 1,
+  },
+  // 최상단에서 좌/우 배경을 그대로 보여주기 위한 오버레이
+  topBackgroundWalls: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 160, // 기본값 (실제 높이는 insets.top으로 덮어쓰기)
+    zIndex: 1,
+    pointerEvents: 'none',
+  },
+  leftTopBackground: {
+    position: 'absolute',
+    left: 0,
+    width: '90%',
+    height: '100%',
+    overflow: 'hidden',
+    transform: [{ translateY: -400 }],
+  },
+  rightTopBackground: {
+    position: 'absolute',
+    right: -190,
+    width: '70%',
+    height: '100%',
+    overflow: 'hidden',
+    transform: [{ translateY: -400 }],
   },
   
   // 상단 헤더 영역
@@ -261,7 +336,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    paddingHorizontal: 20,
+    paddingLeft: 26,
+    paddingRight: 26,
     paddingTop: 20,
     paddingBottom: 10,
     backgroundColor: 'transparent',
@@ -278,7 +354,7 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     fontWeight: '700',
     fontFamily: 'Pretendard',
-    color: 'rgba(0,0,0,0.85)',
+    color: '#636363',
     textAlign: 'left',
   },
   addressSubtitle: {
@@ -286,13 +362,14 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontWeight: '500',
     fontFamily: 'Pretendard',
-    color: 'rgba(0,0,0,0.75)',
+    color: '#636363',
     textAlign: 'left',
-    marginTop: 4,
+    marginTop: 8,
   },
   headerIcons: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: -5,
   },
   iconButton: {
     marginLeft: 16,
@@ -302,9 +379,9 @@ const styles = StyleSheet.create({
     height: 20,
   },
   bellWrapper: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 39,
+    height: 39,
+    borderRadius: 19.5,
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
@@ -375,13 +452,14 @@ const styles = StyleSheet.create({
   
   // 보유 리워드/하트 카드
   rewardSection: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 26,
     marginTop: -360,
     zIndex: 20,
   },
   rewardCards: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 16,
     marginBottom: 20,
     marginTop: -120,
   },
@@ -389,9 +467,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     borderRadius: 12,
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-    marginHorizontal: 5,
+    paddingVertical: 11,
+    paddingHorizontal: 11,
+    marginHorizontal: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.03,
@@ -399,6 +477,7 @@ const styles = StyleSheet.create({
     elevation: 4,
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 60,
   },
   rewardIconContainer: {
     marginRight: 12,
@@ -428,14 +507,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 45,
+    marginTop: 35,
   },
   rewardLabel: {
     fontSize: 12,
     lineHeight: 16,
     marginTop: -3,
     fontFamily: 'Pretendard',
-    color: '#000000',
+    color: '#636363',
     textAlign: 'left',
     fontWeight: '400',
   },
@@ -467,7 +546,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignSelf: 'center',
     width: '100%',
-    marginHorizontal: 21,
+    marginHorizontal: 26,
   },
   inviteButtonText: {
     width: 92,
@@ -525,14 +604,24 @@ const styles = StyleSheet.create({
   
   // 프로필 정보 섹션
   profileSection: {
-    paddingHorizontal: 20,
-    marginTop: 20,
+    paddingHorizontal: 0,
+    marginTop: -12,
     marginBottom: 10,
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    zIndex: 20,
+    zIndex: 40,
     position: 'relative',
+  },
+  // 초록색 배경과 회색 배경의 경계 라운드 처리용 전환 뷰
+  roundedTransition: {
+    height: 50,
+    backgroundColor: '#f9f9f9',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    zIndex: 10,
+    marginTop: 3, // 위의 초록 영역을 살짝 덮으면서 15px 더 아래로 이동
+    marginBottom: -6, // 아래 섹션과 간격 없이 맞닿도록 조정 (겹침 완화)
   },
   profileCard: {
     backgroundColor: 'transparent',
@@ -545,7 +634,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 28,
     padding: 16,
-    marginHorizontal: 12,
+    paddingLeft: 11, // left -5px
+    paddingTop: 11,  // up -5px
+    marginHorizontal: 26, // keep card bounds; edges controlled by section padding
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -564,6 +655,7 @@ const styles = StyleSheet.create({
     color: '#323232',
     textAlign: 'left',
     height: 27,
+    marginTop: -5,
   },
   profileHandle: {
     width: 86,
@@ -573,7 +665,7 @@ const styles = StyleSheet.create({
     color: '#cdcdcd',
     textAlign: 'left',
     height: 24,
-    marginTop: 4,
+    marginTop: -1,
   },
   profileDescription: {
     width: 218,
@@ -583,7 +675,7 @@ const styles = StyleSheet.create({
     color: '#323232',
     textAlign: 'left',
     height: 24,
-    marginTop: 8,
+    marginTop: 3,
   },
   editButton: {
     backgroundColor: '#f2f2f2',
@@ -613,7 +705,7 @@ const styles = StyleSheet.create({
   
   // 나의 뱃지 섹션
   badgeSection: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
     marginTop: 10,
     marginBottom: 10,
   },
@@ -621,14 +713,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 28,
     padding: 20,
+    paddingLeft: 15, // left -5px
+    paddingTop: 23,  // top space larger like profile
     height: 180,
-    marginHorizontal: 12,
+    marginHorizontal: 26,
   },
   badgeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+    marginTop: 0,
   },
   badgeTitle: {
     width: 116,
@@ -655,6 +750,7 @@ const styles = StyleSheet.create({
     color: '#636363',
     textAlign: 'left',
     marginBottom: 20,
+    marginTop: 0,
   },
   badgeList: {
     flexDirection: 'row',
@@ -711,7 +807,7 @@ const styles = StyleSheet.create({
   
   // 나의 활동 섹션
   activitySection: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
     marginTop: 10,
     marginBottom: 10,
   },
@@ -719,8 +815,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 28,
     padding: 20,
+    paddingLeft: 15, // left -5px
+    paddingTop: 23,  // top space larger like profile
     height: 304,
-    marginHorizontal: 12,
+    marginHorizontal: 26,
     shadowColor: '#000',
     shadowOffset: { width: -1.5, height: 1 },
     shadowOpacity: 0.01,
@@ -737,6 +835,7 @@ const styles = StyleSheet.create({
     color: '#323232',
     textAlign: 'left',
     marginBottom: 20,
+    marginTop: 0,
   },
   activityList: {
     gap: 16,
@@ -769,6 +868,7 @@ const styles = StyleSheet.create({
     color: '#323232',
     textAlign: 'left',
     marginLeft: -130,
+    marginTop: -5, // texts +5px up additionally
   },
   activityIcon: {
     width: 24,

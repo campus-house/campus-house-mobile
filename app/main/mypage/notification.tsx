@@ -2,12 +2,47 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
 export default function NotificationSettingsScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const [neighborOn, setNeighborOn] = useState(true);
   const [transferOn, setTransferOn] = useState(false);
   const [snsOn, setSnsOn] = useState(true);
+  
+  // 하단바 스타일을 메인과 동일하게 설정
+  useFocusEffect(
+    React.useCallback(() => {
+      const parent = navigation.getParent?.();
+      parent?.setOptions({ 
+        tabBarStyle: {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 105,
+          width: 393,
+          backgroundColor: '#FFF',
+          borderTopLeftRadius: 25,
+          borderTopRightRadius: 25,
+          borderBottomLeftRadius: 0,
+          borderBottomRightRadius: 0,
+          shadowColor: '#000',
+          shadowOffset: { width: -1.5, height: -4.5 },
+          shadowOpacity: 0.03,
+          shadowRadius: 4,
+          elevation: 5,
+          justifyContent: 'space-evenly',
+          paddingHorizontal: 14,
+        }
+      });
+      return () => {
+        parent?.setOptions({ tabBarStyle: undefined });
+      };
+    }, [navigation])
+  );
+  
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
