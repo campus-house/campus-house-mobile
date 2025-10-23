@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,9 @@ import {
   Dimensions,
   StatusBar,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
 } from 'react-native';
 import { router } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
@@ -32,13 +35,24 @@ export default function ApartmentNewsDetail() {
   const [bookmarkCount, setBookmarkCount] = useState(0);
   const [commentInputVisible, setCommentInputVisible] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [comments, setComments] = useState<Comment[]>([
     {
       id: 1,
       author: '말하는감자',
-      profileImage: require('@/assets/images/squirrel4x.png'),
+      profileImage: require('@/assets/images/ramjui.png'),
       time: '10분 전',
       content: '저요!!!!!!!!!!!!!',
+      replies: [
+        {
+          id: 3,
+          author: '찹쌀떡',
+          profileImage: require('@/assets/images/ramjui.png'),
+          time: '5분 전',
+          content: '저 지금 가겠습니다.',
+        },
+      ],
     },
     {
       id: 2,
@@ -46,24 +60,6 @@ export default function ApartmentNewsDetail() {
       profileImage: require('@/assets/images/ramjui.png'),
       time: '5분 전',
       content: '저 지금 가겠습니다.',
-      replies: [
-        {
-          id: 3,
-          author: '안단팥빵',
-          profileImage: require('@/assets/images/squirrel4x.png'),
-          time: '2분 전',
-          content: '저도 같이 가도 괜찮을까요~~~~?',
-          replies: [
-            {
-              id: 4,
-              author: '빵미오',
-              profileImage: require('@/assets/images/squirrel4x.png'),
-              time: '1분 전',
-              content: '넵넵 좋습니다 ㅎ.ㅎ 세 분 남았어요!',
-            },
-          ],
-        },
-      ],
     },
   ]);
 
@@ -77,6 +73,28 @@ export default function ApartmentNewsDetail() {
     setBookmarkCount(isBookmarked ? bookmarkCount - 1 : bookmarkCount + 1);
   };
 
+  // 전체 댓글 개수 계산 (대댓글 포함)
+  const getTotalCommentCount = () => {
+    return comments.reduce((total, comment) => {
+      return total + 1 + (comment.replies ? comment.replies.length : 0);
+    }, 0);
+  };
+
+  // 키보드 이벤트 리스너
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      keyboardDidShowListener?.remove();
+      keyboardDidHideListener?.remove();
+    };
+  }, []);
+
   const handleCommentSubmit = () => {
     if (commentText.trim()) {
       const newComment: Comment = {
@@ -87,34 +105,49 @@ export default function ApartmentNewsDetail() {
         content: commentText.trim(),
       };
 
-      setComments((prev) => [...prev, newComment]);
+      if (replyingTo) {
+        // 대댓글 추가
+        setComments((prev) =>
+          prev.map((comment) =>
+            comment.id === replyingTo
+              ? {
+                  ...comment,
+                  replies: [...(comment.replies || []), newComment],
+                }
+              : comment
+          )
+        );
+        setReplyingTo(null);
+      } else {
+        // 일반 댓글 추가
+        setComments((prev) => [...prev, newComment]);
+      }
+
       setCommentText('');
       setCommentInputVisible(false);
     }
   };
 
+  const handleReplyPress = (commentId: number) => {
+    setReplyingTo(commentId);
+    setCommentInputVisible(true);
+  };
+
   const renderComment = (comment: Comment, isReply = false, isNestedReply = false) => (
-    <View key={comment.id}>
-      <View
-        style={
-          isReply
-            ? isNestedReply
-              ? styles.commentReplyWrapper2
-              : styles.commentReplyWrapper
-            : styles.commentItem
-        }
-      >
+    <View key={comment.id} style={[styles.commentWrapper, isReply && styles.replyWrapper]}>
+      <View style={styles.commentContainer}>
+        {/* 대댓글 화살표 */}
         {isReply && (
           <View style={styles.replyArrowContainer}>
             <Svg width="20" height="24" viewBox="0 0 20 24" fill="none">
               <Path
-                d="M1.34375 1.11328V16.7462C1.34375 18.4158 2.69721 19.7692 4.36678 19.7692H18.6895"
+                d="M0.850098 0.849609V16.4825C0.850098 18.1521 2.20356 19.5055 3.87313 19.5055H18.1958"
                 stroke="#AAAAAA"
                 strokeWidth="1.7"
                 strokeLinecap="round"
               />
               <Path
-                d="M15.8428 16L18.6775 19.2397C19.0438 19.6583 18.9981 20.2954 18.5757 20.6575L15.8428 23"
+                d="M15.3491 15.7363L18.1839 18.976C18.5502 19.3947 18.5044 20.0318 18.0821 20.3938L15.3491 22.7363"
                 stroke="#AAAAAA"
                 strokeWidth="1.7"
                 strokeLinecap="round"
@@ -122,48 +155,37 @@ export default function ApartmentNewsDetail() {
             </Svg>
           </View>
         )}
-        <View
-          style={
-            isReply
-              ? isNestedReply
-                ? styles.commentItem3
-                : styles.commentItem2
-              : styles.commentItem
-          }
-        >
-          <View
-            style={
-              isReply
-                ? isNestedReply
-                  ? styles.commentAvatarContainer2
-                  : styles.commentAvatarContainer
-                : styles.commentAvatarContainer
-            }
-          >
-            <Image source={comment.profileImage} style={styles.commentAvatar} />
+        
+        {/* 프로필 사진 */}
+        <View style={styles.commentProfileContainer}>
+          <Image source={comment.profileImage} style={styles.commentProfileImage} />
+        </View>
+        
+        {/* 댓글 내용 */}
+        <View style={styles.commentContentContainer}>
+          {/* 닉네임과 시간 */}
+          <View style={styles.commentHeaderRow}>
+            <Text style={styles.commentAuthorName}>{comment.author}</Text>
+            <Text style={styles.commentTimeText}>{comment.time}</Text>
           </View>
-          <View style={styles.commentContent}>
-            <View style={styles.commentHeader}>
-              <View style={styles.commentHeaderLeft}>
-                <Text style={styles.commentAuthor}>{comment.author}</Text>
-                <Text style={styles.commentTime}>{comment.time}</Text>
-              </View>
-            </View>
-            <View style={styles.commentTextRow}>
-              <Text style={styles.commentText}>{comment.content}</Text>
-              {!isReply && (
-                <TouchableOpacity
-                  style={styles.replyButton}
-                  onPress={() => setCommentInputVisible(true)}
-                >
-                  <Text style={styles.replyButtonText}>댓글 달기</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+          
+          {/* 댓글 내용과 댓글 달기 버튼 */}
+          <View style={styles.commentTextRow}>
+            <Text style={styles.commentContentText}>{comment.content}</Text>
+            {!isReply && (
+              <TouchableOpacity 
+                style={styles.replyButton}
+                onPress={() => handleReplyPress(comment.id)}
+              >
+                <Text style={styles.replyButtonText}>댓글 달기</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
-      {comment.replies && comment.replies.map((reply) => renderComment(reply, true, true))}
+      
+      {/* 대댓글들 */}
+      {comment.replies && comment.replies.map((reply) => renderComment(reply, true))}
     </View>
   );
 
@@ -199,7 +221,11 @@ export default function ApartmentNewsDetail() {
       </View>
 
       {/* 스크롤 가능한 메인 콘텐츠 */}
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {/* 메인 이미지 */}
         <View style={styles.imageContainer}>
           <Image
@@ -284,7 +310,7 @@ export default function ApartmentNewsDetail() {
             <View style={styles.commentsHeader}>
               <View style={styles.commentsTitleContainer}>
                 <Text style={styles.commentsTitle}>댓글</Text>
-                <Text style={styles.commentsCount}>{comments.length}</Text>
+                <Text style={styles.commentsCount}>{getTotalCommentCount()}</Text>
               </View>
             </View>
 
@@ -295,52 +321,51 @@ export default function ApartmentNewsDetail() {
                   {renderComment(comment)}
                   {index < comments.length - 1 && (
                     <View style={styles.commentDividerContainer}>
-                      <Svg width="394" height="2" viewBox="0 0 394 2" fill="none">
-                        <Path d="M-10.6562 1L405.709 1.10367" stroke="#F2F2F2" strokeWidth="1" />
+                      <Svg width="393" height="2" viewBox="0 0 393 2" fill="none">
+                        <Path d="M-11.1562 0.5L405.209 0.603665" stroke="#F2F2F2" strokeWidth="1" />
                       </Svg>
                     </View>
                   )}
                 </View>
               ))}
             </View>
-
-            {/* 구분선 */}
-            <View style={styles.commentDividerContainer}>
-              <Svg width="394" height="2" viewBox="0 0 394 2" fill="none">
-                <Path d="M-10.6562 1L405.709 1.10367" stroke="#F2F2F2" strokeWidth="1" />
-              </Svg>
-            </View>
           </View>
         </View>
       </ScrollView>
 
-      {/* 댓글 입력창 */}
-      {commentInputVisible && (
-        <View style={styles.commentInputWrapper}>
-          <View style={styles.commentInputContainer}>
-            <TextInput
-              style={styles.commentInput}
-              placeholder="댓글을 남겨주세요"
-              placeholderTextColor="#AAA"
-              value={commentText}
-              onChangeText={setCommentText}
-              multiline
-            />
-            <TouchableOpacity style={styles.sendButton} onPress={handleCommentSubmit}>
-              <Svg width="28" height="42" viewBox="0 0 28 42" fill="none">
-                <Path
-                  d="M25.6311 19.0528C26.0886 19.2745 25.8985 20.0227 25.381 20.037L4.14152 20.6233C3.90407 20.6299 3.70947 20.4533 3.68172 20.2061L2.39009 8.70309C2.34437 8.29587 2.7542 7.96861 3.10003 8.13617L25.6311 19.0528Z"
-                  fill="#AAAAAA"
-                />
-                <Path
-                  d="M25.6852 22.2231C26.1311 21.9721 25.8999 21.241 25.3808 21.2606L4.14675 22.0609C3.90921 22.0698 3.72396 22.2569 3.70834 22.5036L2.97581 34.0726C2.94989 34.4821 3.38004 34.783 3.71865 34.5924L25.6852 22.2231Z"
-                  fill="#AAAAAA"
-                />
-              </Svg>
-            </TouchableOpacity>
+      {/* 기본 댓글 입력창 */}
+      <View style={[styles.commentInputWrapper, { transform: [{ translateY: -keyboardHeight }] }]}>
+        <View style={styles.commentInputContainer}>
+          {/* 프로필 사진 */}
+          <View style={styles.inputProfileContainer}>
+            <Image source={require('@/assets/images/ramjui.png')} style={styles.inputProfileImage} />
           </View>
+          
+          {/* 댓글 입력 필드 */}
+          <TextInput
+            style={styles.commentInput}
+            placeholder="댓글을 남겨주세요"
+            placeholderTextColor="#AAA"
+            value={commentText}
+            onChangeText={setCommentText}
+            multiline
+          />
+          
+          {/* 보내기 버튼 */}
+          <TouchableOpacity style={[styles.sendButton, commentText.trim() ? styles.sendButtonActive : styles.sendButtonInactive]} onPress={handleCommentSubmit}>
+            <Svg width="28" height="42" viewBox="0 0 28 42" fill="none">
+              <Path
+                d="M25.4832 19.0528C25.9407 19.2745 25.7505 20.0227 25.233 20.037L3.99357 20.6233C3.75612 20.6299 3.56152 20.4533 3.53377 20.2061L2.24214 8.70309C2.19642 8.29587 2.60625 7.96861 2.95208 8.13617L25.4832 19.0528Z"
+                fill={commentText.trim() ? "#FF805F" : "#AAAAAA"}
+              />
+              <Path
+                d="M25.5373 22.2231C25.9832 21.9721 25.752 21.241 25.2328 21.2606L3.9988 22.0609C3.76126 22.0698 3.57601 22.2569 3.56039 22.5036L2.82786 34.0726C2.80194 34.4821 3.2321 34.783 3.5707 34.5924L25.5373 22.2231Z"
+                fill={commentText.trim() ? "#FF805F" : "#AAAAAA"}
+              />
+            </Svg>
+          </TouchableOpacity>
         </View>
-      )}
+      </View>
     </View>
   );
 }
@@ -383,6 +408,9 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: 100,
+  },
   imageContainer: {
     width,
     height: 300,
@@ -422,6 +450,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 2,
+    marginTop: 5,
   },
   authorName: {
     fontSize: 15,
@@ -442,6 +471,7 @@ const styles = StyleSheet.create({
     color: '#636363',
     fontFamily: 'Pretendard',
     lineHeight: 22,
+    marginTop: -3,
   },
   chatButton: {
     display: 'flex',
@@ -509,7 +539,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   commentsSection: {
-    marginTop: 60,
+    marginTop: 40,
     paddingHorizontal: 20,
   },
   commentsHeader: {
@@ -517,11 +547,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
-    marginTop: -20,
+    marginTop: 0,
   },
   commentsTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginLeft: -10,
   },
   commentsTitle: {
     color: '#323232',
@@ -538,55 +570,114 @@ const styles = StyleSheet.create({
     fontStyle: 'normal',
     fontWeight: '600',
     lineHeight: 22.959,
+    marginLeft: 5,
   },
   commentsList: {
     marginBottom: 20,
-    marginTop: 20,
-  },
-  commentItem: {
-    flexDirection: 'row',
-    marginBottom: 16,
-  },
-  commentItem2: {
-    flexDirection: 'row',
-    marginBottom: 16,
-    marginTop: 20,
-  },
-  commentReplyWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 0,
-    marginTop: -15,
-  },
-  replyArrowContainer: {
-    width: 18,
-    height: 22,
-    marginRight: 5,
-    marginTop: 0,
-    alignSelf: 'center',
-  },
-  commentItem3: {
-    flexDirection: 'row',
-    marginBottom: 16,
-    flex: 1,
-  },
-  commentReplyWrapper2: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 0,
     marginTop: 10,
   },
-  commentAvatarContainer: {
-    width: 45,
-    height: 45,
-    flexShrink: 0,
+  commentWrapper: {
+    marginBottom: 16,
+  },
+  replyWrapper: {
+    marginLeft: 20,
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  replyArrowContainer: {
+    width: 20,
+    height: 24,
+    marginRight: 8,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  commentContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  commentProfileContainer: {
+    width: 40,
+    height: 40,
     backgroundColor: '#FF805F',
-    borderRadius: 22.5,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
-  commentAvatarContainer2: {
+  commentProfileImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  commentContentContainer: {
+    flex: 1,
+    marginTop: -2,
+  },
+  commentHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 0,
+    marginTop: 2,
+  },
+  commentAuthorName: {
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 14,
+    fontStyle: 'normal',
+    fontWeight: '500',
+    lineHeight: 24.822,
+    marginRight: 8,
+  },
+  commentTimeText: {
+    color: '#AAA',
+    fontFamily: 'Pretendard',
+    fontSize: 12,
+    fontStyle: 'normal',
+    fontWeight: '400',
+    lineHeight: 24.822,
+  },
+  commentTextRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginTop: -16,
+    position: 'relative',
+  },
+  commentContentText: {
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 14.6,
+    fontStyle: 'normal',
+    fontWeight: '400',
+    lineHeight: 24.822,
+    flex: 1,
+    marginRight: 8,
+    marginTop: 4,
+  },
+  replyButton: {
+    display: 'flex',
+    width: 73,
+    height: 31,
+    padding: 1.212,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12.117,
+    flexShrink: 0,
+    borderRadius: 11.5,
+    backgroundColor: '#F2F2F2',
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  replyButtonText: {
+    color: '#AAA',
+    fontFamily: 'Pretendard',
+    fontSize: 13,
+    fontStyle: 'normal',
+    fontWeight: '500',
+    lineHeight: 17.298,
+  },
+  commentAvatarContainer: {
     width: 45,
     height: 45,
     flexShrink: 0,
@@ -613,12 +704,6 @@ const styles = StyleSheet.create({
   commentHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  commentTextRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: -12,
   },
   commentAuthor: {
     color: '#323232',
@@ -650,33 +735,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 8,
   },
-  replyButton: {
-    display: 'flex',
-    width: 73,
-    height: 31,
-    padding: 1.212,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12.117,
-    flexShrink: 0,
-    borderRadius: 11.5,
-    backgroundColor: '#F2F2F2',
-    alignSelf: 'flex-start',
-  },
-  replyButtonText: {
-    color: '#AAA',
-    fontFamily: 'Pretendard',
-    fontSize: 13,
-    fontStyle: 'normal',
-    fontWeight: '500',
-    lineHeight: 17.298,
-  },
   commentDividerContainer: {
-    width: 416.365,
-    height: 0,
-    transform: [{ rotate: '0.014deg' }],
-    flexShrink: 0,
     marginTop: 20,
+    marginBottom: 20,
+    paddingHorizontal: 20,
     alignSelf: 'center',
   },
   commentInputWrapper: {
@@ -686,12 +748,11 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: '#FFF',
     paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#F2F2F2',
+    paddingTop: 20,
+    paddingBottom: 40,
   },
   commentInputContainer: {
-    width: 361,
+    width: '100%',
     height: 65,
     flexShrink: 0,
     borderRadius: 27.715,
@@ -699,6 +760,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
+  },
+  inputProfileContainer: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#FF805F',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  inputProfileImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
   commentInput: {
     flex: 1,
@@ -709,11 +784,22 @@ const styles = StyleSheet.create({
     fontStyle: 'normal',
     fontWeight: '500',
     lineHeight: 21.495,
-    maxHeight: 50,
+    minHeight: 25.536,
+    paddingVertical: 0,
+    textAlignVertical: 'center',
   },
   sendButton: {
     width: 27.39,
     height: 41.513,
     marginLeft: 10,
+  },
+  commentInputActive: {
+    color: '#323232',
+  },
+  sendButtonActive: {
+    // 활성화 상태 (주황색)
+  },
+  sendButtonInactive: {
+    // 비활성화 상태 (회색)
   },
 });

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import { COLORS } from '@/constants/colors';
+import { router } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 
 export default function NewScreen3() {
@@ -32,7 +33,7 @@ export default function NewScreen3() {
     >
       {/* 뒤로가기 버튼 */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Svg width="13" height="22" viewBox="0 0 13 22" fill="none">
             <Path 
               d="M10.9121 1.13647L1.28829 10.4639C1.08343 10.6624 1.08595 10.9919 1.29383 11.1872L10.9121 20.2274" 
@@ -97,10 +98,16 @@ export default function NewScreen3() {
 
         {/* 아이디찾기/비밀번호찾기와 회원가입 */}
         <View style={styles.linksRow}>
-          <TouchableOpacity style={styles.findLinks}>
-            <Text style={styles.findLinksText}>아이디 찾기 / 비밀번호 찾기</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.signupLink}>
+          <View style={styles.findLinksContainer}>
+            <TouchableOpacity style={styles.findLinks} onPress={() => router.push('/auth/find-id')}>
+              <Text style={styles.findLinksText}>아이디 찾기</Text>
+            </TouchableOpacity>
+            <Text style={styles.separator}> / </Text>
+            <TouchableOpacity style={styles.findLinks} onPress={() => router.push('/auth/find-password')}>
+              <Text style={styles.findLinksText}>비밀번호 찾기</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity style={styles.signupLink} onPress={() => router.push('/auth/signup')}>
             <Text style={styles.signupText}>회원가입</Text>
           </TouchableOpacity>
         </View>
@@ -108,7 +115,7 @@ export default function NewScreen3() {
 
       {/* 로그인 버튼 */}
       <View style={[styles.buttonContainer, keyboardVisible && styles.buttonContainerKeyboard]}>
-        <TouchableOpacity style={styles.loginButton}>
+        <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/main')}>
           <Text style={styles.loginButtonText}>로그인하기</Text>
         </TouchableOpacity>
       </View>
@@ -125,6 +132,8 @@ const styles = StyleSheet.create({
     paddingTop: 100, // 아래로 내림
     paddingHorizontal: 20,
     paddingBottom: 20,
+    alignItems: 'flex-start', // 왼쪽 정렬
+    paddingLeft: 32, // 왼쪽 32px
   },
   backButton: {
     width: 10,
@@ -172,8 +181,13 @@ const styles = StyleSheet.create({
     marginBottom: 50,
     paddingRight: 20, // 회원가입을 왼쪽으로 이동
   },
-  findLinks: {
+  findLinksContainer: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  findLinks: {
+    // flex: 1 제거
   },
   findLinksText: {
     color: '#AAA',
@@ -183,6 +197,15 @@ const styles = StyleSheet.create({
     fontStyle: 'normal',
     fontWeight: '400',
     lineHeight: 24.177,
+  },
+  separator: {
+    color: '#AAA',
+    fontFamily: 'Pretendard',
+    fontSize: 14,
+    fontStyle: 'normal',
+    fontWeight: '400',
+    lineHeight: 24.177,
+    marginHorizontal: 4,
   },
   signupLink: {
     alignSelf: 'flex-end',
