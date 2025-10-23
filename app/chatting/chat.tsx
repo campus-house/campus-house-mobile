@@ -146,23 +146,16 @@ export default function ChatScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: '#fff' }]}
+      style={[styles.container, { backgroundColor: '#fff', paddingBottom: 100 }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
-      <ScrollView
-        ref={scrollViewRef}
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 20, flexGrow: 1 }}
-        showsVerticalScrollIndicator={true}
-        scrollEnabled={true}
-        bounces={true}
-      >
-        <View style={{ width: '100%', paddingTop: 82, paddingBottom: 12, paddingHorizontal: 20 }}>
+      {/* 고정 헤더 */}
+      <View style={{ width: '100%', paddingTop: 82, paddingBottom: 12, paddingHorizontal: 20, backgroundColor: '#fff', zIndex: 100 }}>
           <View
             style={{
               position: 'absolute',
-              left: 5,
+              left: 17,
               top: 87,
               height: 32,
               width: 32,
@@ -202,8 +195,8 @@ export default function ChatScreen() {
           <Pressable
             style={{
               position: 'absolute',
-              right: 5,
-              top: 89,
+              right: 29,
+              top: 92,
               height: 22,
               width: 22,
               justifyContent: 'center',
@@ -213,7 +206,7 @@ export default function ChatScreen() {
           >
             <Image
               source={require('@/assets/images/jum3.png')}
-              style={{ width: 18, height: 15 }}
+              style={{ width: 23, height: 20 }}
               resizeMode="contain"
             />
           </Pressable>
@@ -224,7 +217,6 @@ export default function ChatScreen() {
               marginTop: 4,
               fontSize: 14,
               lineHeight: 21,
-              fontWeight: '300',
               fontFamily: 'Pretendard',
               color: '#323232',
               textAlign: 'center',
@@ -234,7 +226,7 @@ export default function ChatScreen() {
           </Text>
 
           {/* 도넛 나눔할게요 카드 */}
-          <View style={styles.offerBox}>
+          <View style={[styles.offerBox, { transform: [{ translateX: -3 }] }]}>
             <Image
               source={require('@/assets/images/donut.png')}
               style={styles.offerImage}
@@ -247,9 +239,22 @@ export default function ChatScreen() {
 
           {/* 구분선 */}
           <View style={styles.offerSeparator} />
+        </View>
 
-          {/* 공지 박스 */}
-          <View style={styles.noticeBox}>
+        {/* 스크롤 가능한 콘텐츠 */}
+        <ScrollView
+          ref={scrollViewRef}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: 20, paddingTop: -30, flexGrow: 1, minHeight: '150%' }}
+          showsVerticalScrollIndicator={true}
+          scrollEnabled={true}
+          bounces={false}
+          horizontal={false}
+          directionalLockEnabled={true}
+        >
+          <View style={{ width: '100%', paddingHorizontal: 20 }}>
+            {/* 공지 박스 */}
+          <View style={[styles.noticeBox, { transform: [{ translateY: -13 }] }]}>
             <Image
               source={require('@/assets/images/loudspeaker.png')}
               style={styles.noticeIcon}
@@ -259,7 +264,7 @@ export default function ChatScreen() {
           </View>
 
           {/* 날짜 텍스트 */}
-          <Text style={styles.dateText}>2025년 9월 1일</Text>
+          <Text style={[styles.dateText, { transform: [{ translateY: -8 }] }]}>2025년 9월 1일</Text>
 
           {/* 첫 채팅 버블 - 라쿤 */}
           <View style={[styles.chatRow, { paddingLeft: -22, paddingRight: 50, marginTop: 19 }]}>
@@ -268,7 +273,7 @@ export default function ChatScreen() {
                 console.log('라쿤 아바타 클릭됨 - 프로필 화면으로 이동');
                 setShowUserProfile(true);
               }}
-              style={{ padding: 10 }}
+              style={{ padding: 10, transform: [{ translateX: -5 }] }}
               activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
@@ -285,19 +290,19 @@ export default function ChatScreen() {
                 />
               </View>
             </TouchableOpacity>
-            <View style={[styles.chatBubbleLeft, { marginTop: 5 }]}>
+            <View style={[styles.chatBubbleLeft, { marginTop: 5, transform: [{ translateX: -10 }] }]}>
               <Text style={styles.chatBubbleText}>안녕하세요~!</Text>
             </View>
           </View>
 
           {/* 두 번째 채팅 버블 - 라쿤 */}
-          <View style={[styles.chatRow, { paddingLeft: 13, paddingRight: 20, marginTop: 8 }]}>
+          <View style={[styles.chatRow, { paddingLeft: 13, paddingRight: 20, marginTop: 3 }]}>
             <View style={{ width: 54 }} />
             <View style={styles.bubbleWithTime}>
-              <View style={[styles.chatBubbleLeft, { marginLeft: -10, marginRight: -10 }]}>
+              <View style={[styles.chatBubbleLeft, { marginLeft: -10, marginRight: -10, transform: [{ translateX: 14 }] }]}>
                 <Text style={styles.chatBubbleTextWide}>도넛 다 나눔하셨나요?</Text>
               </View>
-              <Text style={[styles.timeTextSmallRight, { marginLeft: 10, marginBottom: 0 }]}>
+              <Text style={[styles.timeTextSmallRight, { marginLeft: 10, marginBottom: 0, transform: [{ translateX: 26 }] }]}>
                 오후 18:24
               </Text>
             </View>
@@ -307,7 +312,7 @@ export default function ChatScreen() {
           <View
             style={[
               styles.chatRow,
-              { paddingLeft: 50, paddingRight: -22, marginTop: 13, justifyContent: 'flex-end' },
+              { paddingLeft: 50, paddingRight: -22, marginTop: 18, justifyContent: 'flex-end' },
             ]}
           >
             <View style={styles.bubbleWithTimeUser}>
@@ -324,7 +329,7 @@ export default function ChatScreen() {
           <View
             style={[
               styles.chatRow,
-              { paddingLeft: 50, paddingRight: -22, marginTop: 13, justifyContent: 'flex-end' },
+              { paddingLeft: 50, paddingRight: -22, marginTop: 8, justifyContent: 'flex-end' },
             ]}
           >
             <View style={styles.bubbleWithTimeUser}>
@@ -338,13 +343,13 @@ export default function ChatScreen() {
           </View>
 
           {/* 라쿤 마지막 메시지 */}
-          <View style={[styles.chatRow, { paddingLeft: -22, paddingRight: 50, marginTop: 13 }]}>
+          <View style={[styles.chatRow, { paddingLeft: -22, paddingRight: 50, marginTop: 18 }]}>
             <TouchableOpacity
               onPress={() => {
                 console.log('라쿤 아바타 클릭됨 - 프로필 화면으로 이동');
                 setShowUserProfile(true);
               }}
-              style={{ padding: 10 }}
+              style={{ padding: 10, transform: [{ translateX: -5 }] }}
               activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
@@ -357,10 +362,10 @@ export default function ChatScreen() {
               </View>
             </TouchableOpacity>
             <View style={styles.bubbleWithTime}>
-              <View style={styles.chatBubbleLeft}>
+              <View style={[styles.chatBubbleLeft, { transform: [{ translateX: -10 }] }]}>
                 <Text style={styles.chatBubbleTextWide}>네!!!! 금방 가겠습니다!!</Text>
               </View>
-              <Text style={[styles.timeTextSmallRight, { marginLeft: 10, marginBottom: 0 }]}>
+              <Text style={[styles.timeTextSmallRight, { marginLeft: 10, marginBottom: 0, transform: [{ translateX: -15 }] }]}>
                 오후 18:26
               </Text>
             </View>
@@ -597,7 +602,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 16,
     borderRadius: 10,
-    marginHorizontal: 15,
+    marginHorizontal: 10,
   },
   noticeIcon: {
     width: 22,
@@ -726,10 +731,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     paddingHorizontal: 16,
     paddingVertical: 10,
+    paddingBottom: 50,
     backgroundColor: '#fff',
     flexDirection: 'row',
     alignItems: 'center',
     zIndex: 100,
+     transform: [{ translateY: 40 }],
   },
   plusButton: {
     width: 51,
