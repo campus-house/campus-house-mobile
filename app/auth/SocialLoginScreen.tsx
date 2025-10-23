@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   ScrollView,
   useWindowDimensions,
 } from 'react-native';
@@ -16,12 +15,14 @@ import { NaverLoginButton } from '@/components/Button/NaverLoginButton';
 import { GoogleLoginButton } from '@/components/Button/GoogleLoginButton';
 import PermissionModal from '@/components/Modal/PermissionModal';
 import { useLayoutScale, LAYOUT_SIZES } from '@/utils/layout';
+import AppTitle from '@/components/Icon/AppTitle';
+import HouseLogo from '@/components/Icon/HouseLogo';
 
 // Title block from design
 const TITLE = LAYOUT_SIZES.TITLE.SPLASH;
 
 // Buttons
-const BTN = { H: 57, GAP: 14 };
+const BTN = { H: 58, GAP: 14 };
 
 // Vertical gaps from spec
 const GAP_TITLE_TO_BTN1 = 252.51; // title bottom -> first button top
@@ -32,13 +33,13 @@ export default function SocialLoginScreen() {
   const [showPermissionModal, setShowPermissionModal] = useState(true);
 
   const handleKakaoLogin = () => {
-    router.push('/main/mypage');
+    router.push('/main');
   };
   const handleNaverLogin = () => {
-    router.push('/main/mypage');
+    router.push('/main');
   };
   const handleGoogleLogin = () => {
-    router.push('/main/mypage');
+    router.push('/main');
   };
   const goToIdLogin = () => router.push('/auth/login');
   const goToSignup = () => router.push('/auth/signup');
@@ -55,21 +56,24 @@ export default function SocialLoginScreen() {
 
       <ScrollView
         contentContainerStyle={{
-          paddingTop: insets.top + y(TITLE.Y - figma.SAFE_TOP), // start so title sits near design
+          paddingTop: insets.top + y(TITLE.Y - figma.SAFE_TOP - 66), // 전체 내용 63 위로
           paddingHorizontal: 40,
           paddingBottom: insets.bottom + 24,
         }}
         keyboardShouldPersistTaps="handled"
       >
+        {/* House Icon */}
+        <View style={{ alignSelf: 'center', marginBottom: 24 }}>
+          <HouseLogo width={80 * 1.05} height={43 * 1.03} />
+        </View>
+
         {/* Title */}
-        <Image
-          source={require('@/assets/images/app_title.png')}
-          style={{ width: TITLE.W, height: TITLE.H, alignSelf: 'center' }}
-          resizeMode="contain"
-        />
+        <View style={{ alignSelf: 'center' }}>
+          <AppTitle width={214.92 * 1.05} height={32.2526 * 1.05} />
+        </View>
 
         {/* Spacer: Title -> First button */}
-        <View style={{ height: y(GAP_TITLE_TO_BTN1) }} />
+        <View style={{ height: y(90) }} />
 
         {/* Buttons */}
         <KakaoLoginButton style={{ height: BTN.H, width: '100%' }} onPress={handleKakaoLogin} />
@@ -83,7 +87,7 @@ export default function SocialLoginScreen() {
         />
 
         {/* Bottom links */}
-        <View style={{ height: y(GAP_GOOGLE_TO_LINKS) }} />
+        <View style={{ height: y(GAP_GOOGLE_TO_LINKS + 2.2) }} />
         <View style={styles.linksRow}>
           <View style={[styles.linkCol, styles.linkColLeft]}>
             <TouchableOpacity onPress={goToIdLogin} style={[styles.linkBtn, { marginRight: 1 }]}>

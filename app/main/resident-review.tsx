@@ -33,7 +33,7 @@ export default function ResidentReview() {
       date: '2025.09.01',
       title: '1년동안 거주하실 분 찾아요!',
       content: '1년 동안 아이파크 거주하실 까요?',
-      image: require('@/assets/images/house-logo.png'),
+      image: require('@/assets/images/donut.png'),
       comments: 3,
       likes: 12,
       bookmarks: 0,

@@ -6,7 +6,9 @@ import Vector124 from '@/components/Vector124';
 import Vector123 from '@/components/Vector123';
 import Vector119 from '@/components/Vector119';
 import { router } from 'expo-router';
-import Svg, { Path, Circle } from 'react-native-svg';
+import BellIcon from '@/components/Icon/BellIcon';
+import ShopIcon from '@/components/Icon/ShopIcon';
+import SettingIcon from '@/components/Icon/SettingIcon';
 
 export default function MyPageScreen() {
   const { width: screenWidth } = Dimensions.get('window');
@@ -48,6 +50,9 @@ export default function MyPageScreen() {
   // 하드코딩된 프로필 데이터
   const name = '방미오';
   const intro = '이번에 이사온 미오라고해요!! ^~^';
+  
+  // 알림 상태 (true면 주황색 점 표시)
+  const [hasNotification, setHasNotification] = React.useState(true);
 
 
   return (
@@ -57,8 +62,8 @@ export default function MyPageScreen() {
         <View style={styles.leftTopBackground}><Vector124 /></View>
         <View style={styles.rightTopBackground}><Vector123 /></View>
       </View>
-      <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 60, paddingBottom: 100 }}>
+      <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 60, paddingBottom: 120 }}>
         {/* 상단 헤더 영역 */}
         <View style={styles.headerSection}>
           {/* 주소 정보 */}
@@ -69,20 +74,19 @@ export default function MyPageScreen() {
           
           {/* 우측 아이콘들 */}
           <View style={styles.headerIcons}>
-            <TouchableOpacity style={[styles.iconButton, styles.bellWrapper]} onPress={() => router.push('/main/mypage/alerts')}>
-              <Image source={require('@/assets/images/bell.png')} style={[styles.headerIcon, { width: 22, height: 22 }]} resizeMode="contain" />
-              <View style={styles.bellBadge} />
+            <TouchableOpacity style={[styles.iconButton, styles.iconWrapper]} onPress={() => router.push('/main/mypage/alerts')}>
+              <BellIcon hasNotification={hasNotification} />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.iconButton, styles.bellWrapper]}>
-              <Image source={require('@/assets/images/shop.png')} style={[styles.headerIcon, { width: 37, height: 37 }]} resizeMode="contain" />
+            <TouchableOpacity style={[styles.iconButton, styles.iconWrapper]}>
+              <ShopIcon />
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.iconButton, styles.bellWrapper, { zIndex: 10000 }]}
+              style={[styles.iconButton, styles.iconWrapper, { zIndex: 10000 }]}
               activeOpacity={0.7}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               onPress={() => router.push('/main/mypage/settings')}
             >
-              <Image source={require('@/assets/images/setting.png')} style={[styles.headerIcon, { width: 37, height: 37 }]} resizeMode="contain" />
+              <SettingIcon />
             </TouchableOpacity>
           </View>
         </View>
@@ -140,7 +144,6 @@ export default function MyPageScreen() {
           <View style={styles.inviteButtonContainer}>
             <TouchableOpacity style={styles.inviteButton}>
               <Text style={styles.inviteButtonText}>친구 초대하기</Text>
-              <Text style={styles.inviteButtonLabel}>친구 초대하기</Text>
             </TouchableOpacity>
             {/* 툴팁 */}
             <View style={styles.tooltip}>
@@ -317,18 +320,36 @@ const styles = StyleSheet.create({
   leftTopBackground: {
     position: 'absolute',
     left: 0,
-    width: '90%',
+    width: '75%',
     height: '100%',
     overflow: 'hidden',
     transform: [{ translateY: -400 }],
   },
   rightTopBackground: {
     position: 'absolute',
-    right: -190,
-    width: '70%',
+    left: '75%',
+    width: '25%',
     height: '100%',
     overflow: 'hidden',
-    transform: [{ translateY: -400 }],
+    transform: [{ translateY: -400 }, { translateX: -5 }],
+  },
+  borderLineContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    pointerEvents: 'none',
+    zIndex: 1000,
+  },
+  borderLine: {
+    position: 'absolute',
+    left: '75%',
+    top: 0,
+    bottom: 73,
+    width: 2,
+    backgroundColor: '#FFE19066',
+    transform: [{ translateX: -5 }],
   },
   
   // 상단 헤더 영역
@@ -337,8 +358,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     paddingLeft: 26,
-    paddingRight: 26,
-    paddingTop: 20,
+    paddingRight: 29,
+    paddingTop: 10,
     paddingBottom: 10,
     backgroundColor: 'transparent',
     zIndex: 5000,
@@ -355,6 +376,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontFamily: 'Pretendard',
     color: '#636363',
+    paddingLeft: 2,
     textAlign: 'left',
   },
   addressSubtitle: {
@@ -365,18 +387,30 @@ const styles = StyleSheet.create({
     color: '#636363',
     textAlign: 'left',
     marginTop: 8,
+    paddingLeft: 2,
   },
   headerIcons: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: -5,
+    gap: 10,
   },
   iconButton: {
-    marginLeft: 16,
+    marginLeft: 0,
   },
   headerIcon: {
     width: 20,
     height: 20,
+  },
+  iconWrapper: {
+    width: 35.544,
+    height: 35.544,
+    borderRadius: 17.772,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    flexShrink: 0,
   },
   bellWrapper: {
     width: 39,
@@ -400,7 +434,7 @@ const styles = StyleSheet.create({
   // 라쿤 캐릭터와 배경
   characterSection: {
     position: 'relative',
-    height: 770,
+    height: 700,
     marginTop: 20,
     overflow: 'visible',
     pointerEvents: 'box-none',
@@ -417,44 +451,45 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     top: -400,
-    width: '90%',
+    width: '75%',
     height: 650,
   },
   rightWallContainer: {
     position: 'absolute',
-    right: -190,
+    left: '75%',
     top: -400,
-    width: '70%',
+    width: '25%',
     height: 590,
+    transform: [{ translateX: -5 }],
   },
   bottomWallContainer: {
     position: 'absolute',
-    left: 0,
+    left: -50,
     right: 0,
-    bottom: 70,
+    bottom: 20,
     height: 800,
   },
   characterContainer: {
     position: 'absolute',
-    top: -250,
+    top: -265,
     left: 0,
     right: 0,
     alignItems: 'center',
     zIndex: 1000,
-    transform: [{ translateX: 90 }],
+    transform: [{ translateX: 80 }],
     // 라쿤 레이어가 아래 UI 터치를 막지 않도록 비활성화
     pointerEvents: 'none',
   },
   characterImage: {
-    width: 825,
-    height: 825,
+    width: 750,
+    height: 750,
   },
   
   // 보유 리워드/하트 카드
   rewardSection: {
     paddingHorizontal: 26,
-    marginTop: -360,
-    zIndex: 20,
+    marginTop: -364,
+    zIndex: 100,
   },
   rewardCards: {
     flexDirection: 'row',
@@ -529,14 +564,15 @@ const styles = StyleSheet.create({
   },
   inviteButtonContainer: {
     position: 'relative',
-    marginTop: 0,
+    marginTop: -5,
   },
   inviteButton: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    paddingVertical: 21,
-    paddingHorizontal: 20,
-    minHeight: 41,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    width: 336,
+    height: 46,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -545,19 +581,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
-    width: '100%',
-    marginHorizontal: 26,
+    flexShrink: 0,
   },
   inviteButtonText: {
-    width: 92,
     fontSize: 15,
     lineHeight: 22,
     fontWeight: '600',
     fontFamily: 'Pretendard',
     color: '#636363',
-    textAlign: 'left',
+    textAlign: 'center',
     zIndex: 1,
-    marginTop: 20,
   },
   inviteButtonLabel: {
     position: 'absolute',
@@ -605,23 +638,24 @@ const styles = StyleSheet.create({
   // 프로필 정보 섹션
   profileSection: {
     paddingHorizontal: 0,
-    marginTop: -12,
+    marginTop: -80,
     marginBottom: 10,
     backgroundColor: 'transparent',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    zIndex: 40,
+    zIndex: 100,
     position: 'relative',
   },
   // 초록색 배경과 회색 배경의 경계 라운드 처리용 전환 뷰
   roundedTransition: {
-    height: 50,
+    height: 118,
     backgroundColor: '#f9f9f9',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    zIndex: 10,
-    marginTop: 3, // 위의 초록 영역을 살짝 덮으면서 15px 더 아래로 이동
+    zIndex: 100,
+    marginTop: 33, // 친구 초대하기 버튼과의 여백 증가
     marginBottom: -6, // 아래 섹션과 간격 없이 맞닿도록 조정 (겹침 완화)
+    paddingTop: -100, // 영역 내 첫 번째 카드의 상단 여백 줄임
   },
   profileCard: {
     backgroundColor: 'transparent',
@@ -633,15 +667,12 @@ const styles = StyleSheet.create({
   profileWhiteCard: {
     backgroundColor: '#fff',
     borderRadius: 28,
+    width: 344,
+    height: 122,
     padding: 16,
     paddingLeft: 11, // left -5px
     paddingTop: 11,  // up -5px
     marginHorizontal: 26, // keep card bounds; edges controlled by section padding
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 6,
   },
   profileInfo: {
     flex: 1,

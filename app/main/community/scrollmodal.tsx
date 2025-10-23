@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,13 @@ import {
   ScrollView,
   Dimensions,
   Image,
+  PanResponder,
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { router } from 'expo-router';
 import { BackIcon } from '@/components/Icon/BackIcon';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLayoutScale } from '@/utils/layout';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -31,21 +34,77 @@ type Post = {
 
 type Props = {
   showBackButton: boolean;
-  cardPosition: number;
-  pan: Animated.ValueXY;
-  panResponder: any;
-  onScroll: (e: any) => void;
   posts: Post[];
 };
 
 export default function ScrollModal({
   showBackButton,
-  cardPosition,
-  pan,
-  panResponder,
-  onScroll,
   posts,
 }: Props) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const modalHeightAnim = useRef(new Animated.Value(screenHeight * 0.18)).current;
+  const { y, insets, figma } = useLayoutScale();
+  
+  // 모달 높이 상수 (3개 스냅 위치)
+  const MIN_HEIGHT = screenHeight * 0.16; // 18% - 시작/최하단 위치
+  const MID_HEIGHT = screenHeight * 0.4; // 40% - 중간 위치
+  const MAX_HEIGHT = screenHeight; // 100% - 최대 위치
+  
+  useEffect(() => {
+    modalHeightAnim.setValue(MIN_HEIGHT);
+    setIsExpanded(false); // 명시적으로 false로 초기화
+  }, []);
+  
+  // PanResponder 설정 - 드래그로 모달 높이 조절
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        return Math.abs(gestureState.dy) > 5;
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        // 드래그 중 - 높이 동적 조절 (PropertyModal 방식)
+        if (gestureState.dy < 0) {
+          // 위로 드래그하면 높이 증가
+          const dragRatio = Math.abs(gestureState.dy) / (screenHeight * 0.85);
+          const newHeight = MIN_HEIGHT + (MAX_HEIGHT - MIN_HEIGHT) * Math.min(dragRatio, 1);
+          modalHeightAnim.setValue(newHeight);
+        } else {
+          // 아래로 드래그하면 높이 감소
+          modalHeightAnim.setValue(MIN_HEIGHT);
+        }
+      },
+            onPanResponderRelease: (evt, gestureState) => {
+              const dragDistance = gestureState.dy;
+              
+              if (dragDistance < -screenHeight * 0.27) {
+                // 27% 이상 위로 드래그: 100%로 스냅 (PropertyModal과 동일)
+                setIsExpanded(true);
+                Animated.timing(modalHeightAnim, {
+                  toValue: MAX_HEIGHT,
+                  duration: 300,
+                  useNativeDriver: false,
+                }).start();
+              } else if (dragDistance > screenHeight * 0.23) {
+                // 23% 이상 아래로 드래그: 15%로 스냅 (PropertyModal과 동일)
+                setIsExpanded(false);
+                Animated.timing(modalHeightAnim, {
+                  toValue: MIN_HEIGHT,
+                  duration: 300,
+                  useNativeDriver: false,
+                }).start();
+              } else {
+                // 그 외: 15%로 스냅 (PropertyModal과 동일)
+                setIsExpanded(false);
+                Animated.timing(modalHeightAnim, {
+                  toValue: MIN_HEIGHT,
+                  duration: 300,
+                  useNativeDriver: false,
+                }).start();
+              }
+            },
+    })
+  ).current;
+  
   const renderPost = (post: Post) => (
     <TouchableOpacity
       key={post.id}
@@ -135,30 +194,39 @@ export default function ScrollModal({
   );
 
   return (
-    <>
-      {showBackButton && (
-        <View style={styles.backButtonContainer}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <BackIcon />
-          </TouchableOpacity>
-        </View>
-      )}
-
+    <View style={styles.modalOverlay} pointerEvents="box-none">
       <Animated.View
         style={[
-          styles.draggableCard,
+          styles.modalContainer,
           {
-            top: cardPosition,
-            transform: pan.getTranslateTransform(),
+            height: modalHeightAnim,
           },
         ]}
       >
+        {/* 헤더 - 확장된 상태에서만 표시 */}
+        {isExpanded && (
+          <View style={styles.topNavBar}>
+            <TouchableOpacity 
+              style={[
+                styles.backButton, 
+                { 
+                  top: insets.top + y(60 - figma.SAFE_TOP),
+                  left: 20
+                }
+              ]} 
+              onPress={() => router.push('/main/community')}
+            >
+              <BackIcon />
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View
-          style={[styles.header, showBackButton && { marginTop: 80 }]}
+          style={[styles.header, isExpanded && { marginTop: 80 }]}
           {...panResponder.panHandlers}
         >
-          {!showBackButton && <View style={styles.dragHandle} />}
-          <Text style={[styles.headerTitle, showBackButton && styles.headerTitleFullScreen]}>
+          {!isExpanded && <View style={styles.dragHandle} />}
+          <Text style={[styles.headerTitle, isExpanded && styles.headerTitleFullScreen]}>
             질문 게시판
           </Text>
         </View>
@@ -211,7 +279,6 @@ export default function ScrollModal({
         <ScrollView
           style={styles.postsContainer}
           showsVerticalScrollIndicator={false}
-          onScroll={onScroll}
           scrollEventThrottle={16}
           bounces={true}
           scrollEnabled={true}
@@ -220,23 +287,51 @@ export default function ScrollModal({
           <View style={styles.communityPosts}>{posts.map(renderPost)}</View>
         </ScrollView>
       </Animated.View>
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  backButtonContainer: { position: 'absolute', top: 75, left: 20, zIndex: 1000 },
-  backButton: { padding: 8, backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: 20 },
-  draggableCard: {
+  topNavBar: {
+    width: screenWidth,
+    height: 113,
+    backgroundColor: '#FFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    zIndex: 10,
     position: 'absolute',
+    top: 0,
+  },
+  backButton: {
+    position: 'absolute',
+    left: 31,
+    width: 44,
+    height: 60,
+    padding: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 10000,
+  },
+  modalContainer: {
+    position: 'absolute',
+    bottom: 0,
     left: 0,
     right: 0,
     width: screenWidth,
-    height: screenHeight + 100,
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    zIndex: 10,
+    borderTopLeftRadius: 34.5,
+    borderTopRightRadius: 34.5,
+    zIndex: 10001,
     shadowColor: 'rgba(194, 224, 242, 0.20)',
     shadowOffset: { width: 0, height: -12 },
     shadowOpacity: 1,
@@ -248,8 +343,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 20,
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
+    borderTopLeftRadius: 34.5,
+    borderTopRightRadius: 34.5,
     alignItems: 'flex-start',
   },
   headerTitle: {
@@ -266,7 +361,8 @@ const styles = StyleSheet.create({
     height: 4,
     backgroundColor: '#CDCDCD',
     borderRadius: 2,
-    marginBottom: 32,
+    marginBottom: 8,
+    marginTop: -8,
     alignSelf: 'center',
   },
   postsContainer: { flex: 1, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 300 },

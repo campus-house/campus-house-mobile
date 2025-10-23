@@ -1,39 +1,130 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
-  Dimensions,
-  Animated,
   ScrollView,
   Image,
+  Dimensions,
+  Animated,
+  PanResponder,
+  TouchableWithoutFeedback,
 } from 'react-native';
-import { PropertyMarker as PropertyMarkerType } from '@/src/types/property';
+import Svg, { Path, Circle, Rect, Mask } from 'react-native-svg';
 import { COLORS } from '@/constants/colors';
-import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { router } from 'expo-router';
+import { PropertyMarker as PropertyMarkerType } from '@/src/types/property';
+import { Portal } from 'react-native-portalize';
 
 const { width, height } = Dimensions.get('window');
 
 type TabType = '실거주자 후기' | '기본 정보' | '질문하기' | '양도';
 
-interface PropertyModalProps {
-  visible: boolean;
-  property: PropertyMarkerType | null;
+interface BuildingDetailModalProps {
+  isVisible: boolean;
   onClose: () => void;
+  property?: PropertyMarkerType | null;
+  onHeightChange?: (heightRatio: number) => void;
 }
 
-export const PropertyModal: React.FC<PropertyModalProps> = ({ visible, property, onClose }) => {
-  const translateY = useRef(new Animated.Value(height)).current;
+export default function BuildingDetailModal({ isVisible, onClose, property, onHeightChange }: BuildingDetailModalProps) {
   const [selectedTab, setSelectedTab] = useState<TabType>('실거주자 후기');
-  const [sortModalVisible, setSortModalVisible] = useState(false);
-  const [selectedSort, setSelectedSort] = useState('최신순');
+  const [isExpanded, setIsExpanded] = useState(false);
+  const modalHeightAnim = useRef(new Animated.Value(height * 0.46)).current;
+  
+  // 모달 높이 상수
+  const COLLAPSED_HEIGHT = height * 0.46;
+  const EXPANDED_HEIGHT = height;
 
-  const sortOptions = ['최신순', '오래된 순', '높은 별점 순', '낮은 별점 순'];
+  useEffect(() => {
+    if (isVisible) {
+      // 상태 초기화
+      setIsExpanded(false);
+      setSelectedTab('실거주자 후기');
+      // 아래에서 슬라이드 업 애니메이션
+      modalHeightAnim.setValue(0);
+      Animated.timing(modalHeightAnim, {
+        toValue: COLLAPSED_HEIGHT,
+        duration: 200,
+        useNativeDriver: false,
+      }).start();
+    } else {
+      // 모달이 닫힐 때는 즉시 0으로
+      modalHeightAnim.setValue(0);
+    }
+  }, [isVisible]);
 
-  // 양도 관련 샘플 데이터
+  // 모달 높이 변경 리스너
+  useEffect(() => {
+    if (!isVisible) return;
+    
+    const listenerId = modalHeightAnim.addListener(({ value }) => {
+      // 46% ~ 100% 사이의 비율 계산 (0 ~ 1)
+      const ratio = (value - COLLAPSED_HEIGHT) / (EXPANDED_HEIGHT - COLLAPSED_HEIGHT);
+      const clampedRatio = Math.max(0, Math.min(1, ratio));
+      onHeightChange?.(clampedRatio);
+    });
+
+    return () => {
+      modalHeightAnim.removeListener(listenerId);
+    };
+  }, [isVisible, onHeightChange]);
+
+  // PanResponder 설정 - 드래그로 모달 높이 조절
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        return Math.abs(gestureState.dy) > 5;
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        // 드래그 중 - 높이 동적 조절
+        if (gestureState.dy < 0) {
+          // 위로 드래그하면 높이 증가
+          const dragRatio = Math.abs(gestureState.dy) / (height * 0.54);
+          const newHeight = COLLAPSED_HEIGHT + (EXPANDED_HEIGHT - COLLAPSED_HEIGHT) * Math.min(dragRatio, 1);
+          modalHeightAnim.setValue(newHeight);
+        } else {
+          // 아래로 드래그하면 높이 감소
+          modalHeightAnim.setValue(COLLAPSED_HEIGHT);
+        }
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        const dragDistance = gestureState.dy;
+        
+        if (dragDistance < -height * 0.27) {
+          // 27% 이상 위로 드래그: 100%로 스냅
+          setIsExpanded(true);
+          // 부드러운 애니메이션으로 100%로 이동
+          Animated.timing(modalHeightAnim, {
+            toValue: EXPANDED_HEIGHT,
+            duration: 300,
+            useNativeDriver: false,
+          }).start();
+        } else if (dragDistance > height * 0.23) {
+          // 23% 이상 아래로 드래그: 닫기
+          handleClose();
+        } else {
+          // 그 외: 46%로 스냅
+          setIsExpanded(false);
+          // 부드러운 애니메이션으로 46%로 이동
+          Animated.timing(modalHeightAnim, {
+            toValue: COLLAPSED_HEIGHT,
+            duration: 300,
+            useNativeDriver: false,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
+  const handleClose = () => {
+    setIsExpanded(false);
+    onClose();
+  };
+
+
+  // 복붙된 데이터 (transferData, questionData 등) — 필요하면 props로 넘기셔도 됨
   const transferData = [
     {
       id: 1,
@@ -43,7 +134,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ visible, property,
       date: '2025.09.01',
       title: '1년동안 거주하실 분 찾아요!',
       content: '1년 동안 아이파크 거주하실 까요?',
-      image: require('@/assets/images/house-logo.png'),
+      image: require('@/assets/images/donut.png'),
       comments: 3,
       likes: 12,
       bookmarks: 0,
@@ -61,9 +152,21 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ visible, property,
       likes: 8,
       bookmarks: 1,
     },
+    {
+      id: 3,
+      author: '방미오',
+      profileImage: require('@/assets/images/real-racoon-4x.png'),
+      time: '3시간 전',
+      date: '2025.09.01',
+      title: '도넛 나눔할게요',
+      content: '도넛을 너무 많이 샀어요. 나눔해요!',
+      image: require('@/assets/images/donut.png'),
+      comments: 2,
+      likes: 15,
+      bookmarks: 3,
+    },
   ];
 
-  // 질문하기 관련 샘플 데이터
   const questionData = [
     {
       id: 1,
@@ -87,39 +190,21 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ visible, property,
       likes: 12,
       bookmarks: 1,
     },
+    {
+      id: 3,
+      author: '구운찹쌀떡',
+      profileImage: require('@/assets/images/ramjui.png'),
+      date: '2025.09.01',
+      title: '주변에 맛집이 있나요??',
+      content: '점심을 맨날 같은 곳만 가게 되어서,,, 추천해주세요!',
+      comments: 4,
+      likes: 0,
+      bookmarks: 0,
+    },
   ];
 
-  useEffect(() => {
-    if (visible) {
-      // 모달이 열릴 때 아래에서 위로 올라오는 애니메이션
-      Animated.spring(translateY, {
-        toValue: 0,
-        useNativeDriver: true,
-        tension: 100,
-        friction: 8,
-      }).start();
-    } else {
-      // 모달이 닫힐 때 위에서 아래로 내려가는 애니메이션
-      Animated.timing(translateY, {
-        toValue: height,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [visible]);
-
-  const formatPriceText = () => {
-    if (!property) {
-      return '';
-    }
-    const deposit = property?.price?.deposit ?? 0;
-    const monthly = property?.price?.monthly ?? 0;
-    const depositK = deposit / 1000;
-    return `${depositK}천 / ${monthly}만원`;
-  };
-
-  // 양도 카드 렌더링
-  const renderTransferCard = (transfer: (typeof transferData)[0]) => (
+  // 각 카드 렌더링 함수 (ResidentReview에서 가져온 것과 동일)
+  const renderTransferCard = (transfer: typeof transferData[0]) => (
     <View key={transfer.id} style={styles.transferCard}>
       <View style={styles.transferHeader}>
         <View style={styles.transferAuthorInfo}>
@@ -132,9 +217,8 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ visible, property,
             </View>
             <Text style={styles.transferDate}>{transfer.date}</Text>
           </View>
-        </View>
+        </View>ㄱ
       </View>
-
       <View style={styles.transferContent}>
         <View style={styles.transferContentLeft}>
           <Text style={styles.transferTitle}>{transfer.title}</Text>
@@ -144,9 +228,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ visible, property,
           <Image source={transfer.image} style={styles.transferImage} />
         </View>
       </View>
-
       <View style={styles.transferDivider} />
-
       <View style={styles.transferActions}>
         <View style={styles.transferActionItem}>
           <View style={styles.transferActionIcon}>
@@ -158,6 +240,11 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ visible, property,
                 fill="none"
               />
             </Svg>
+            <View style={styles.transferDotsContainer}>
+              <View style={styles.transferDot} />
+              <View style={styles.transferDot} />
+              <View style={styles.transferDot} />
+            </View>
           </View>
           <Text style={styles.transferActionText}>{transfer.comments}</Text>
         </View>
@@ -187,8 +274,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ visible, property,
     </View>
   );
 
-  // 질문 카드 렌더링
-  const renderQuestionCard = (question: (typeof questionData)[0]) => (
+  const renderQuestionCard = (question: typeof questionData[0]) => (
     <View key={question.id} style={styles.questionCard}>
       <View style={styles.questionHeader}>
         <View style={styles.questionAuthorInfo}>
@@ -203,16 +289,13 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ visible, property,
           </View>
         </View>
       </View>
-
       <View style={styles.questionContent}>
         <View style={styles.questionContentLeft}>
           <Text style={styles.questionTitle}>{question.title}</Text>
           <Text style={styles.questionDescription}>{question.content}</Text>
         </View>
       </View>
-
       <View style={styles.questionDivider} />
-
       <View style={styles.questionActions}>
         <View style={styles.questionActionItem}>
           <View style={styles.questionActionIcon}>
@@ -224,6 +307,11 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ visible, property,
                 fill="none"
               />
             </Svg>
+            <View style={styles.questionDotsContainer}>
+              <View style={styles.questionDot} />
+              <View style={styles.questionDot} />
+              <View style={styles.questionDot} />
+            </View>
           </View>
           <Text style={styles.questionActionText}>{question.comments}</Text>
         </View>
@@ -253,34 +341,35 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ visible, property,
     </View>
   );
 
-  if (!property) {
-    return null;
-  }
+  if (!isVisible) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        {/* 배경 터치 시 모달 닫기 */}
-        <TouchableOpacity style={styles.backgroundTouchable} activeOpacity={1} onPress={onClose} />
+    <Portal>
+      <View style={styles.modalOverlay} pointerEvents="box-none">
+      {/* 배경 영역 - 46% 상태에서만 터치 시 닫힘 */}
+      {!isExpanded && (
+        <TouchableWithoutFeedback onPress={handleClose}>
+          <View style={styles.modalBackground} />
+        </TouchableWithoutFeedback>
+      )}
+      
+      <Animated.View 
+        style={[
+          styles.modalContainer, 
+          { 
+            height: modalHeightAnim,
+          }
+        ]}
+      >
+        {/* 드래그 핸들 - 항상 표시 */}
+        <View style={styles.dragHandle} {...panResponder.panHandlers}>
+          <View style={styles.dragIndicator} />
+        </View>
 
-        {/* 모달 컨텐츠 */}
-        <Animated.View
-          style={[
-            styles.modalContainer,
-            {
-              transform: [{ translateY }],
-            },
-          ]}
-        >
-          {/* 모달 핸들 */}
-          <View style={styles.handleContainer}>
-            <View style={styles.handle} />
-          </View>
-
-          {/* 상단 네비게이션 바 */}
+        {/* 헤더 - 확장된 상태에서만 표시 */}
+        {isExpanded && (
           <View style={styles.topNavBar}>
-            {/* 닫기 버튼 */}
-            <TouchableOpacity style={styles.backButton} onPress={onClose}>
+            <TouchableOpacity style={styles.backButton} onPress={handleClose}>
               <Svg width="13" height="23" viewBox="0 0 13 23" fill="none">
                 <Path
                   d="M11.1836 2L1.55977 11.3274C1.35491 11.5259 1.35744 11.8554 1.56532 12.0508L11.1836 21.0909"
@@ -290,11 +379,9 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ visible, property,
                 />
               </Svg>
             </TouchableOpacity>
-
-            {/* 오른쪽 아이콘들 */}
             <View style={styles.rightIcons}>
-              {/* 스크랩 버튼 */}
               <TouchableOpacity style={styles.scrapButton}>
+                {/* 스크랩 아이콘 등 복붙 */}
                 <Svg width="21" height="26" viewBox="0 0 21 26" fill="none">
                   <Path
                     d="M17.1457 1.59521H3.8019C2.53097 1.59521 1.50104 2.62619 1.50232 3.89711L1.52131 22.7093C1.52238 23.7767 2.5868 24.5164 3.58759 24.1451L10.099 21.7294C10.3322 21.6429 10.5887 21.6427 10.8221 21.7288L17.3815 24.1493C18.3825 24.5186 19.4453 23.778 19.4453 22.711V3.89479C19.4453 2.62477 18.4158 1.59521 17.1457 1.59521Z"
@@ -303,8 +390,6 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ visible, property,
                   />
                 </Svg>
               </TouchableOpacity>
-
-              {/* 점 세개 메뉴 버튼 */}
               <TouchableOpacity style={styles.menuButton}>
                 <Svg width="4" height="16" viewBox="0 0 4 16" fill="none">
                   <Circle cx="1.68359" cy="1.5" r="1.5" fill="#323232" />
@@ -314,504 +399,636 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ visible, property,
               </TouchableOpacity>
             </View>
           </View>
+        )}
 
-          {/* 스크롤 가능한 컨텐츠 */}
-          <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} bounces={true}>
-            {/* 건물 정보 섹션 */}
-            <View style={styles.whiteBox}>
-              {/* 건물 이름 */}
-              <Text style={styles.buildingName}>{property.buildingName}</Text>
+        <ScrollView 
+          style={[styles.scrollView, { marginTop: isExpanded ? 113 : 0 }]} 
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={isExpanded}
+        >
+          {/* 지도 공간 제외하고 흰 배경 박스 부분 */}
+          <View style={styles.whiteBox}>
+            {/* 여기에 기존 ResidentReview에서 흰 카드 내부 전체 JSX를 거의 그대로 넣으면 됩니다 */}
+            
+            {/* 건물 이름, 평점, 별점 등 */}
+            <Text style={styles.buildingName}>{property?.buildingName || '아이파크'}</Text>
+            <Text style={styles.rating}>4.0</Text>
+            <View style={styles.starsContainer}>
+              {/* 별점 SVG 복붙 */}
+              <Svg width="103" height="20" viewBox="0 0 103 20" fill="none">
+                <Path
+                  d="M7.5551 2.7345C7.78307 2.03287 8.7757 2.03286 9.00367 2.7345L9.96724 5.70006C10.0692 6.01384 10.3616 6.22629 10.6915 6.22629H13.8097C14.5474 6.22629 14.8542 7.17033 14.2573 7.60396L11.7347 9.43678C11.4678 9.63071 11.3561 9.97445 11.458 10.2882L12.4216 13.2538C12.6496 13.9554 11.8465 14.5389 11.2497 14.1052L8.72702 12.2724C8.4601 12.0785 8.09867 12.0785 7.83175 12.2724L5.30909 14.1052C4.71225 14.5389 3.9092 13.9554 4.13717 13.2538L5.10074 10.2882C5.2027 9.97445 5.09101 9.63071 4.82409 9.43678L2.30143 7.60396C1.70459 7.17033 2.01132 6.22629 2.74906 6.22629H5.86724C6.19717 6.22629 6.48958 6.01384 6.59153 5.70006L7.5551 2.7345Z"
+                  fill="#FEB71F"
+                />
+                <Path
+                  d="M24.9731 2.7345C25.201 2.03287 26.1937 2.03286 26.4216 2.7345L27.3852 5.70006C27.4872 6.01384 27.7796 6.22629 28.1095 6.22629H31.2277C31.9654 6.22629 32.2722 7.17033 31.6753 7.60396L29.1527 9.43678C28.8857 9.63071 28.774 9.97445 28.876 10.2882L29.8396 13.2538C30.0675 13.9554 29.2645 14.5389 28.6676 14.1052L26.145 12.2724C25.8781 12.0785 25.5166 12.0785 25.2497 12.2724L22.7271 14.1052C22.1302 14.5389 21.3272 13.9554 21.5551 13.2538L22.5187 10.2882C22.6207 9.97445 22.509 9.63071 22.2421 9.43678L19.7194 7.60396C19.1226 7.17033 19.4293 6.22629 20.167 6.22629H23.2852C23.6151 6.22629 23.9075 6.01384 24.0095 5.70006L24.9731 2.7345Z"
+                  fill="#FEB71F"
+                />
+                <Path
+                  d="M42.3891 2.7345C42.6171 2.03287 43.6097 2.03286 43.8377 2.7345L44.8012 5.70006C44.9032 6.01384 45.1956 6.22629 45.5255 6.22629H48.6437C49.3814 6.22629 49.6882 7.17033 49.0913 7.60396L46.5687 9.43678C46.3018 9.63071 46.1901 9.97445 46.292 10.2882L47.2556 13.2538C47.4836 13.9554 46.6805 14.5389 46.0837 14.1052L43.561 12.2724C43.2941 12.0785 42.9327 12.0785 42.6657 12.2724L40.1431 14.1052C39.5462 14.5389 38.7432 13.9554 38.9712 13.2538L39.9347 10.2882C40.0367 9.97445 39.925 9.63071 39.6581 9.43678L37.1354 7.60396C36.5386 7.17033 36.8453 6.22629 37.583 6.22629H40.7012C41.0312 6.22629 41.3236 6.01384 41.4255 5.70006L42.3891 2.7345Z"
+                  fill="#FEB71F"
+                />
+                <Path
+                  d="M59.8071 2.7345C60.035 2.03287 61.0277 2.03286 61.2556 2.7345L62.2192 5.70006C62.3211 6.01384 62.6136 6.22629 62.9435 6.22629H66.0617C66.7994 6.22629 67.1061 7.17033 66.5093 7.60396L63.9866 9.43678C63.7197 9.63071 63.608 9.97445 63.71 10.2882L64.6736 13.2538C64.9015 13.9554 64.0985 14.5389 63.5016 14.1052L60.979 12.2724C60.7121 12.0785 60.3506 12.0785 60.0837 12.2724L57.561 14.1052C56.9642 14.5389 56.1612 13.9554 56.3891 13.2538L57.3527 10.2882C57.4546 9.97445 57.343 9.63071 57.076 9.43678L54.5534 7.60396C53.9565 7.17033 54.2633 6.22629 55.001 6.22629H58.1192C58.4491 6.22629 58.7415 6.01384 58.8435 5.70006L59.8071 2.7345Z"
+                  fill="#FEB71F"
+                />
+                <Path
+                  d="M77.225 2.7345C77.453 2.03287 78.4456 2.03286 78.6736 2.7345L79.6372 5.70006C79.7391 6.01384 80.0315 6.22629 80.3615 6.22629H83.4796C84.2174 6.22629 84.5241 7.17033 83.9273 7.60396L81.4046 9.43678C81.1377 9.63071 81.026 9.97445 81.128 10.2882L82.0915 13.2538C82.3195 13.9554 81.5164 14.5389 80.9196 14.1052L78.3969 12.2724C78.13 12.0785 77.7686 12.0785 77.5017 12.2724L74.979 14.1052C74.3822 14.5389 73.5791 13.9554 73.8071 13.2538L74.7707 10.2882C74.8726 9.97445 74.7609 9.63071 74.494 9.43678L71.9714 7.60396C71.3745 7.17033 71.6812 6.22629 72.419 6.22629H75.5372C75.8671 6.22629 76.1595 6.01384 76.2615 5.70006L77.225 2.7345Z"
+                  fill="#FEB71F"
+                />
+              </Svg>
+            </View>
+            <Text style={styles.reviewCount}>12개의 후기</Text>
 
-              {/* 평점 */}
-              <Text style={styles.rating}>4.0</Text>
-
-              {/* 별점 */}
-              <View style={styles.starsContainer}>
-                <Svg width="103" height="20" viewBox="0 0 103 20" fill="none">
-                  <Path
-                    d="M9.11733 2.81088C9.35681 2.07383 10.3995 2.07383 10.639 2.81088L11.8664 6.58825C11.9735 6.91787 12.2806 7.14104 12.6272 7.14104H16.599C17.3739 7.14104 17.6962 8.13273 17.0692 8.58825L13.856 10.9228C13.5756 11.1265 13.4583 11.4876 13.5654 11.8172L14.7927 15.5946C15.0322 16.3316 14.1886 16.9445 13.5616 16.489L10.3484 14.1545C10.068 13.9508 9.68834 13.9508 9.40795 14.1545L6.19472 16.489C5.56775 16.9445 4.72417 16.3316 4.96365 15.5946L6.19099 11.8172C6.29809 11.4876 6.18076 11.1265 5.90037 10.9228L2.68715 8.58825C2.06018 8.13273 2.3824 7.14104 3.15738 7.14104H7.12914C7.47572 7.14104 7.78289 6.91787 7.88999 6.58825L9.11733 2.81088Z"
-                    fill="#FEB71F"
-                  />
-                  <Path
-                    d="M29.9279 2.81088C30.1674 2.07383 31.2101 2.07383 31.4496 2.81088L32.6769 6.58825C32.784 6.91787 33.0912 7.14104 33.4378 7.14104H37.4095C38.1845 7.14104 38.5067 8.13273 37.8797 8.58825L34.6665 10.9228C34.3861 11.1265 34.2688 11.4876 34.3759 11.8172L35.6032 15.5946C35.8427 16.3316 34.9991 16.9445 34.3722 16.489L31.1589 14.1545C30.8786 13.9508 30.4989 13.9508 30.2185 14.1545L27.0053 16.489C26.3783 16.9445 25.5347 16.3316 25.7742 15.5946L27.0015 11.8172C27.1086 11.4876 26.9913 11.1265 26.7109 10.9228L23.4977 8.58825C22.8707 8.13273 23.1929 7.14104 23.9679 7.14104H27.9397C28.2863 7.14104 28.5934 6.91787 28.7005 6.58825L29.9279 2.81088Z"
-                    fill="#FEB71F"
-                  />
-                  <Path
-                    d="M50.7384 2.81088C50.9779 2.07383 52.0206 2.07383 52.2601 2.81088L53.4875 6.58825C53.5946 6.91787 53.9017 7.14104 54.2483 7.14104H58.2201C58.995 7.14104 59.3173 8.13273 58.6903 8.58825L55.4771 10.9228C55.1967 11.1265 55.0794 11.4876 55.1865 11.8172L56.4138 15.5946C56.6533 16.3316 55.8097 16.9445 55.1827 16.489L51.9695 14.1545C51.6891 13.9508 51.3094 13.9508 51.029 14.1545L47.8158 16.489C47.1888 16.9445 46.3453 16.3316 46.5847 15.5946L47.8121 11.8172C47.9192 11.4876 47.8019 11.1265 47.5215 10.9228L44.3082 8.58825C43.6813 8.13273 44.0035 7.14104 44.7785 7.14104H48.7502C49.0968 7.14104 49.404 6.91787 49.5111 6.58825L50.7384 2.81088Z"
-                    fill="#FEB71F"
-                  />
-                  <Path
-                    d="M71.549 2.81088C71.7885 2.07383 72.8312 2.07383 73.0707 2.81088L74.298 6.58825C74.4051 6.91787 74.7123 7.14104 75.0588 7.14104H79.0306C79.8056 7.14104 80.1278 8.13273 79.5008 8.58825L76.2876 10.9228C76.0072 11.1265 75.8899 11.4876 75.997 11.8172L77.2243 15.5946C77.4638 16.3316 76.6202 16.9445 75.9933 16.489L72.78 14.1545C72.4997 13.9508 72.12 13.9508 71.8396 14.1545L68.6264 16.489C67.9994 16.9445 67.1558 16.3316 67.3953 15.5946L68.6226 11.8172C68.7297 11.4876 68.6124 11.1265 68.332 10.9228L65.1188 8.58825C64.4918 8.13273 64.814 7.14104 65.589 7.14104H69.5608C69.9074 7.14104 70.2145 6.91787 70.3216 6.58825L71.549 2.81088Z"
-                    fill="#FEB71F"
-                  />
-                  <Path
-                    d="M92.3595 2.81088C92.599 2.07383 93.6417 2.07383 93.8812 2.81088L95.1085 6.58825C95.2156 6.91787 95.5228 7.14104 95.8694 7.14104H99.8412C100.616 7.14104 100.938 8.13273 100.311 8.58825L97.0982 10.9228C96.8178 11.1265 96.7004 11.4876 96.8075 11.8172L98.0349 15.5946C98.2744 16.3316 97.4308 16.9445 96.8038 16.489L93.5906 14.1545C93.3102 13.9508 92.9305 13.9508 92.6501 14.1545L89.4369 16.489C88.8099 16.9445 87.9664 16.3316 88.2058 15.5946L89.4332 11.8172C89.5403 11.4876 89.423 11.1265 89.1426 10.9228L85.9293 8.58825C85.3024 8.13273 85.6246 7.14104 86.3996 7.14104H90.3713C90.7179 7.14104 91.0251 6.91787 91.1322 6.58825L92.3595 2.81088Z"
-                    fill="#F2F2F2"
-                  />
-                </Svg>
-              </View>
-
-              {/* 후기 개수 */}
-              <Text style={styles.reviewCount}>12개의 후기</Text>
-
-              {/* 평가 항목들 */}
-              <View style={styles.ratingsSection}>
-                {/* 소음 */}
-                <View style={styles.ratingItem}>
-                  <Text style={styles.ratingLabel}>소음</Text>
-                  <Text style={styles.ratingText}>조용해요</Text>
-                  <View style={styles.ratingBarContainer}>
-                    <Svg width="170" height="9" viewBox="0 0 170 9" fill="none">
-                      <Rect
-                        x="0.9375"
-                        y="0.895996"
-                        width="168.99"
-                        height="7.96677"
-                        rx="3.98339"
-                        fill="#F2F2F2"
-                      />
-                      <Rect
-                        x="0.9375"
-                        y="0.895996"
-                        width="163.085"
-                        height="7.96677"
-                        rx="3.98339"
-                        fill="#FFD429"
-                      />
-                    </Svg>
-                  </View>
-                </View>
-
-                {/* 편의시설 */}
-                <View style={styles.ratingItem}>
-                  <Text style={styles.ratingLabel}>편의시설</Text>
-                  <Text style={styles.ratingText}>접근성 좋아요</Text>
-                  <View style={styles.ratingBarContainer}>
-                    <Svg width="170" height="9" viewBox="0 0 170 9" fill="none">
-                      <Rect
-                        x="0.9375"
-                        y="0.895996"
-                        width="168.99"
-                        height="7.96677"
-                        rx="3.98339"
-                        fill="#F2F2F2"
-                      />
-                      <Rect
-                        x="0.9375"
-                        y="0.895996"
-                        width="155"
-                        height="7.96677"
-                        rx="3.98339"
-                        fill="#FFD429"
-                      />
-                    </Svg>
-                  </View>
-                </View>
-
-                {/* 주차장 */}
-                <View style={styles.ratingItem}>
-                  <Text style={styles.ratingLabel}>주차장</Text>
-                  <Text style={styles.ratingText}>넓어요</Text>
-                  <View style={styles.ratingBarContainer}>
-                    <Svg width="170" height="9" viewBox="0 0 170 9" fill="none">
-                      <Rect
-                        x="0.9375"
-                        y="0.895996"
-                        width="168.99"
-                        height="7.96677"
-                        rx="3.98339"
-                        fill="#F2F2F2"
-                      />
-                      <Rect
-                        x="0.9375"
-                        y="0.895996"
-                        width="110"
-                        height="7.96677"
-                        rx="3.98339"
-                        fill="#FFD429"
-                      />
-                    </Svg>
-                  </View>
-                </View>
-
-                {/* 벌레 */}
-                <View style={styles.ratingItem}>
-                  <Text style={styles.ratingLabel}>벌레</Text>
-                  <Text style={styles.ratingText}>가끔 나와요</Text>
-                  <View style={styles.ratingBarContainer}>
-                    <Svg width="170" height="9" viewBox="0 0 170 9" fill="none">
-                      <Rect
-                        x="0.9375"
-                        y="0.895996"
-                        width="168.99"
-                        height="7.96677"
-                        rx="3.98339"
-                        fill="#F2F2F2"
-                      />
-                      <Rect
-                        x="0.9375"
-                        y="0.895996"
-                        width="30"
-                        height="7.96677"
-                        rx="3.98339"
-                        fill="#FFD429"
-                      />
-                    </Svg>
-                  </View>
-                </View>
-              </View>
-
-              {/* 탭 메뉴 */}
-              <View style={styles.tabContainer}>
-                <View style={styles.tabsRow}>
-                  <TouchableOpacity onPress={() => setSelectedTab('실거주자 후기')}>
-                    <Text
-                      style={[
-                        styles.tabText,
-                        selectedTab === '실거주자 후기' && styles.tabTextActive,
-                      ]}
-                    >
-                      실거주자 후기
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setSelectedTab('기본 정보')}>
-                    <Text
-                      style={[styles.tabText, selectedTab === '기본 정보' && styles.tabTextActive]}
-                    >
-                      기본 정보
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setSelectedTab('질문하기')}>
-                    <Text
-                      style={[styles.tabText, selectedTab === '질문하기' && styles.tabTextActive]}
-                    >
-                      질문하기
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setSelectedTab('양도')}>
-                    <Text style={[styles.tabText, selectedTab === '양도' && styles.tabTextActive]}>
-                      양도
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* 하단 회색 줄 */}
-                <View style={styles.tabUnderlineContainer}>
-                  <Svg
-                    width="393"
-                    height="4"
-                    viewBox="0 0 393 4"
-                    fill="none"
-                    style={styles.grayLine}
-                  >
-                    <Path d="M0 2.02002H397.398" stroke="#F2F2F2" strokeWidth="3" />
+            {/* 평가 항목들 */}
+            <View style={styles.ratingsSection}>
+              {/* 소음, 편의시설, 주차장, 벌레 항목 복붙 */}
+              <View style={styles.ratingItem}>
+                <Text style={styles.ratingLabel}>소음</Text>
+                <Text style={styles.ratingText}>조용해요</Text>
+                <View style={styles.ratingBarContainer}>
+                  <Svg width="170" height="9" viewBox="0 0 170 9" fill="none">
+                    <Rect
+                      x="0.9375"
+                      y="0.895996"
+                      width="168.99"
+                      height="7.96677"
+                      rx="3.98339"
+                      fill="#F2F2F2"
+                    />
+                    <Rect
+                      x="0.9375"
+                      y="0.895996"
+                      width="163.085"
+                      height="7.96677"
+                      rx="3.98339"
+                      fill="#FFD429"
+                    />
                   </Svg>
+                </View>
+              </View>
+              <View style={styles.ratingItem}>
+                <Text style={styles.ratingLabel}>편의시설</Text>
+                <Text style={styles.ratingText}>접근성 좋아요</Text>
+                <View style={styles.ratingBarContainer}>
+                  <Svg width="170" height="9" viewBox="0 0 170 9" fill="none">
+                    <Rect
+                      x="0.9375"
+                      y="0.895996"
+                      width="168.99"
+                      height="7.96677"
+                      rx="3.98339"
+                      fill="#F2F2F2"
+                    />
+                    <Rect
+                      x="0.9375"
+                      y="0.895996"
+                      width="163.085"
+                      height="7.96677"
+                      rx="3.98339"
+                      fill="#FFD429"
+                    />
+                  </Svg>
+                </View>
+              </View>
+              <View style={styles.ratingItem}>
+                <Text style={styles.ratingLabel}>주차장</Text>
+                <Text style={styles.ratingText}>넓어요</Text>
+                <View style={styles.ratingBarContainer}>
+                  <Svg width="170" height="9" viewBox="0 0 170 9" fill="none">
+                    <Rect
+                      x="0.9375"
+                      y="0.895996"
+                      width="168.99"
+                      height="7.96677"
+                      rx="3.98339"
+                      fill="#F2F2F2"
+                    />
+                    <Rect
+                      x="0.9375"
+                      y="0.895996"
+                      width="113.3"
+                      height="7.96677"
+                      rx="3.98339"
+                      fill="#FFD429"
+                    />
+                  </Svg>
+                </View>
+              </View>
+              <View style={styles.ratingItem}>
+                <Text style={styles.ratingLabel}>벌레</Text>
+                <Text style={styles.ratingText}>가끔 나와요</Text>
+                <View style={styles.ratingBarContainer}>
+                  <Svg width="170" height="9" viewBox="0 0 170 9" fill="none">
+                    <Rect
+                      x="0.9375"
+                      y="0.895996"
+                      width="168.99"
+                      height="7.96677"
+                      rx="3.98339"
+                      fill="#F2F2F2"
+                    />
+                    <Rect
+                      x="0.9375"
+                      y="0.895996"
+                      width="56.65"
+                      height="7.96677"
+                      rx="3.98339"
+                      fill="#FFD429"
+                    />
+                  </Svg>
+                </View>
+              </View>
+            </View>
 
-                  {/* 주황색 줄 */}
-                  <View
-                    style={[
-                      styles.orangeLineContainer,
-                      selectedTab === '실거주자 후기' && { left: 10, width: 92 },
-                      selectedTab === '기본 정보' && { left: 122, width: 70 },
-                      selectedTab === '질문하기' && { left: 217, width: 70 },
-                      selectedTab === '양도' && { left: 312, width: 45 },
-                    ]}
+            {/* 탭 메뉴 */}
+            <View style={styles.tabContainer}>
+              <View style={styles.tabsRow}>
+                <TouchableOpacity onPress={() => setSelectedTab('실거주자 후기')}>
+                  <Text
+                    style={[styles.tabText, selectedTab === '실거주자 후기' && styles.tabTextActive]}
                   >
+                    실거주자 후기
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setSelectedTab('기본 정보')}>
+                  <Text style={[styles.tabText, selectedTab === '기본 정보' && styles.tabTextActive]}>
+                    기본 정보
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setSelectedTab('질문하기')}>
+                  <Text style={[styles.tabText, selectedTab === '질문하기' && styles.tabTextActive]}>
+                    질문하기
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setSelectedTab('양도')}>
+                  <Text style={[styles.tabText, selectedTab === '양도' && styles.tabTextActive]}>
+                    양도
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.tabUnderlineContainer}>
+                <Svg width="393" height="4" viewBox="0 0 393 4" fill="none" style={styles.grayLine}>
+                  <Path d="M0 2.02002H397.398" stroke="#F2F2F2" strokeWidth="3" />
+                </Svg>
+                <View
+                  style={[
+                    styles.orangeLineContainer,
+                    selectedTab === '실거주자 후기' && { left: 10, width: 92 },
+                    selectedTab === '기본 정보' && { left: 122, width: 70 },
+                    selectedTab === '질문하기' && { left: 217, width: 70 },
+                    selectedTab === '양도' && { left: 312, width: 45 },
+                  ]}
+                >
+                  <Svg
+                    width="100%"
+                    height="4"
+                    viewBox="0 0 127 4"
+                    fill="none"
+                    preserveAspectRatio="none"
+                  >
+                    <Path
+                      d="M-2.81641 2H125.086"
+                      stroke="#FF805F"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                    />
+                  </Svg>
+                </View>
+              </View>
+            </View>
+
+            {/* 탭별 콘텐츠 */}
+            {selectedTab === '기본 정보' && (
+              <View style={styles.basicInfoSection}>
+                {/* 기존 기본 정보 복사 */}
+                <Text style={styles.basicInfoTitle}>기본 정보</Text>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>주소</Text>
+                  <View style={styles.infoContent}>
+                    <Text style={styles.infoValue}>경기 수원시 영통구 영통동 1012-1</Text>
+                    <Text style={styles.infoValue}>반달로35번길 30</Text>
+                  </View>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>가격</Text>
+                  <Text style={styles.infoValue}>
+                    {property?.price 
+                      ? `월세 ${property.price.deposit}만원/ ${property.price.monthly}만원`
+                      : '월세 2000만원/ 40만원'
+                    }
+                  </Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>세대수</Text>
+                  <Text style={styles.infoValue}>-</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>난방방식</Text>
+                  <Text style={styles.infoValue}>-</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>주차대수</Text>
+                  <Text style={styles.infoValue}>총 715대</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>승강기대수</Text>
+                  <Text style={styles.infoValue}>7대 (일반 5대, 비상용 2대)</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>건축물용도</Text>
+                  <View>
+                    <Text style={styles.infoValue}>오피스텔 84.1%</Text>
+                    <Text style={styles.infoValue}>기타제2종근린생활시설 15.8%</Text>
+                  </View>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>사용승인일</Text>
+                  <Text style={styles.infoValue}>2017.09.26</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>준공일</Text>
+                  <Text style={styles.infoValue}>2017.09</Text>
+                </View>
+              </View>
+            )}
+
+            {selectedTab === '실거주자 후기' && (
+              <View style={styles.reviewSection}>
+                {/* 후기 섹션 전체 복사 */}
+                <Text style={styles.reviewSectionTitle}>실거주자 후기</Text>
+                <View style={styles.reviewCard}>
+                  <View style={styles.reviewHeader}>
+                    <View style={styles.profileCircle}>
+                      <Image
+                        source={require('@/assets/images/real-racoon-4x.png')}
+                        style={styles.profileImage}
+                        resizeMode="contain"
+                      />
+                    </View>
+                    <View style={styles.reviewerInfo}>
+                      <Text style={styles.reviewerName}>방마오</Text>
+                      <Text style={styles.reviewerPeriod}>2025년까지 거주</Text>
+                    </View>
+                  </View>
+                  <View style={styles.ratingRow}>
+                    <Svg width="87" height="18" viewBox="0 0 87 18" fill="none">
+                      <Path
+                        d="M7.5551 2.7345C7.78307 2.03287 8.7757 2.03286 9.00367 2.7345L9.96724 5.70006C10.0692 6.01384 10.3616 6.22629 10.6915 6.22629H13.8097C14.5474 6.22629 14.8542 7.17033 14.2573 7.60396L11.7347 9.43678C11.4678 9.63071 11.3561 9.97445 11.458 10.2882L12.4216 13.2538C12.6496 13.9554 11.8465 14.5389 11.2497 14.1052L8.72702 12.2724C8.4601 12.0785 8.09867 12.0785 7.83175 12.2724L5.30909 14.1052C4.71225 14.5389 3.9092 13.9554 4.13717 13.2538L5.10074 10.2882C5.2027 9.97445 5.09101 9.63071 4.82409 9.43678L2.30143 7.60396C1.70459 7.17033 2.01132 6.22629 2.74906 6.22629H5.86724C6.19717 6.22629 6.48958 6.01384 6.59153 5.70006L7.5551 2.7345Z"
+                        fill="#FEB71F"
+                      />
+                      <Path
+                        d="M24.9731 2.7345C25.201 2.03287 26.1937 2.03286 26.4216 2.7345L27.3852 5.70006C27.4872 6.01384 27.7796 6.22629 28.1095 6.22629H31.2277C31.9654 6.22629 32.2722 7.17033 31.6753 7.60396L29.1527 9.43678C28.8857 9.63071 28.774 9.97445 28.876 10.2882L29.8396 13.2538C30.0675 13.9554 29.2645 14.5389 28.6676 14.1052L26.145 12.2724C25.8781 12.0785 25.5166 12.0785 25.2497 12.2724L22.7271 14.1052C22.1302 14.5389 21.3272 13.9554 21.5551 13.2538L22.5187 10.2882C22.6207 9.97445 22.509 9.63071 22.2421 9.43678L19.7194 7.60396C19.1226 7.17033 19.4293 6.22629 20.167 6.22629H23.2852C23.6151 6.22629 23.9075 6.01384 24.0095 5.70006L24.9731 2.7345Z"
+                        fill="#FEB71F"
+                      />
+                      <Path
+                        d="M42.3891 2.7345C42.6171 2.03287 43.6097 2.03286 43.8377 2.7345L44.8012 5.70006C44.9032 6.01384 45.1956 6.22629 45.5255 6.22629H48.6437C49.3814 6.22629 49.6882 7.17033 49.0913 7.60396L46.5687 9.43678C46.3018 9.63071 46.1901 9.97445 46.292 10.2882L47.2556 13.2538C47.4836 13.9554 46.6805 14.5389 46.0837 14.1052L43.561 12.2724C43.2941 12.0785 42.9327 12.0785 42.6657 12.2724L40.1431 14.1052C39.5462 14.5389 38.7432 13.9554 38.9712 13.2538L39.9347 10.2882C40.0367 9.97445 39.925 9.63071 39.6581 9.43678L37.1354 7.60396C36.5386 7.17033 36.8453 6.22629 37.583 6.22629H40.7012C41.0312 6.22629 41.3236 6.01384 41.4255 5.70006L42.3891 2.7345Z"
+                        fill="#FEB71F"
+                      />
+                      <Path
+                        d="M59.8071 2.7345C60.035 2.03287 61.0277 2.03286 61.2556 2.7345L62.2192 5.70006C62.3211 6.01384 62.6136 6.22629 62.9435 6.22629H66.0617C66.7994 6.22629 67.1061 7.17033 66.5093 7.60396L63.9866 9.43678C63.7197 9.63071 63.608 9.97445 63.71 10.2882L64.6736 13.2538C64.9015 13.9554 64.0985 14.5389 63.5016 14.1052L60.979 12.2724C60.7121 12.0785 60.3506 12.0785 60.0837 12.2724L57.561 14.1052C56.9642 14.5389 56.1612 13.9554 56.3891 13.2538L57.3527 10.2882C57.4546 9.97445 57.343 9.63071 57.076 9.43678L54.5534 7.60396C53.9565 7.17033 54.2633 6.22629 55.001 6.22629H58.1192C58.4491 6.22629 58.7415 6.01384 58.8435 5.70006L59.8071 2.7345Z"
+                        fill="#FEB71F"
+                      />
+                      <Path
+                        d="M77.225 2.7345C77.453 2.03287 78.4456 2.03286 78.6736 2.7345L79.6372 5.70006C79.7391 6.01384 80.0315 6.22629 80.3615 6.22629H83.4796C84.2174 6.22629 84.5241 7.17033 83.9273 7.60396L81.4046 9.43678C81.1377 9.63071 81.026 9.97445 81.128 10.2882L82.0915 13.2538C82.3195 13.9554 81.5164 14.5389 80.9196 14.1052L78.3969 12.2724C78.13 12.0785 77.7686 12.0785 77.5017 12.2724L74.979 14.1052C74.3822 14.5389 73.5791 13.9554 73.8071 13.2538L74.7707 10.2882C74.8726 9.97445 74.7609 9.63071 74.494 9.43678L71.9714 7.60396C71.3745 7.17033 71.6812 6.22629 72.419 6.22629H75.5372C75.8671 6.22629 76.1595 6.01384 76.2615 5.70006L77.225 2.7345Z"
+                        fill="#FEB71F"
+                      />
+                    </Svg>
+                    <Text style={styles.reviewDate}>2025.09.15</Text>
+                  </View>
+                  <Text style={styles.reviewContent}>
+                    편의점이랑 3분 거리여서 접근성이 괜찮히 좋아요. 급하게 구한 집이라 걱정을 많이 했는데 생각보다 만족스러워요. 벌레는 가끔 나오지만 바퀴벌레는 아직 안나왔어요 ^^
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.moreReviewButton}
+                  onPress={() => router.push('/main/review-detail')}
+                >
+                  <Text style={styles.moreReviewText}>12개의 후기 더보기</Text>
+                </TouchableOpacity>
+                <View style={styles.bottomLine} />
+                <View style={styles.goodPointsSection}>
+                  <Text style={styles.goodPointsTitle}>이런 점이 좋았어요</Text>
+                  <View style={[styles.pointBox, styles.pointBox90]}>
+                    <Text style={styles.pointText}>청결해요</Text>
+                    <Text style={styles.pointPercentage}>90%</Text>
+                  </View>
+                  <View style={[styles.pointBox, styles.pointBox70]}>
+                    <Text style={styles.pointText}>주차가 편해요</Text>
+                    <Text style={styles.pointPercentage}>70%</Text>
+                  </View>
+                  <View style={[styles.pointBox, styles.pointBox40]}>
+                    <Text style={styles.pointText}>채광이 좋아요</Text>
+                    <Text style={styles.pointPercentage}>40%</Text>
+                  </View>
+                </View>
+                <View style={styles.badPointsSection}>
+                  <Text style={styles.badPointsTitle}>이런 점이 아쉬워요</Text>
+                  <View style={[styles.badPointBox, styles.badPointBox90]}>
+                    <Text style={styles.badPointText}>학교에서 멀어요</Text>
+                    <Text style={styles.badPointPercentage}>90%</Text>
+                  </View>
+                  <View style={[styles.badPointBox, styles.badPointBox80]}>
+                    <Text style={styles.badPointText}>역이랑 멀어요</Text>
+                    <Text style={styles.badPointPercentage}>80%</Text>
+                  </View>
+                  <View style={[styles.badPointBox, styles.badPointBox20]}>
+                    <Text style={styles.badPointText20}>소음</Text>
+                    <Text style={styles.badPointPercentage20}>20%</Text>
+                  </View>
+                </View>
+                <View style={styles.dividerLine} />
+                <View style={styles.writeReviewSection}>
+                  <Text style={styles.writeReviewTitle}>후기 작성으로{'\n'}경험을 공유해요!</Text>
+                  <TouchableOpacity style={styles.writeReviewButton}>
                     <Svg
-                      width="100%"
-                      height="4"
-                      viewBox="0 0 127 4"
+                      width="13"
+                      height="14"
+                      viewBox="0 0 13 14"
                       fill="none"
-                      preserveAspectRatio="none"
+                      style={styles.pencilIcon}
                     >
                       <Path
-                        d="M-2.81641 2H125.086"
-                        stroke="#FF805F"
-                        strokeWidth="3"
+                        d="M7.80309 1.04381C8.61389 0.105539 10.0756 -0.0527729 11.0682 0.690473L11.313 0.874257C12.3055 1.61785 12.4525 2.98161 11.6417 3.92005L4.9662 11.6457C4.9656 11.6466 4.96568 11.6479 4.96651 11.6486C4.96726 11.6496 4.96705 11.6511 4.96585 11.6516L1.15126 13.2027C0.700995 13.3858 0.229356 12.9906 0.330586 12.5153L1.12847 8.77723C1.12868 8.77624 1.12799 8.77501 1.12718 8.77442C1.12582 8.77361 1.12573 8.77174 1.12676 8.77054L7.80309 1.04381Z"
+                        fill="#F2F2F2"
+                        stroke="#323232"
+                        strokeWidth="1.011"
+                      />
+                    </Svg>
+                    <Text style={styles.writeReviewButtonText}>후기 작성하기</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {selectedTab === '질문하기' && (
+              <View style={styles.questionSection}>
+                <View style={styles.questionList}>
+                  {questionData.map(renderQuestionCard)}
+                </View>
+              </View>
+            )}
+
+            {selectedTab === '양도' && (
+              <View style={styles.transferSection}>
+                <TouchableOpacity style={styles.sortButton}>
+                  <View style={styles.sortArrowsContainer}>
+                    <Svg width="7" height="13" viewBox="0 0 7 13" fill="none" style={styles.upArrow}>
+                      <Path
+                        d="M3.43945 1.55825L3.43945 11.7227"
+                        stroke="#323232"
+                        strokeWidth="1.36277"
+                        strokeLinecap="round"
+                      />
+                      <Path
+                        d="M1 3.82999L3.37562 1.45438C3.4111 1.4189 3.46862 1.4189 3.5041 1.45438L5.87971 3.82999"
+                        stroke="#323232"
+                        strokeWidth="1.18107"
+                        strokeLinecap="round"
+                      />
+                    </Svg>
+                    <Svg
+                      width="7"
+                      height="13"
+                      viewBox="0 0 7 13"
+                      fill="none"
+                      style={styles.downArrow}
+                    >
+                      <Path
+                        d="M3.43945 11.7227L3.43945 1.55825"
+                        stroke="#636363"
+                        strokeWidth="1.36277"
+                        strokeLinecap="round"
+                      />
+                      <Path
+                        d="M5.87971 9.45096L3.5041 11.8266C3.46862 11.8621 3.4111 11.8621 3.37562 11.8266L1 9.45096"
+                        stroke="#636363"
+                        strokeWidth="1.18107"
                         strokeLinecap="round"
                       />
                     </Svg>
                   </View>
+                  <Text style={styles.sortText}>최신순</Text>
+                  <Svg width="12" height="7" viewBox="0 0 12 7" fill="none">
+                    <Path
+                      d="M10.582 1.09091L6.18708 5.81292C6.09346 5.9135 5.93378 5.91228 5.84171 5.81027L1.58203 1.09091"
+                      stroke="#636363"
+                      strokeWidth="1.48776"
+                      strokeLinecap="round"
+                    />
+                  </Svg>
+                </TouchableOpacity>
+                <View style={styles.transferList}>
+                  {transferData.map(renderTransferCard)}
                 </View>
               </View>
-
-              {/* 기본 정보 섹션 */}
-              {selectedTab === '기본 정보' && (
-                <View style={styles.basicInfoSection}>
-                  <Text style={styles.basicInfoTitle}>기본 정보</Text>
-
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>주소</Text>
-                    <View style={styles.infoContent}>
-                      <Text style={styles.infoValue}>경기 수원시 영통구 영통동 1012-1</Text>
-                      <Text style={styles.infoValue}>반달로35번길 30</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>가격</Text>
-                    <Text style={styles.infoValue}>{formatPriceText()}</Text>
-                  </View>
-
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>세대수</Text>
-                    <Text style={styles.infoValue}>-</Text>
-                  </View>
-
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>난방방식</Text>
-                    <Text style={styles.infoValue}>-</Text>
-                  </View>
-
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>주차대수</Text>
-                    <Text style={styles.infoValue}>총 715대</Text>
-                  </View>
-
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>승강기대수</Text>
-                    <Text style={styles.infoValue}>7대 (일반 5대, 비상용 2대)</Text>
-                  </View>
-
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>건축물용도</Text>
-                    <View>
-                      <Text style={styles.infoValue}>오피스텔 84.1%</Text>
-                      <Text style={styles.infoValue}>기타제2종근린생활시설 15.8%</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>사용승인일</Text>
-                    <Text style={styles.infoValue}>2017.09.26</Text>
-                  </View>
-
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>준공일</Text>
-                    <Text style={styles.infoValue}>2017.09</Text>
-                  </View>
-
-                  <Text style={styles.etcTitle}>기타</Text>
-                  <View style={styles.etcContainer}>
-                    <View style={styles.etcItem}>
-                      <Svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                        <Circle
-                          cx="14.0546"
-                          cy="13.5546"
-                          r="12.6046"
-                          stroke="#323232"
-                          strokeWidth="1.9"
-                        />
-                        <Path
-                          d="M15.9023 7.0874C17.9137 7.18914 19.5137 8.85251 19.5137 10.8892L19.5088 11.0845C19.4103 13.0311 17.8489 14.5915 15.9023 14.6899L15.707 14.6948H12.1777V18.9751C12.1777 19.4997 11.7522 19.9253 11.2275 19.9253C10.7029 19.9253 10.2774 19.4997 10.2773 18.9751V8.13135C10.2773 7.88541 10.371 7.66143 10.5244 7.49268C10.6857 7.24579 10.9644 7.08263 11.2812 7.08252H15.707L15.9023 7.0874ZM12.2783 12.7954H15.707C16.7597 12.7953 17.6131 11.9419 17.6133 10.8892C17.6133 9.83634 16.7598 8.98299 15.707 8.98291H12.2783V12.7954Z"
-                          fill="#323232"
-                        />
-                      </Svg>
-                      <Text style={styles.etcText}>주차가능</Text>
-                    </View>
-
-                    <View style={styles.etcItem}>
-                      <Svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                        <Path
-                          d="M10 5.08252H17.9717"
-                          stroke="#323232"
-                          strokeWidth="1.9"
-                          strokeLinecap="round"
-                        />
-                        <Path d="M14.0527 11.8604V25.4151" stroke="#323232" strokeWidth="1.9" />
-                        <Rect
-                          x="1.95"
-                          y="1.45"
-                          width="24.1053"
-                          height="24.1053"
-                          rx="12.0526"
-                          stroke="#323232"
-                          strokeWidth="1.9"
-                        />
-                      </Svg>
-                      <Text style={styles.etcText}>엘리베이터</Text>
-                    </View>
-                  </View>
-                </View>
-              )}
-
-              {/* 질문하기 섹션 */}
-              {selectedTab === '질문하기' && (
-                <View style={styles.contentSection}>
-                  {questionData.map(renderQuestionCard)}
-
-                  {/* 질문하기 버튼 */}
-                  <TouchableOpacity
-                    style={styles.writeButton}
-                    onPress={() => {
-                      onClose();
-                      router.push('/main/map/question-write');
-                    }}
-                  >
-                    <Text style={styles.writeButtonText}>질문하기</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {/* 양도 섹션 */}
-              {selectedTab === '양도' && (
-                <View style={styles.contentSection}>{transferData.map(renderTransferCard)}</View>
-              )}
-
-              {/* 실거주자 후기 섹션 */}
-              {selectedTab === '실거주자 후기' && (
-                <View style={styles.contentSection}>
-                  <TouchableOpacity
-                    style={styles.reviewDetailButton}
-                    onPress={() => {
-                      onClose();
-                      router.push('/main/map/review-detail');
-                    }}
-                  >
-                    <Text style={styles.reviewDetailButtonText}>실거주자 후기 전체보기</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          </ScrollView>
-        </Animated.View>
-      </View>
-    </Modal>
+            )}
+          </View>
+        </ScrollView>
+      </Animated.View>
+    </View>
+    </Portal>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
     justifyContent: 'flex-end',
+    zIndex: 99999,
+    elevation: 99999,
   },
-  backgroundTouchable: {
-    flex: 1,
+  modalBackground: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'transparent',
   },
   modalContainer: {
-    backgroundColor: COLORS.neutral.white,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    height: height * 0.9, // 화면의 90% 높이
+    position: 'absolute',
+    bottom: 0,
+    width,
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 40.5,
+    borderTopRightRadius: 40.5,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -5,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 99999,
+    zIndex: 99999,
   },
-  handleContainer: {
-    paddingTop: 12,
-    paddingBottom: 8,
+  dragHandle: {
+    width: '100%',
+    height: 30,
+    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 40.5,
+    borderTopRightRadius: 40.5,
   },
-  handle: {
+  dragIndicator: {
     width: 40,
     height: 4,
-    backgroundColor: COLORS.neutral.grey3,
+    backgroundColor: '#E0E0E0',
     borderRadius: 2,
   },
   topNavBar: {
+    width,
+    height: 113,
+    backgroundColor: '#FFF',
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.neutral.grey2,
+    paddingTop: 40,
+    zIndex: 10,
+    position: 'absolute',
+    top: 0,
   },
   backButton: {
-    padding: 8,
+    width: 10,
+    height: 19.091,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   rightIcons: {
     flexDirection: 'row',
-    gap: 16,
+    alignItems: 'center',
+    gap: 15,
   },
   scrapButton: {
-    padding: 4,
+    width: 17.945,
+    height: 23.316,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   menuButton: {
-    padding: 4,
+    width: 3,
+    height: 15.938,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollView: {
     flex: 1,
   },
   whiteBox: {
-    backgroundColor: COLORS.neutral.white,
+    // ResidentReview의 whiteBox 스타일 복사
+    width: 393.004,
+    flex: 1, // 부모 컨테이너 높이에 맞춤
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 40.5,
+    borderTopRightRadius: 40.5,
+    marginTop: -40,
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 30,
+    paddingBottom: 20, // 패딩 줄임
   },
   buildingName: {
+    color: '#323232',
     fontFamily: 'Pretendard',
-    fontSize: 28,
-    fontWeight: '700',
-    color: COLORS.neutral.black,
-    marginBottom: 12,
+    fontSize: 30,
+    fontWeight: '600',
+    lineHeight: 35,
+    marginBottom: 10,
+    marginTop: 30,
+    textAlign: 'center',
   },
   rating: {
+    color: '#323232',
     fontFamily: 'Pretendard',
-    fontSize: 20,
-    fontWeight: '600',
-    color: COLORS.neutral.black,
-    marginBottom: 8,
+    fontSize: 22.909,
+    fontWeight: '700',
+    lineHeight: 28,
+    marginTop: 10,
+    textAlign: 'center',
   },
   starsContainer: {
-    marginBottom: 8,
+    width: 102.553,
+    height: 19.311,
+    alignSelf: 'center',
+    marginTop: 10,
   },
   reviewCount: {
+    color: '#AAA',
     fontFamily: 'Pretendard',
     fontSize: 14,
     fontWeight: '400',
-    color: COLORS.neutral.grey5,
-    marginBottom: 24,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginTop: 2,
   },
   ratingsSection: {
-    marginBottom: 24,
+    marginTop: 30,
+    paddingHorizontal: 10,
   },
   ratingItem: {
-    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   ratingLabel: {
-    fontFamily: 'Pretendard',
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.neutral.black,
-    marginBottom: 4,
-  },
-  ratingText: {
+    color: '#636363',
     fontFamily: 'Pretendard',
     fontSize: 12,
     fontWeight: '400',
-    color: COLORS.neutral.grey5,
-    marginBottom: 8,
+    lineHeight: 22,
+    width: 60,
+  },
+  ratingText: {
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 22,
+    width: 90,
   },
   ratingBarContainer: {
-    width: 170,
+    flex: 1,
+    alignItems: 'flex-end',
   },
   tabContainer: {
-    marginTop: 24,
-    marginBottom: 0,
+    marginTop: 30,
+    marginBottom: 20,
   },
   tabsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 12,
   },
   tabText: {
+    color: '#AAA',
     fontFamily: 'Pretendard',
-    fontSize: 16,
-    fontWeight: '500',
-    color: COLORS.neutral.grey5,
-    paddingVertical: 8,
+    fontSize: 15,
+    fontWeight: '400',
+    lineHeight: 22,
   },
   tabTextActive: {
-    color: COLORS.primary,
-    fontWeight: '700',
+    color: '#FF805F',
+    fontWeight: '500',
   },
   tabUnderlineContainer: {
     position: 'relative',
+    width: '100%',
     height: 4,
-    marginBottom: 20,
   },
   grayLine: {
     position: 'absolute',
     top: 0,
     left: 0,
+    right: 0,
   },
   orangeLineContainer: {
     position: 'absolute',
@@ -819,71 +1036,487 @@ const styles = StyleSheet.create({
     height: 4,
   },
   basicInfoSection: {
-    paddingTop: 20,
+    marginTop: 20,
+    paddingHorizontal: 20,
   },
   basicInfoTitle: {
+    color: '#000',
     fontFamily: 'Pretendard',
-    fontSize: 18,
+    fontSize: 21,
     fontWeight: '700',
-    color: COLORS.neutral.black,
-    marginBottom: 16,
+    lineHeight: 28,
+    marginBottom: 40,
   },
   infoRow: {
     flexDirection: 'row',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.neutral.grey2,
+    marginBottom: 24,
+    alignItems: 'flex-start',
   },
   infoLabel: {
+    color: '#AAA',
     fontFamily: 'Pretendard',
-    fontSize: 14,
+    fontSize: 17,
     fontWeight: '500',
-    color: COLORS.neutral.grey5,
+    lineHeight: 22,
     width: 100,
   },
   infoContent: {
     flex: 1,
   },
   infoValue: {
+    flex: 1,
+    color: '#323232',
     fontFamily: 'Pretendard',
-    fontSize: 14,
-    fontWeight: '400',
-    color: COLORS.neutral.black,
+    fontSize: 17,
+    fontWeight: '500',
+    lineHeight: 22,
   },
-  etcTitle: {
+  reviewSection: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  reviewSectionTitle: {
+    color: '#323232',
     fontFamily: 'Pretendard',
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.neutral.black,
-    marginTop: 24,
-    marginBottom: 16,
+    fontSize: 20.864,
+    fontWeight: '600',
+    lineHeight: 27,
+    marginBottom: 20,
   },
-  etcContainer: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 24,
-  },
-  etcItem: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  etcText: {
-    fontFamily: 'Pretendard',
-    fontSize: 12,
-    fontWeight: '400',
-    color: COLORS.neutral.black,
-  },
-  contentSection: {
-    paddingTop: 20,
-    paddingBottom: 40,
-  },
-  transferCard: {
-    backgroundColor: COLORS.neutral.white,
+  reviewCard: {
+    backgroundColor: '#FFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
+    marginLeft: -16,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    marginLeft: 0,
+  },
+  profileCircle: {
+    width: 40.025,
+    height: 40.861,
+    backgroundColor: '#86D382',
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  profileImage: {
+    width: 50.453,
+    height: 30.662,
+  },
+  reviewerInfo: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  reviewerName: {
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 22,
+    textAlign: 'left',
+    marginBottom: -5,
+  },
+  reviewerPeriod: {
+    color: '#AAA',
+    fontFamily: 'Pretendard',
+    fontSize: 11,
+    fontWeight: '400',
+    lineHeight: 22,
+    textAlign: 'left',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginBottom: 12,
+  },
+  reviewDate: {
+    color: '#AAA',
+    fontFamily: 'Pretendard',
+    fontSize: 11,
+    fontWeight: '400',
+    lineHeight: 16,
+  },
+  reviewContent: {
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 15,
+    fontWeight: '400',
+    lineHeight: 22,
+    textAlign: 'left',
+  },
+  moreReviewButton: {
+    width: 320,
+    height: 55,
+    backgroundColor: '#F2F2F2',
+    borderRadius: 14.559,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 3.651,
+    },
+    shadowOpacity: 0.02,
+    shadowRadius: 3.651,
+    elevation: 2,
+  },
+  moreReviewText: {
+    width: 112.83,
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 14.602,
+    fontWeight: '600',
+    lineHeight: 20.078,
+    textAlign: 'center',
+  },
+  bottomLine: {
+    width: 310,
+    height: 1.5,
+    backgroundColor: '#F2F2F2',
+    borderRadius: 30,
+    marginTop: 20,
+  },
+  goodPointsSection: {
+    marginTop: 50,
+  },
+  goodPointsTitle: {
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 17,
+    fontWeight: '600',
+    lineHeight: 22,
+    marginBottom: 16,
+  },
+  pointBox: {
+    height: 43,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+  pointBox90: {
+    width: 297.932,
+    backgroundColor: 'rgba(134, 211, 130, 0.95)',
+  },
+  pointBox70: {
+    width: 237,
+    backgroundColor: 'rgba(134, 211, 130, 0.70)',
+  },
+  pointBox40: {
+    width: 180,
+    backgroundColor: 'rgba(134, 211, 130, 0.45)',
+  },
+  pointText: {
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 22,
+  },
+  pointPercentage: {
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 22,
+  },
+  badPointsSection: {
+    marginTop: 30,
+  },
+  badPointsTitle: {
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 17,
+    fontWeight: '600',
+    lineHeight: 22,
+    marginBottom: 16,
+  },
+  badPointBox: {
+    height: 43,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+  badPointBox90: {
+    width: 297.932,
+    backgroundColor: 'rgba(255, 128, 95, 0.90)',
+  },
+  badPointBox80: {
+    width: 237,
+    backgroundColor: 'rgba(255, 128, 95, 0.70)',
+  },
+  badPointBox20: {
+    width: 150,
+    backgroundColor: 'rgba(255, 128, 95, 0.30)',
+  },
+  badPointText: {
+    color: '#FFF',
+    fontFamily: 'Pretendard',
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 22,
+  },
+  badPointPercentage: {
+    color: '#FFF',
+    fontFamily: 'Pretendard',
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 22,
+  },
+  badPointText20: {
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 22,
+  },
+  badPointPercentage20: {
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 22,
+  },
+  dividerLine: {
+    width: 337,
+    height: 1.5,
+    backgroundColor: '#F2F2F2',
+    borderRadius: 30,
+    alignSelf: 'center',
+    marginTop: 40,
+  },
+  writeReviewSection: {
+    marginTop: 50,
+    alignItems: 'flex-start',
+    paddingHorizontal: 0,
+  },
+  writeReviewTitle: {
+    color: '#323232',
+    textAlign: 'left',
+    fontFamily: 'Pretendard',
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 21,
+    marginBottom: 25,
+  },
+  writeReviewButton: {
+    width: 337,
+    height: 55,
+    backgroundColor: '#F2F2F2',
+    borderRadius: 14.559,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 3.651,
+    },
+    shadowOpacity: 0.02,
+    shadowRadius: 3.651,
+    elevation: 2,
+  },
+  pencilIcon: {
+    width: 12.879,
+    height: 12.034,
+    transform: [{ rotate: '-6.159deg' }],
+    marginRight: 8,
+  },
+  writeReviewButtonText: {
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 14.602,
+    fontWeight: '600',
+    lineHeight: 20.078,
+  },
+  
+  // … 질문하기, 양도 섹션 스타일도 동일하게 복사
+  questionSection: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+    position: 'relative',
+    flex: 1,
+  },
+  questionList: {
+    marginTop: 20,
+  },
+  questionCard: {
+    width: 347,
+    minHeight: 180,
+    backgroundColor: '#FCFCFC',
+    borderRadius: 17,
     borderWidth: 1,
-    borderColor: COLORS.neutral.grey2,
+    borderColor: 'rgba(242, 242, 242, 0.50)',
+    padding: 16,
+    marginBottom: 12,
+    alignSelf: 'center',
+  },
+  questionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  questionAuthorInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  questionProfileImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FFD429',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+    overflow: 'hidden',
+  },
+  questionProfileImageInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  questionAuthorDetails: {
+    flex: 1,
+  },
+  questionNameTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 1,
+  },
+  questionAuthorName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    lineHeight: 22,
+    marginRight: 8,
+  },
+  questionDate: {
+    fontSize: 12,
+    color: '#636363',
+    fontFamily: 'Pretendard',
+    lineHeight: 22,
+  },
+  questionContent: {
+    flexDirection: 'row',
+    marginBottom: 15,
+  },
+  questionContentLeft: {
+    flex: 1,
+  },
+  questionTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    lineHeight: 22,
+    marginBottom: 8,
+  },
+  questionDescription: {
+    fontSize: 15,
+    color: '#636363',
+    fontFamily: 'Pretendard',
+    lineHeight: 22,
+  },
+  questionDivider: {
+    width: 321,
+    height: 1.5,
+    backgroundColor: '#F2F2F2',
+    marginBottom: 20,
+    alignSelf: 'center',
+  },
+  questionActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: -8,
+  },
+  questionActionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 16,
+  },
+  questionActionIcon: {
+    marginRight: 4,
+    position: 'relative',
+  },
+  questionDotsContainer: {
+    position: 'absolute',
+    top: 7,
+    left: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  questionDot: {
+    width: 2.4,
+    height: 2.4,
+    borderRadius: 1.2,
+    backgroundColor: '#AAAAAA',
+    marginRight: 2.4,
+  },
+  questionActionText: {
+    fontSize: 13,
+    color: '#AAA',
+    fontFamily: 'Pretendard',
+    fontWeight: '500',
+    lineHeight: 28.992,
+  },
+  transferSection: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  sortButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    marginBottom: 20,
+    gap: 6,
+  },
+  sortArrowsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  upArrow: {
+    marginRight: 0,
+  },
+  downArrow: {
+    marginLeft: 0,
+  },
+  sortText: {
+    color: '#323232',
+    textAlign: 'center',
+    fontFamily: 'Pretendard',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  transferList: {
+    marginTop: 20,
+  },
+  transferCard: {
+    width: 347,
+    minHeight: 200,
+    backgroundColor: '#FCFCFC',
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: 'rgba(242, 242, 242, 0.50)',
+    padding: 16,
+    marginBottom: 12,
+    alignSelf: 'center',
   },
   transferHeader: {
     marginBottom: 12,
@@ -893,15 +1526,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   transferProfileImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#FFD429',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+    overflow: 'hidden',
+  },
+  transferProfileImageInner: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    overflow: 'hidden',
-    marginRight: 12,
-  },
-  transferProfileImageInner: {
-    width: '100%',
-    height: '100%',
   },
   transferAuthorDetails: {
     flex: 1,
@@ -909,40 +1546,43 @@ const styles = StyleSheet.create({
   transferNameTimeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 1,
   },
   transferAuthorName: {
-    fontFamily: 'Pretendard',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: COLORS.neutral.black,
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    lineHeight: 22,
+    marginRight: 8,
   },
   transferDate: {
-    fontFamily: 'Pretendard',
     fontSize: 12,
-    fontWeight: '400',
-    color: COLORS.neutral.grey5,
+    color: '#636363',
+    fontFamily: 'Pretendard',
+    lineHeight: 22,
   },
   transferContent: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: 15,
   },
   transferContentLeft: {
     flex: 1,
-    paddingRight: 12,
+    marginRight: 12,
   },
   transferTitle: {
-    fontFamily: 'Pretendard',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    color: COLORS.neutral.black,
+    color: '#323232',
+    fontFamily: 'Pretendard',
+    lineHeight: 22,
     marginBottom: 8,
   },
   transferDescription: {
+    fontSize: 15,
+    color: '#636363',
     fontFamily: 'Pretendard',
-    fontSize: 14,
-    fontWeight: '400',
-    color: COLORS.neutral.grey5,
+    lineHeight: 22,
   },
   transferImageContainer: {
     width: 80,
@@ -955,141 +1595,46 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   transferDivider: {
-    height: 1,
-    backgroundColor: COLORS.neutral.grey2,
-    marginVertical: 12,
+    width: 321,
+    height: 1.5,
+    backgroundColor: '#F2F2F2',
+    marginBottom: 20,
+    alignSelf: 'center',
   },
   transferActions: {
     flexDirection: 'row',
-    gap: 16,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: -8,
   },
   transferActionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    marginLeft: 16,
   },
   transferActionIcon: {
     marginRight: 4,
+    position: 'relative',
+  },
+  transferDotsContainer: {
+    position: 'absolute',
+    top: 7,
+    left: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  transferDot: {
+    width: 2.4,
+    height: 2.4,
+    borderRadius: 1.2,
+    backgroundColor: '#AAAAAA',
+    marginRight: 2.4,
   },
   transferActionText: {
+    fontSize: 13,
+    color: '#AAA',
     fontFamily: 'Pretendard',
-    fontSize: 12,
-    fontWeight: '400',
-    color: COLORS.neutral.grey5,
-  },
-  questionCard: {
-    backgroundColor: COLORS.neutral.white,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: COLORS.neutral.grey2,
-  },
-  questionHeader: {
-    marginBottom: 12,
-  },
-  questionAuthorInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  questionProfileImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    overflow: 'hidden',
-    marginRight: 12,
-  },
-  questionProfileImageInner: {
-    width: '100%',
-    height: '100%',
-  },
-  questionAuthorDetails: {
-    flex: 1,
-  },
-  questionNameTimeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  questionAuthorName: {
-    fontFamily: 'Pretendard',
-    fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.neutral.black,
-  },
-  questionDate: {
-    fontFamily: 'Pretendard',
-    fontSize: 12,
-    fontWeight: '400',
-    color: COLORS.neutral.grey5,
-  },
-  questionContent: {
-    marginBottom: 12,
-  },
-  questionContentLeft: {
-    flex: 1,
-  },
-  questionTitle: {
-    fontFamily: 'Pretendard',
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.neutral.black,
-    marginBottom: 8,
-  },
-  questionDescription: {
-    fontFamily: 'Pretendard',
-    fontSize: 14,
-    fontWeight: '400',
-    color: COLORS.neutral.grey5,
-  },
-  questionDivider: {
-    height: 1,
-    backgroundColor: COLORS.neutral.grey2,
-    marginVertical: 12,
-  },
-  questionActions: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  questionActionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  questionActionIcon: {
-    marginRight: 4,
-  },
-  questionActionText: {
-    fontFamily: 'Pretendard',
-    fontSize: 12,
-    fontWeight: '400',
-    color: COLORS.neutral.grey5,
-  },
-  writeButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 8,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  writeButtonText: {
-    fontFamily: 'Pretendard',
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.neutral.white,
-  },
-  reviewDetailButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 8,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  reviewDetailButtonText: {
-    fontFamily: 'Pretendard',
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.neutral.white,
+    fontWeight: '500',
+    lineHeight: 28.992,
   },
 });
-
-export default PropertyModal;

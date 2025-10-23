@@ -1,5 +1,5 @@
 import React from 'react';
-import Svg, { Circle, Rect } from 'react-native-svg';
+import Svg, { Path, Rect } from 'react-native-svg';
 import { COLORS } from '@/constants/colors';
 
 export interface SearchIconProps {
@@ -17,21 +17,17 @@ export const SearchIcon: React.FC<SearchIconProps> = ({ size = 22, active = fals
   const height = size === 22 ? size : size + 1;
 
   return (
-    <Svg width={size} height={height} viewBox={viewBox} fill="none">
-      <Circle
-        cx="8.92899"
-        cy={size === 22 ? '8.51884' : '9.49296'}
-        r="7.51884"
+    <Svg width={size} height={height} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M9.70312 0.892578C14.605 0.892578 18.5146 4.69382 18.5146 9.30469C18.5144 13.9153 14.6048 17.7158 9.70312 17.7158C4.80148 17.7157 0.892841 13.9153 0.892578 9.30469C0.892578 4.69386 4.80131 0.892649 9.70312 0.892578Z"
         stroke={iconColor}
-        strokeWidth="2"
+        strokeWidth="1.78448"
       />
       <Rect
-        x="13.0039"
-        y={size === 22 ? '14.9502' : '15.9243'}
-        width="2.05454"
-        height="9.93332"
-        rx="1.02727"
-        transform="rotate(-45 13.0039 14.9502)"
+        width="2.29258"
+        height="11.0842"
+        rx="1.14629"
+        transform="matrix(0.721793 -0.69211 0.721793 0.69211 14.3438 16.3286)"
         fill={iconColor}
       />
     </Svg>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { COLORS } from '@/constants/colors';
 import { GreyCheckButton } from '@/components/Button/CheckButton';
@@ -7,6 +7,7 @@ import { GreyCheckIcon } from '@/components/Button/GreyCheckIcon';
 import { ArrowIcon } from '@/components/Icon/ArrowIcon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLayoutScale } from '@/utils/layout';
+import HouseLogo from '@/components/Icon/HouseLogo';
 
 interface TermItem {
   id: string;
@@ -67,7 +68,7 @@ export default function TermsAgreementScreen() {
     <ScrollView 
       style={styles.container} 
       contentContainerStyle={{
-        paddingTop: insets.top + y(60),
+        paddingTop: insets.top + y(77),
         paddingHorizontal: 25,
         paddingBottom: insets.bottom + 40,
       }}
@@ -75,16 +76,12 @@ export default function TermsAgreementScreen() {
       {/* 로고 영역 */}
       <View style={[styles.logoContainer, { marginTop: y(23) }]}>
         <View style={styles.logoBackground}>
-          <Image
-            source={require('@/assets/images/house-logo.png')}
-            style={styles.houseLogo}
-            resizeMode="contain"
-          />
+          <HouseLogo width={92.782} height={49.62} />
         </View>
       </View>
 
       {/* 안내 문구 */}
-      <Text style={[styles.guideText, { marginTop: y(8) }]}>아래 이용약관에{'\n'}동의하시면 가입이 시작됩니다.</Text>
+      <Text style={[styles.guideText, { marginTop: y(5) }]}>아래 이용약관에{'\n'}동의하시면 가입이 시작됩니다.</Text>
 
       {/* 약관 동의 섹션 */}
       <View style={[styles.termsContainer, { marginTop: y(20) }]}>
@@ -133,21 +130,24 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 60,
   },
   logoBackground: {
-    width: 168,
-    height: 168,
-    borderRadius: 84,
-    backgroundColor: '#FFFBFB',
+    width: 133,
+    height: 133,
+    borderRadius: 66.5,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  houseLogo: {
-    width: 137,
-    height: 99,
     flexShrink: 0,
-    aspectRatio: 137 / 99,
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 2.24,
+    },
+    shadowOpacity: 0.07,
+    shadowRadius: 2.5, // Figma의 blur를 대략적으로 반영
+    elevation: 3, // Android fallback
   },
   guideText: {
     color: COLORS.text.primary,

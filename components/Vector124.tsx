@@ -15,7 +15,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 299,
     backgroundColor: "#fff6dc"
-  }
+  },
 });
 
 export default Vector124;

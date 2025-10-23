@@ -3,6 +3,9 @@ export { ArrowIcon } from './ArrowIcon';
 export { SearchIcon } from './SearchIcon';
 export type { SearchIconProps } from './SearchIcon';
 
+export { FilterIcon } from './FilterIcon';
+export type { FilterIconProps } from './FilterIcon';
+
 export { EmailIcon } from './EmailIcon';
 export type { EmailIconProps } from './EmailIcon';
 
@@ -25,3 +28,6 @@ export { EmailOutlineIcon } from './EmailOutlineIcon';
 export type { EmailOutlineIconProps } from './EmailOutlineIcon';
 
 export { BackIcon } from './BackIcon';
+
+export { MenuIcon } from './MenuIcon';
+export type { MenuIconProps } from './MenuIcon';
