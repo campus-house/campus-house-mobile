@@ -4,13 +4,15 @@ import { Portal } from 'react-native-portalize';
 import { COLORS } from '@/constants/colors';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { searchBuildings } from '@/api/buildings';
 
 interface SearchModalProps {
   isVisible: boolean;
   onClose: () => void;
+  onSearchResult?: (building: any) => void;
 }
 
-export default function SearchModal({ isVisible, onClose }: SearchModalProps) {
+export default function SearchModal({ isVisible, onClose, onSearchResult }: SearchModalProps) {
   const insets = useSafeAreaInsets();
   const [recentSearches, setRecentSearches] = useState([
     '영통동',
@@ -20,6 +22,8 @@ export default function SearchModal({ isVisible, onClose }: SearchModalProps) {
     '마이온'
   ]);
   const [searchText, setSearchText] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // 개별 검색어 삭제
   const removeSearchTerm = (index: number) => {
@@ -31,12 +35,75 @@ export default function SearchModal({ isVisible, onClose }: SearchModalProps) {
     setRecentSearches([]);
   };
 
-  // 검색 실행
-  const handleSearch = () => {
-    if (searchText.trim() && !recentSearches.includes(searchText.trim())) {
-      setRecentSearches(prev => [searchText.trim(), ...prev]);
+  // 검색어 클릭 처리
+  const handleSearchTermClick = async (searchTerm: string) => {
+    try {
+      setIsSearching(true);
+      console.log('검색어 클릭:', searchTerm);
+      
+      // 서버에서 건물 검색
+      const results = await searchBuildings(searchTerm, { page: 0, size: 10 });
+      console.log('검색 결과:', results);
+      
+      if (results.content && results.content.length > 0) {
+        setSearchResults(results.content);
+        
+        // 첫 번째 결과를 선택하고 지도로 이동
+        const firstResult = results.content[0];
+        if (onSearchResult) {
+          onSearchResult(firstResult);
+        }
+        
+        onClose(); // 검색 모달 닫기
+      } else {
+        console.log('검색 결과 없음');
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('검색 에러:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
     }
-    setSearchText('');
+  };
+
+  // 검색 실행
+  const handleSearch = async () => {
+    if (!searchText.trim()) return;
+    
+    try {
+      setIsSearching(true);
+      console.log('검색어:', searchText.trim());
+      
+      // 서버에서 건물 검색
+      const results = await searchBuildings(searchText.trim(), { page: 0, size: 10 });
+      console.log('검색 결과:', results);
+      
+      if (results.content && results.content.length > 0) {
+        setSearchResults(results.content);
+        
+        // 첫 번째 결과를 선택하고 지도로 이동
+        const firstResult = results.content[0];
+        if (onSearchResult) {
+          onSearchResult(firstResult);
+        }
+        
+        // 검색어를 최근 검색어에 추가
+        if (!recentSearches.includes(searchText.trim())) {
+          setRecentSearches(prev => [searchText.trim(), ...prev]);
+        }
+        
+        onClose(); // 검색 모달 닫기
+      } else {
+        console.log('검색 결과 없음');
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('검색 에러:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   if (!isVisible) return null;
@@ -45,7 +112,7 @@ export default function SearchModal({ isVisible, onClose }: SearchModalProps) {
     <Portal>
       <View style={styles.container}>
         {/* 검색창 */}
-        <View style={[styles.searchContainer, { marginTop: insets.top + 20 }]}>
+        <View style={[styles.searchContainer, { marginTop: insets.top + 18 }]}>
           <TouchableOpacity style={styles.backButton} onPress={onClose}>
             <Svg width="13" height="22" viewBox="0 0 13 22" fill="none">
               <Path 
@@ -66,6 +133,29 @@ export default function SearchModal({ isVisible, onClose }: SearchModalProps) {
               onChangeText={setSearchText}
               onSubmitEditing={handleSearch}
               returnKeyType="search"
+              autoCorrect={false}
+              autoCapitalize="none"
+              keyboardType="default"
+              textContentType="none"
+              spellCheck={false}
+              autoComplete="off"
+              importantForAutofill="no"
+              dataDetectorTypes="none"
+              multiline={false}
+              numberOfLines={1}
+              blurOnSubmit={true}
+              clearButtonMode="never"
+              enablesReturnKeyAutomatically={true}
+              keyboardAppearance="default"
+              secureTextEntry={false}
+              selectTextOnFocus={false}
+              showSoftInputOnFocus={true}
+              allowFontScaling={false}
+              maxLength={100}
+              editable={true}
+              caretHidden={false}
+              contextMenuHidden={false}
+              scrollEnabled={false}
             />
             <TouchableOpacity style={styles.searchIcon} onPress={handleSearch}>
               <Svg width="23" height="23" viewBox="0 0 23 23" fill="none">
@@ -97,24 +187,43 @@ export default function SearchModal({ isVisible, onClose }: SearchModalProps) {
           
           {recentSearches.length > 0 ? (
             <View style={styles.searchTagsContainer}>
-              {recentSearches.map((search, index) => (
-                <View key={index} style={styles.searchTag}>
-                  <Text style={styles.searchTagText}>{search}</Text>
-                  <TouchableOpacity 
-                    style={styles.deleteButton}
-                    onPress={() => removeSearchTerm(index)}
-                  >
-                    <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <Path 
-                        d="M18 6L6 18M6 6L18 18" 
-                        stroke="#323232" 
-                        strokeWidth="2" 
-                        strokeLinecap="round"
-                      />
-                    </Svg>
-                  </TouchableOpacity>
-                </View>
-              ))}
+              {recentSearches.map((search, index) => {
+                // 글자 수에 따른 동적 크기 계산
+                const getTagWidth = (text: string) => {
+                  const length = text.length;
+                  return 68 + length * 10;
+                };
+
+                const dynamicTagStyle = {
+                  ...styles.searchTag,
+                  minWidth: getTagWidth(search),
+                  maxWidth: getTagWidth(search) + 20,
+                };
+
+                return (
+                  <View key={index} style={dynamicTagStyle}>
+                    <TouchableOpacity 
+                      style={styles.searchTagContent}
+                      onPress={() => handleSearchTermClick(search)}
+                    >
+                      <Text style={styles.searchTagText}>{search}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.deleteButton}
+                      onPress={() => removeSearchTerm(index)}
+                    >
+                      <Svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <Path 
+                          d="M18 6L6 18M6 6L18 18" 
+                          stroke={COLORS.neutral.grey4} 
+                          strokeWidth="2" 
+                          strokeLinecap="round"
+                        />
+                      </Svg>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
             </View>
           ) : (
             <View style={styles.noRecentSearches}>
@@ -135,13 +244,16 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 30,
+    marginTop: 106,
     marginBottom: 30,
   },
   backButton: {
     width: 10,
     height: 19.091,
     marginRight: 15,
+    marginLeft: -3,
+    marginTop: 11,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -153,6 +265,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
+    marginTop: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -166,6 +279,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#000',
     fontFamily: 'Pretendard',
+    textAlign: 'left',
+    textAlignVertical: 'center',
+    includeFontPadding: false,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    margin: 0,
+    borderWidth: 0,
   },
   searchIcon: {
     width: 22.915,
@@ -175,14 +295,14 @@ const styles = StyleSheet.create({
   },
   recentSearchesSection: {
     paddingHorizontal: 30,
-    marginTop: 20,
+    marginTop: 9,
   },
   recentSearchesHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
-    paddingLeft: 20,
+    paddingLeft: 8,
   },
   recentSearchesTitle: {
     color: '#323232',
@@ -218,11 +338,12 @@ const styles = StyleSheet.create({
   searchTag: {
     display: 'flex',
     minWidth: 94,
+    maxWidth: 200,
     height: 39,
-    paddingHorizontal: 18,
-    paddingVertical: 7,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
     alignItems: 'center',
-    gap: 15,
+    gap: 0,
     flexShrink: 0,
     borderRadius: 22.65,
     borderWidth: 0.5,
@@ -231,6 +352,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  searchTagContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    minWidth: 0,
+    paddingLeft: 2,
+  },
   searchTagText: {
     color: '#323232',
     fontFamily: 'Pretendard',
@@ -238,10 +366,12 @@ const styles = StyleSheet.create({
     fontStyle: 'normal',
     fontWeight: '400',
     lineHeight: 22,
+    flexShrink: 0,
+    textAlign: 'center',
   },
   deleteButton: {
-    width: 24,
-    height: 24,
+    width: 18,
+    height: 18,
     aspectRatio: 1,
     justifyContent: 'center',
     alignItems: 'center',

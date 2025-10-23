@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, StyleSheet, Dimensions, ActivityIndicator, Text, TouchableOpacity, TextInput, Animated } from 'react-native';
+import { View, StyleSheet, Dimensions, ActivityIndicator, Text, TouchableOpacity, TextInput, Animated, Alert } from 'react-native';
 import { NaverMapView, type Camera, type NaverMapViewRef } from '@mj-studio/react-native-naver-map';
 import { COLORS } from '@/constants/colors';
 import { PropertyMarker } from '@/components/map/PropertyMarker';
@@ -10,6 +10,8 @@ import { PropertyMarker as PropertyMarkerType } from '@/src/types/property';
 import { loadMockProperties } from '@/src/data/mockProperties';
 import { FilterIcon, SearchIcon } from '@/components/Icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getBuildings, searchBuildings, getNearbyBuildings, getBuildingById } from '@/api/buildings';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -36,19 +38,150 @@ export default function MapScreen() {
   // 검색 모달 state
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   
+  // 로그인 상태 관리
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
+  
   // 상단 UI 애니메이션
   const topUIOffset = useRef(new Animated.Value(0)).current;
 
   /**
-   * 매물 데이터 로드 함수
+   * 간단한 로그인 함수 (JWT 없이)
+   */
+  const simpleLogin = async (email: string, password: string) => {
+    try {
+      // 서버에 로그인 요청 (JWT 없이)
+      const response = await global.fetch('http://172.30.1.54:8080/api/auth/simple-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        
+        // 로그인 상태 저장
+        await AsyncStorage.setItem('isLoggedIn', 'true');
+        await AsyncStorage.setItem('userInfo', JSON.stringify(userData));
+        
+        setIsLoggedIn(true);
+        setUserInfo(userData);
+        
+        console.log('로그인 성공:', userData);
+        return true;
+      } else {
+        console.log('로그인 실패:', response.status);
+        return false;
+      }
+    } catch (error) {
+      console.error('로그인 에러:', error);
+      return false;
+    }
+  };
+
+  /**
+   * 로그인 상태 확인
+   */
+  const checkLoginStatus = async () => {
+    try {
+      const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+      const userInfo = await AsyncStorage.getItem('userInfo');
+      
+      if (isLoggedIn === 'true' && userInfo) {
+        setIsLoggedIn(true);
+        setUserInfo(JSON.parse(userInfo));
+        console.log('로그인 상태 복원:', JSON.parse(userInfo));
+      }
+    } catch (error) {
+      console.error('로그인 상태 확인 에러:', error);
+    }
+  };
+
+  /**
+   * 테스트 로그인 함수
+   */
+  const testLogin = async () => {
+    try {
+      Alert.alert('로그인 테스트', '아이디: 1, 비밀번호: 1로 로그인 시도...');
+      
+      const loginSuccess = await simpleLogin('1', '1');
+      
+      if (loginSuccess) {
+        Alert.alert('성공!', `로그인 완료!\n사용자: ${(userInfo as any)?.nickname || '테스트유저'}`);
+      } else {
+        Alert.alert('실패', '로그인에 실패했습니다.');
+      }
+    } catch (error: any) {
+      console.error('로그인 테스트 에러:', error);
+      Alert.alert('에러', `로그인 테스트 실패: ${error.message}`);
+    }
+  };
+
+  /**
+   * API 테스트 함수들
+   */
+  const testBuildingAPI = async () => {
+    try {
+      Alert.alert('API 테스트', '건물 API 테스트를 시작합니다...');
+      
+      // 1. 모든 건물 조회 테스트
+      const buildings = await getBuildings({ page: 0, size: 10 });
+      console.log('건물 목록:', buildings);
+      
+      // 2. 키워드 검색 테스트
+      const searchResults = await searchBuildings('경희대', { page: 0, size: 5 });
+      console.log('검색 결과:', searchResults);
+      
+      // 3. 위치 기반 검색 테스트 (경희대학교 좌표)
+      const nearbyResults = await getNearbyBuildings(37.2415169034264, 127.071726204875, { radiusKm: 1.0 });
+      console.log('주변 건물:', nearbyResults);
+      
+      Alert.alert('성공!', `건물 ${buildings.content?.length || 0}개 조회 완료`);
+    } catch (error: any) {
+      console.error('API 테스트 에러:', error);
+      Alert.alert('에러', `API 테스트 실패: ${error.message}`);
+    }
+  };
+
+  /**
+   * 매물 데이터 로드 함수 (서버 연동)
    */
   const loadProperties = async () => {
     try {
       setIsLoadingProperties(true);
-      const mockData = await loadMockProperties();
-      setProperties(mockData);
+      
+      // 방법 1: 전체 데이터 로드 (간단한 방식) - 인증 없이 테스트
+      const buildings = await getBuildings({ page: 0, size: 50 });
+      
+      if (buildings.content) {
+        // 서버 데이터를 PropertyMarker 형태로 변환
+        const serverProperties = buildings.content.map((building: any, index: number) => ({
+          id: `server_${building.id}`,
+          buildingName: building.buildingName,
+          latitude: building.latitude,
+          longitude: building.longitude,
+          price: {
+            deposit: building.deposit || 0,
+            monthly: building.monthlyRent || 0,
+          },
+          // 서버에서 받은 추가 정보들
+          address: building.address,
+          scrapCount: building.scrapCount || 0,
+          buildingUsage: building.buildingUsage,
+          // 나중에 상세 정보 로드용
+          buildingId: building.id,
+        }));
+        
+        setProperties(serverProperties);
+        console.log(`서버에서 ${serverProperties.length}개 건물 로드 완료`);
+      }
     } catch (error) {
       console.error('매물 데이터 로드 실패:', error);
+      // 실패시 Mock 데이터 사용
+      const mockData = await loadMockProperties();
+      setProperties(mockData);
     } finally {
       setIsLoadingProperties(false);
     }
@@ -59,6 +192,8 @@ export default function MapScreen() {
    */
   const handleMapReady = () => {
       setIsLoading(false);
+    console.log('NaverMap initialized');
+    console.log('지도 스타일 ID:', '922c3502-bc54-427b-a1fa-f99887a68a64');
     // 지도 준비 완료 후 매물 데이터 로드
     loadProperties();
   };
@@ -67,14 +202,15 @@ export default function MapScreen() {
    * 컴포넌트 마운트 시 초기 데이터 로드
    */
   useEffect(() => {
+    checkLoginStatus(); // 로그인 상태 확인
     // 지도가 준비되면 자동으로 loadProperties() 호출됨
   }, []);
 
   /**
-   * 매물 마커 클릭 시 호출
+   * 매물 마커 클릭 시 호출 (서버 연동)
    * @param property 클릭된 매물 정보
    */
-  const handleMarkerPress = (property: PropertyMarkerType) => {
+  const handleMarkerPress = async (property: PropertyMarkerType) => {
     // 지도를 실제 건물 위치로 포커스 (화면 상단 1/3에 위치)
     if (mapRef.current) {
       // 실제 건물 위치 (property 객체에서 가져옴)
@@ -92,6 +228,69 @@ export default function MapScreen() {
       });
     }
     
+    // 서버에서 상세 정보 로드 (buildingId가 있는 경우)
+    if ((property as any).buildingId) {
+      try {
+        console.log(`건물 ${(property as any).buildingId} 상세 정보 로드 중...`);
+        const buildingDetail = await getBuildingById((property as any).buildingId);
+        
+        // 상세 정보를 property에 병합
+        const enrichedProperty = {
+          ...property,
+          ...buildingDetail,
+          // 추가 상세 정보들
+          reviews: buildingDetail.reviews || [],
+          questions: buildingDetail.questions || [],
+          transfers: buildingDetail.transfers || [],
+        };
+        
+        setSelectedProperty(enrichedProperty);
+        console.log('건물 상세 정보 로드 완료:', enrichedProperty);
+        } catch (error) {
+        console.error('건물 상세 정보 로드 실패:', error);
+        // 실패시 기본 정보로 표시
+        setSelectedProperty(property);
+      }
+    } else {
+      // Mock 데이터인 경우
+      setSelectedProperty(property);
+    }
+    
+    setModalVisible(true);
+  };
+
+  /**
+   * 검색 결과 처리
+   */
+  const handleSearchResult = (building: any) => {
+    console.log('검색 결과 처리:', building);
+    
+    // 건물 정보를 PropertyMarker 형태로 변환
+    const property: PropertyMarkerType = {
+      id: `search_${building.id}`,
+      buildingName: building.buildingName,
+      latitude: building.latitude,
+      longitude: building.longitude,
+      price: {
+        deposit: building.deposit || 0,
+        monthly: building.monthlyRent || 0,
+      },
+      buildingId: building.id,
+      address: building.address,
+      scrapCount: building.scrapCount || 0,
+      buildingUsage: building.buildingUsage,
+    };
+
+    // 지도를 해당 위치로 이동
+    if (mapRef.current) {
+      mapRef.current.animateCameraTo({
+        latitude: building.latitude,
+        longitude: building.longitude,
+        zoom: 16,
+      });
+    }
+
+    // 오버레이 표시
     setSelectedProperty(property);
     setModalVisible(true);
   };
@@ -202,7 +401,25 @@ export default function MapScreen() {
       <SearchModal
         isVisible={searchModalVisible}
         onClose={() => setSearchModalVisible(false)}
+        onSearchResult={handleSearchResult}
       />
+
+      {/* 테스트 버튼들 */}
+      <View style={styles.testButtonsContainer}>
+        <TouchableOpacity 
+          style={styles.testButton}
+          onPress={testLogin}
+        >
+          <Text style={styles.testButtonText}>로그인 테스트</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.testButton}
+          onPress={testBuildingAPI}
+        >
+          <Text style={styles.testButtonText}>API 테스트</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -275,4 +492,30 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
     fontFamily: 'Pretendard',
   },
+      testButtonsContainer: {
+        position: 'absolute',
+        right: 20,
+        bottom: 100,
+        flexDirection: 'column',
+        gap: 10,
+      },
+      testButton: {
+        backgroundColor: '#FF805F',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderRadius: 8,
+        shadowColor: '#000',
+        shadowOffset: {
+          width: 0,
+          height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+      },
+      testButtonText: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: '600',
+      },
 });

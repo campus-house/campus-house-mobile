@@ -13,8 +13,8 @@ export const mockProperties: PropertyMarker[] = [
   {
     id: 'prop_001',
     buildingName: '아이파크',
-    latitude: 37.2518069000003,
-    longitude: 127.0774401000001,
+    latitude: 37.2518511494155,
+    longitude: 127.077470848386,
     price: {
       deposit: 1500, // 1500만원
       monthly: 80, // 80만원

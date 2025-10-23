@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginTop: -16,
+    marginTop: 2,
     position: 'relative',
   },
   commentContentText: {
@@ -652,7 +652,7 @@ const styles = StyleSheet.create({
     lineHeight: 24.822,
     flex: 1,
     marginRight: 8,
-    marginTop: 4,
+    marginTop: -8,
   },
   replyButton: {
     display: 'flex',
@@ -667,7 +667,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F2F2',
     position: 'absolute',
     right: 0,
-    top: 0,
+    top: -14,
   },
   replyButtonText: {
     color: '#AAA',

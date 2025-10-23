@@ -58,4 +58,12 @@ export interface PropertyMarker {
   longitude: number;
   /** 가격 정보 (간소화) */
   price: PropertyPrice;
+  /** 서버 건물 ID (서버 연동용) */
+  buildingId?: number;
+  /** 주소 (서버 연동용) */
+  address?: string;
+  /** 스크랩 수 (서버 연동용) */
+  scrapCount?: number;
+  /** 건물 용도 (서버 연동용) */
+  buildingUsage?: string;
 }
