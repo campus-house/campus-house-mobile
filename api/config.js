@@ -1,6 +1,8 @@
 // API 기본 설정
+export const API_BASE_URL = "http://172.21.59.114:8080";
+
 export const API_CONFIG = {
-  BASE_URL: "http://172.21.14.239:8080",
+  BASE_URL: API_BASE_URL,
   TIMEOUT: 10000, // 10초
   HEADERS: {
     'Content-Type': 'application/json',
@@ -8,21 +10,33 @@ export const API_CONFIG = {
   }
 };
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 // JWT 토큰 관리
-export const getAuthToken = () => {
-  // AsyncStorage에서 토큰 가져오기
-  return null; // 임시
+export const getAuthToken = async () => {
+  try {
+    const token = await AsyncStorage.getItem('authToken');
+    console.log('Retrieved token:', token);
+    return token;
+  } catch (error) {
+    console.error('토큰 가져오기 실패:', error);
+    return null;
+  }
 };
 
-export const setAuthToken = (token) => {
-  // AsyncStorage에 토큰 저장
-  console.log('Token saved:', token);
+export const setAuthToken = async (token) => {
+  try {
+    await AsyncStorage.setItem('authToken', token);
+    console.log('Token saved:', token);
+  } catch (error) {
+    console.error('토큰 저장 실패:', error);
+  }
 };
 
 // API 요청 헬퍼 함수
 export const apiRequest = async (endpoint, options = {}) => {
   const url = `${API_CONFIG.BASE_URL}${endpoint}`;
-  const token = getAuthToken();
+  const token = await getAuthToken();
   
   const config = {
     ...options,
@@ -34,9 +48,21 @@ export const apiRequest = async (endpoint, options = {}) => {
   };
 
   try {
+    console.log('API Request:', {
+      url: url,
+      method: config.method,
+      headers: config.headers,
+      body: config.body
+    });
+    
     const response = await fetch(url, config);
     
     if (!response.ok) {
+      console.log('Response error:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url
+      });
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     

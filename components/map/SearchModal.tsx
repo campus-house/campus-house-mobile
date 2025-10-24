@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
-import { Portal } from 'react-native-portalize';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Modal } from 'react-native';
 import { COLORS } from '@/constants/colors';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -106,10 +105,13 @@ export default function SearchModal({ isVisible, onClose, onSearchResult }: Sear
     }
   };
 
-  if (!isVisible) return null;
-
   return (
-    <Portal>
+    <Modal
+      visible={isVisible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      onRequestClose={onClose}
+    >
       <View style={styles.container}>
         {/* 검색창 */}
         <View style={[styles.searchContainer, { marginTop: insets.top + 18 }]}>
@@ -232,7 +234,7 @@ export default function SearchModal({ isVisible, onClose, onSearchResult }: Sear
           )}
         </View>
       </View>
-    </Portal>
+    </Modal>
   );
 }
 
@@ -245,7 +247,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 30,
-    marginTop: 106,
+    marginTop: 8,
     marginBottom: 30,
   },
   backButton: {

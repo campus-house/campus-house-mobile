@@ -16,13 +16,23 @@ export default function ReviewScreen() {
   const [typeSelectY, setTypeSelectY] = useState<number>(0);
   const [periodSelectY, setPeriodSelectY] = useState<number>(0);
   
-  // 이 화면에서만 하단바를 배경 뒤로 숨기기
+  // 하단바 완전히 제거 (독립적인 화면)
   useFocusEffect(
     React.useCallback(() => {
       const parent = navigation.getParent?.();
-      parent?.setOptions({ tabBarStyle: { display: 'none' } });
+      if (parent) {
+        parent.setOptions({
+          tabBarStyle: {
+            display: 'none',
+            height: 0,
+            opacity: 0,
+            position: 'absolute',
+            bottom: -1000
+          }
+        });
+      }
       return () => {
-        parent?.setOptions({ tabBarStyle: undefined });
+        // 복원하지 않음 - 후기 작성 페이지는 독립적
       };
     }, [navigation])
   );

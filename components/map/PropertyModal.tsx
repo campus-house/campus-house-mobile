@@ -10,12 +10,14 @@ import {
   Animated,
   PanResponder,
   TouchableWithoutFeedback,
+  Alert,
 } from 'react-native';
 import Svg, { Path, Circle, Rect, Mask } from 'react-native-svg';
 import { COLORS } from '@/constants/colors';
 import { router } from 'expo-router';
 import { PropertyMarker as PropertyMarkerType } from '@/src/types/property';
 import { Portal } from 'react-native-portalize';
+import { addScrap } from '@/api/scrap';
 
 const { width, height } = Dimensions.get('window');
 
@@ -31,6 +33,7 @@ interface BuildingDetailModalProps {
 export default function BuildingDetailModal({ isVisible, onClose, property, onHeightChange }: BuildingDetailModalProps) {
   const [selectedTab, setSelectedTab] = useState<TabType>('실거주자 후기');
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isScraped, setIsScraped] = useState(false);
   const modalHeightAnim = useRef(new Animated.Value(height * 0.46)).current;
   
   // 모달 높이 상수
@@ -121,6 +124,27 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
   const handleClose = () => {
     setIsExpanded(false);
     onClose();
+  };
+
+  const handleScrapPress = async () => {
+    if (!property?.buildingId) {
+      Alert.alert('오류', '건물 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    try {
+      await addScrap(property.buildingId);
+      setIsScraped(true);
+      Alert.alert('성공', '스크랩에 추가되었습니다!');
+    } catch (error) {
+      console.error('스크랩 추가 실패:', error);
+      if (error.message.includes('이미 스크랩한 건물')) {
+        Alert.alert('알림', '이미 스크랩한 건물입니다.');
+        setIsScraped(true);
+      } else {
+        Alert.alert('오류', '스크랩 추가에 실패했습니다.');
+      }
+    }
   };
 
 
@@ -380,13 +404,13 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
               </Svg>
             </TouchableOpacity>
             <View style={styles.rightIcons}>
-              <TouchableOpacity style={styles.scrapButton}>
-                {/* 스크랩 아이콘 등 복붙 */}
+              <TouchableOpacity style={styles.scrapButton} onPress={handleScrapPress}>
                 <Svg width="21" height="26" viewBox="0 0 21 26" fill="none">
                   <Path
                     d="M17.1457 1.59521H3.8019C2.53097 1.59521 1.50104 2.62619 1.50232 3.89711L1.52131 22.7093C1.52238 23.7767 2.5868 24.5164 3.58759 24.1451L10.099 21.7294C10.3322 21.6429 10.5887 21.6427 10.8221 21.7288L17.3815 24.1493C18.3825 24.5186 19.4453 23.778 19.4453 22.711V3.89479C19.4453 2.62477 18.4158 1.59521 17.1457 1.59521Z"
-                    stroke="#FF805F"
+                    stroke={isScraped ? "#FF805F" : "#AAAAAA"}
                     strokeWidth="2.41446"
+                    fill={isScraped ? "#FF805F" : "none"}
                   />
                 </Svg>
               </TouchableOpacity>
@@ -412,40 +436,32 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
             
             {/* 건물 이름, 평점, 별점 등 */}
             <Text style={styles.buildingName}>{property?.buildingName || '아이파크'}</Text>
-            <Text style={styles.rating}>4.0</Text>
+            <Text style={styles.rating}>{property?.averageRating ? property.averageRating.toFixed(1) : '0.0'}</Text>
             <View style={styles.starsContainer}>
-              {/* 별점 SVG 복붙 */}
-              <Svg width="103" height="20" viewBox="0 0 103 20" fill="none">
-                <Path
-                  d="M7.5551 2.7345C7.78307 2.03287 8.7757 2.03286 9.00367 2.7345L9.96724 5.70006C10.0692 6.01384 10.3616 6.22629 10.6915 6.22629H13.8097C14.5474 6.22629 14.8542 7.17033 14.2573 7.60396L11.7347 9.43678C11.4678 9.63071 11.3561 9.97445 11.458 10.2882L12.4216 13.2538C12.6496 13.9554 11.8465 14.5389 11.2497 14.1052L8.72702 12.2724C8.4601 12.0785 8.09867 12.0785 7.83175 12.2724L5.30909 14.1052C4.71225 14.5389 3.9092 13.9554 4.13717 13.2538L5.10074 10.2882C5.2027 9.97445 5.09101 9.63071 4.82409 9.43678L2.30143 7.60396C1.70459 7.17033 2.01132 6.22629 2.74906 6.22629H5.86724C6.19717 6.22629 6.48958 6.01384 6.59153 5.70006L7.5551 2.7345Z"
-                  fill="#FEB71F"
-                />
-                <Path
-                  d="M24.9731 2.7345C25.201 2.03287 26.1937 2.03286 26.4216 2.7345L27.3852 5.70006C27.4872 6.01384 27.7796 6.22629 28.1095 6.22629H31.2277C31.9654 6.22629 32.2722 7.17033 31.6753 7.60396L29.1527 9.43678C28.8857 9.63071 28.774 9.97445 28.876 10.2882L29.8396 13.2538C30.0675 13.9554 29.2645 14.5389 28.6676 14.1052L26.145 12.2724C25.8781 12.0785 25.5166 12.0785 25.2497 12.2724L22.7271 14.1052C22.1302 14.5389 21.3272 13.9554 21.5551 13.2538L22.5187 10.2882C22.6207 9.97445 22.509 9.63071 22.2421 9.43678L19.7194 7.60396C19.1226 7.17033 19.4293 6.22629 20.167 6.22629H23.2852C23.6151 6.22629 23.9075 6.01384 24.0095 5.70006L24.9731 2.7345Z"
-                  fill="#FEB71F"
-                />
-                <Path
-                  d="M42.3891 2.7345C42.6171 2.03287 43.6097 2.03286 43.8377 2.7345L44.8012 5.70006C44.9032 6.01384 45.1956 6.22629 45.5255 6.22629H48.6437C49.3814 6.22629 49.6882 7.17033 49.0913 7.60396L46.5687 9.43678C46.3018 9.63071 46.1901 9.97445 46.292 10.2882L47.2556 13.2538C47.4836 13.9554 46.6805 14.5389 46.0837 14.1052L43.561 12.2724C43.2941 12.0785 42.9327 12.0785 42.6657 12.2724L40.1431 14.1052C39.5462 14.5389 38.7432 13.9554 38.9712 13.2538L39.9347 10.2882C40.0367 9.97445 39.925 9.63071 39.6581 9.43678L37.1354 7.60396C36.5386 7.17033 36.8453 6.22629 37.583 6.22629H40.7012C41.0312 6.22629 41.3236 6.01384 41.4255 5.70006L42.3891 2.7345Z"
-                  fill="#FEB71F"
-                />
-                <Path
-                  d="M59.8071 2.7345C60.035 2.03287 61.0277 2.03286 61.2556 2.7345L62.2192 5.70006C62.3211 6.01384 62.6136 6.22629 62.9435 6.22629H66.0617C66.7994 6.22629 67.1061 7.17033 66.5093 7.60396L63.9866 9.43678C63.7197 9.63071 63.608 9.97445 63.71 10.2882L64.6736 13.2538C64.9015 13.9554 64.0985 14.5389 63.5016 14.1052L60.979 12.2724C60.7121 12.0785 60.3506 12.0785 60.0837 12.2724L57.561 14.1052C56.9642 14.5389 56.1612 13.9554 56.3891 13.2538L57.3527 10.2882C57.4546 9.97445 57.343 9.63071 57.076 9.43678L54.5534 7.60396C53.9565 7.17033 54.2633 6.22629 55.001 6.22629H58.1192C58.4491 6.22629 58.7415 6.01384 58.8435 5.70006L59.8071 2.7345Z"
-                  fill="#FEB71F"
-                />
-                <Path
-                  d="M77.225 2.7345C77.453 2.03287 78.4456 2.03286 78.6736 2.7345L79.6372 5.70006C79.7391 6.01384 80.0315 6.22629 80.3615 6.22629H83.4796C84.2174 6.22629 84.5241 7.17033 83.9273 7.60396L81.4046 9.43678C81.1377 9.63071 81.026 9.97445 81.128 10.2882L82.0915 13.2538C82.3195 13.9554 81.5164 14.5389 80.9196 14.1052L78.3969 12.2724C78.13 12.0785 77.7686 12.0785 77.5017 12.2724L74.979 14.1052C74.3822 14.5389 73.5791 13.9554 73.8071 13.2538L74.7707 10.2882C74.8726 9.97445 74.7609 9.63071 74.494 9.43678L71.9714 7.60396C71.3745 7.17033 71.6812 6.22629 72.419 6.22629H75.5372C75.8671 6.22629 76.1595 6.01384 76.2615 5.70006L77.225 2.7345Z"
-                  fill="#FEB71F"
-                />
-              </Svg>
+              {/* 동적 별점 표시 */}
+              {[1, 2, 3, 4, 5].map((star) => {
+                const rating = property?.averageRating || 0;
+                const isFilled = star <= rating;
+                const isHalfFilled = star - 0.5 <= rating && rating < star;
+                
+                return (
+                  <Svg key={star} width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ marginRight: 1 }}>
+                    <Path
+                      d="M7.5551 2.7345C7.78307 2.03287 8.7757 2.03286 9.00367 2.7345L9.96724 5.70006C10.0692 6.01384 10.3616 6.22629 10.6915 6.22629H13.8097C14.5474 6.22629 14.8542 7.17033 14.2573 7.60396L11.7347 9.43678C11.4678 9.63071 11.3561 9.97445 11.458 10.2882L12.4216 13.2538C12.6496 13.9554 11.8465 14.5389 11.2497 14.1052L8.72702 12.2724C8.4601 12.0785 8.09867 12.0785 7.83175 12.2724L5.30909 14.1052C4.71225 14.5389 3.9092 13.9554 4.13717 13.2538L5.10074 10.2882C5.2027 9.97445 5.09101 9.63071 4.82409 9.43678L2.30143 7.60396C1.70459 7.17033 2.01132 6.22629 2.74906 6.22629H5.86724C6.19717 6.22629 6.48958 6.01384 6.59153 5.70006L7.5551 2.7345Z"
+                      fill={isFilled ? "#FEB71F" : "#E5E5E5"}
+                    />
+                  </Svg>
+                );
+              })}
             </View>
-            <Text style={styles.reviewCount}>12개의 후기</Text>
+            <Text style={styles.reviewCount}>{property?.totalReviews || 0}개의 후기</Text>
 
             {/* 평가 항목들 */}
             <View style={styles.ratingsSection}>
               {/* 소음, 편의시설, 주차장, 벌레 항목 복붙 */}
               <View style={styles.ratingItem}>
                 <Text style={styles.ratingLabel}>소음</Text>
-                <Text style={styles.ratingText}>조용해요</Text>
+                <Text style={styles.ratingText}>{property?.totalReviews > 0 ? '조용해요' : '후기 없음'}</Text>
                 <View style={styles.ratingBarContainer}>
                   <Svg width="170" height="9" viewBox="0 0 170 9" fill="none">
                     <Rect
@@ -459,7 +475,7 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
                     <Rect
                       x="0.9375"
                       y="0.895996"
-                      width="163.085"
+                      width={property?.totalReviews > 0 ? 163.085 : 0}
                       height="7.96677"
                       rx="3.98339"
                       fill="#FFD429"
@@ -469,7 +485,7 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
               </View>
               <View style={styles.ratingItem}>
                 <Text style={styles.ratingLabel}>편의시설</Text>
-                <Text style={styles.ratingText}>접근성 좋아요</Text>
+                <Text style={styles.ratingText}>{property?.totalReviews > 0 ? '접근성 좋아요' : '후기 없음'}</Text>
                 <View style={styles.ratingBarContainer}>
                   <Svg width="170" height="9" viewBox="0 0 170 9" fill="none">
                     <Rect
@@ -483,7 +499,7 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
                     <Rect
                       x="0.9375"
                       y="0.895996"
-                      width="163.085"
+                      width={property?.totalReviews > 0 ? 163.085 : 0}
                       height="7.96677"
                       rx="3.98339"
                       fill="#FFD429"
@@ -493,7 +509,7 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
               </View>
               <View style={styles.ratingItem}>
                 <Text style={styles.ratingLabel}>주차장</Text>
-                <Text style={styles.ratingText}>넓어요</Text>
+                <Text style={styles.ratingText}>{property?.totalReviews > 0 ? '넓어요' : '후기 없음'}</Text>
                 <View style={styles.ratingBarContainer}>
                   <Svg width="170" height="9" viewBox="0 0 170 9" fill="none">
                     <Rect
@@ -507,7 +523,7 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
                     <Rect
                       x="0.9375"
                       y="0.895996"
-                      width="113.3"
+                      width={property?.totalReviews > 0 ? 113.3 : 0}
                       height="7.96677"
                       rx="3.98339"
                       fill="#FFD429"
@@ -517,7 +533,7 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
               </View>
               <View style={styles.ratingItem}>
                 <Text style={styles.ratingLabel}>벌레</Text>
-                <Text style={styles.ratingText}>가끔 나와요</Text>
+                <Text style={styles.ratingText}>{property?.totalReviews > 0 ? '가끔 나와요' : '후기 없음'}</Text>
                 <View style={styles.ratingBarContainer}>
                   <Svg width="170" height="9" viewBox="0 0 170 9" fill="none">
                     <Rect
@@ -531,7 +547,7 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
                     <Rect
                       x="0.9375"
                       y="0.895996"
-                      width="56.65"
+                      width={property?.totalReviews > 0 ? 56.65 : 0}
                       height="7.96677"
                       rx="3.98339"
                       fill="#FFD429"
@@ -958,6 +974,9 @@ const styles = StyleSheet.create({
     height: 19.311,
     alignSelf: 'center',
     marginTop: 10,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   reviewCount: {
     color: '#AAA',

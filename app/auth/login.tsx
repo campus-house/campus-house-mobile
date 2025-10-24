@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { COLORS } from '@/constants/colors';
 import { router } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
+import { login } from '@/api/auth';
 
 export default function NewScreen3() {
   const [id, setId] = useState('');
@@ -10,6 +11,7 @@ export default function NewScreen3() {
   const [idFocused, setIdFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
@@ -24,6 +26,30 @@ export default function NewScreen3() {
       keyboardDidHideListener?.remove();
     };
   }, []);
+
+  const handleLogin = async () => {
+    if (!id.trim() || !password.trim()) {
+      Alert.alert('오류', '아이디와 비밀번호를 입력해주세요.');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const response = await login({
+        username: id.trim(),
+        password: password.trim()
+      });
+      
+      console.log('로그인 성공:', response);
+      router.push('/main');
+    } catch (error) {
+      console.error('로그인 실패:', error);
+      Alert.alert('오류', '아이디 또는 비밀번호가 올바르지 않습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView 
@@ -115,8 +141,14 @@ export default function NewScreen3() {
 
       {/* 로그인 버튼 */}
       <View style={[styles.buttonContainer, keyboardVisible && styles.buttonContainerKeyboard]}>
-        <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/main')}>
-          <Text style={styles.loginButtonText}>로그인하기</Text>
+        <TouchableOpacity 
+          style={[styles.loginButton, isLoading && styles.loginButtonDisabled]} 
+          onPress={handleLogin}
+          disabled={isLoading}
+        >
+          <Text style={styles.loginButtonText}>
+            {isLoading ? '로그인 중...' : '로그인하기'}
+          </Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -254,5 +286,8 @@ const styles = StyleSheet.create({
     fontStyle: 'normal',
     fontWeight: '700',
     lineHeight: 16,
+  },
+  loginButtonDisabled: {
+    backgroundColor: '#CCCCCC',
   },
 });

@@ -29,7 +29,7 @@ export default function ChatListScreen() {
           bottom: 0,
           left: 0,
           right: 0,
-          height: 76,
+          height: 105,
           width: 393,
           backgroundColor: '#FFF',
           borderTopLeftRadius: 25,
@@ -41,6 +41,9 @@ export default function ChatListScreen() {
           shadowOpacity: 0.03,
           shadowRadius: 4,
           elevation: 5,
+          zIndex: 1000,
+          justifyContent: 'space-evenly',
+          paddingHorizontal: 14,
         },
       });
     }
@@ -180,10 +183,10 @@ export default function ChatListScreen() {
               d="M24.9873 0C28.2062 0 30.8163 2.60931 30.8164 5.82812V14.7383C30.8164 17.9572 28.2062 20.5674 24.9873 20.5674H19.1855L16.4697 25.2715C16.1245 25.8688 15.2621 25.8689 14.917 25.2715L12.2012 20.5674H6.39844C3.17963 20.5672 0.570312 17.9571 0.570312 14.7383V5.82812C0.570464 2.60941 3.17972 0.000152403 6.39844 0H24.9873Z"
               fill="#FF805F"
             />
-            {/* 말풍선 내부 흰점 3개 */}
-            <Circle cx="8" cy="8" r="1.8" fill="white" />
-            <Circle cx="15.5" cy="8" r="1.8" fill="white" />
-            <Circle cx="23" cy="8" r="1.8" fill="white" />
+            {/* 말풍선 내부 흰점 3개 - 더 명확하게 */}
+            <Circle cx="8" cy="8" r="2" fill="white" />
+            <Circle cx="15.5" cy="8" r="2" fill="white" />
+            <Circle cx="23" cy="8" r="2" fill="white" />
           </Svg>
           <Text style={[styles.tabLabel, { color: '#FF805F' }]}>커뮤</Text>
         </TouchableOpacity>

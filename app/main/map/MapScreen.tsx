@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { View, StyleSheet, Dimensions, ActivityIndicator, Text, TouchableOpacity, TextInput, Animated, Alert } from 'react-native';
-import { NaverMapView, type Camera, type NaverMapViewRef } from '@mj-studio/react-native-naver-map';
+import { NaverMapView, NaverMapMarkerOverlay, type Camera, type NaverMapViewRef } from '@mj-studio/react-native-naver-map';
 import { COLORS } from '@/constants/colors';
 import { PropertyMarker } from '@/components/map/PropertyMarker';
 import PropertyModal from '@/components/map/PropertyModal';
@@ -10,7 +10,8 @@ import { PropertyMarker as PropertyMarkerType } from '@/src/types/property';
 import { loadMockProperties } from '@/src/data/mockProperties';
 import { FilterIcon, SearchIcon } from '@/components/Icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getBuildings, searchBuildings, getNearbyBuildings, getBuildingById } from '@/api/buildings';
+import { getBuildings, searchBuildings, getNearbyBuildings } from '@/api/buildings';
+import { getBuildingReviews } from '@/api/building';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
@@ -32,6 +33,10 @@ export default function MapScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<PropertyMarkerType | null>(null);
   
+  // 건물 후기 state
+  const [buildingReviews, setBuildingReviews] = useState([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  
   // 필터 모달 state
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   
@@ -44,6 +49,15 @@ export default function MapScreen() {
   
   // 상단 UI 애니메이션
   const topUIOffset = useRef(new Animated.Value(0)).current;
+
+  /**
+   * 평균 별점 계산 함수
+   */
+  const calculateAverageRating = (reviews: any[]) => {
+    if (!reviews || reviews.length === 0) return 0;
+    const totalRating = reviews.reduce((sum, review) => sum + (review.rating || 0), 0);
+    return Math.round((totalRating / reviews.length) * 10) / 10; // 소수점 첫째자리까지
+  };
 
   /**
    * 간단한 로그인 함수 (JWT 없이)
@@ -99,51 +113,6 @@ export default function MapScreen() {
     }
   };
 
-  /**
-   * 테스트 로그인 함수
-   */
-  const testLogin = async () => {
-    try {
-      Alert.alert('로그인 테스트', '아이디: 1, 비밀번호: 1로 로그인 시도...');
-      
-      const loginSuccess = await simpleLogin('1', '1');
-      
-      if (loginSuccess) {
-        Alert.alert('성공!', `로그인 완료!\n사용자: ${(userInfo as any)?.nickname || '테스트유저'}`);
-      } else {
-        Alert.alert('실패', '로그인에 실패했습니다.');
-      }
-    } catch (error: any) {
-      console.error('로그인 테스트 에러:', error);
-      Alert.alert('에러', `로그인 테스트 실패: ${error.message}`);
-    }
-  };
-
-  /**
-   * API 테스트 함수들
-   */
-  const testBuildingAPI = async () => {
-    try {
-      Alert.alert('API 테스트', '건물 API 테스트를 시작합니다...');
-      
-      // 1. 모든 건물 조회 테스트
-      const buildings = await getBuildings({ page: 0, size: 10 });
-      console.log('건물 목록:', buildings);
-      
-      // 2. 키워드 검색 테스트
-      const searchResults = await searchBuildings('경희대', { page: 0, size: 5 });
-      console.log('검색 결과:', searchResults);
-      
-      // 3. 위치 기반 검색 테스트 (경희대학교 좌표)
-      const nearbyResults = await getNearbyBuildings(37.2415169034264, 127.071726204875, { radiusKm: 1.0 });
-      console.log('주변 건물:', nearbyResults);
-      
-      Alert.alert('성공!', `건물 ${buildings.content?.length || 0}개 조회 완료`);
-    } catch (error: any) {
-      console.error('API 테스트 에러:', error);
-      Alert.alert('에러', `API 테스트 실패: ${error.message}`);
-    }
-  };
 
   /**
    * 매물 데이터 로드 함수 (서버 연동)
@@ -228,26 +197,29 @@ export default function MapScreen() {
       });
     }
     
-    // 서버에서 상세 정보 로드 (buildingId가 있는 경우)
+    // 건물 후기 조회 (buildingId가 있는 경우)
     if ((property as any).buildingId) {
       try {
-        console.log(`건물 ${(property as any).buildingId} 상세 정보 로드 중...`);
-        const buildingDetail = await getBuildingById((property as any).buildingId);
+        console.log(`건물 ${(property as any).buildingId} 후기 조회 중...`);
+        setIsLoadingReviews(true);
+        const reviewsData = await getBuildingReviews((property as any).buildingId);
+        setBuildingReviews(reviewsData.content || []);
+        setIsLoadingReviews(false);
         
-        // 상세 정보를 property에 병합
+        // 후기 정보를 property에 병합
         const enrichedProperty = {
           ...property,
-          ...buildingDetail,
-          // 추가 상세 정보들
-          reviews: buildingDetail.reviews || [],
-          questions: buildingDetail.questions || [],
-          transfers: buildingDetail.transfers || [],
+          reviews: reviewsData.content || [],
+          totalReviews: reviewsData.totalElements || 0,
+          averageRating: calculateAverageRating(reviewsData.content || []),
         };
         
         setSelectedProperty(enrichedProperty);
-        console.log('건물 상세 정보 로드 완료:', enrichedProperty);
-        } catch (error) {
-        console.error('건물 상세 정보 로드 실패:', error);
+        console.log('건물 후기 로드 완료:', enrichedProperty);
+      } catch (error) {
+        console.error('건물 후기 로드 실패:', error);
+        setIsLoadingReviews(false);
+        
         // 실패시 기본 정보로 표시
         setSelectedProperty(property);
       }
@@ -317,8 +289,8 @@ export default function MapScreen() {
   };
 
   const initialCamera: Camera = {
-    latitude: 37.2518069000003, // mockProperties와 일치
-    longitude: 127.0774401000001, // mockProperties와 일치
+    latitude: 37.2518069000003, // 원래 위치로 복구
+    longitude: 127.0774401000001, // 원래 위치로 복구
     zoom: 16,
   };
 
@@ -404,22 +376,6 @@ export default function MapScreen() {
         onSearchResult={handleSearchResult}
       />
 
-      {/* 테스트 버튼들 */}
-      <View style={styles.testButtonsContainer}>
-        <TouchableOpacity 
-          style={styles.testButton}
-          onPress={testLogin}
-        >
-          <Text style={styles.testButtonText}>로그인 테스트</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.testButton}
-          onPress={testBuildingAPI}
-        >
-          <Text style={styles.testButtonText}>API 테스트</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -492,30 +448,4 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
     fontFamily: 'Pretendard',
   },
-      testButtonsContainer: {
-        position: 'absolute',
-        right: 20,
-        bottom: 100,
-        flexDirection: 'column',
-        gap: 10,
-      },
-      testButton: {
-        backgroundColor: '#FF805F',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        borderRadius: 8,
-        shadowColor: '#000',
-        shadowOffset: {
-          width: 0,
-          height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-      },
-      testButtonText: {
-        color: '#FFFFFF',
-        fontSize: 14,
-        fontWeight: '600',
-      },
 });

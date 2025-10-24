@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
 import { useEffect } from 'react';
 import { COLORS } from '@/constants/colors';
+import { TAB_BAR_STYLE } from '@/constants/navigation';
 import CommunityIcon from '@/components/navigator/CommunityIcon';
 import MapIcon from '@/components/navigator/MapIcon';
 import ScrapIcon from '@/components/navigator/ScrapIcon';
@@ -17,27 +18,7 @@ export default function MainLayout() {
     router.replace('/main/map/');
   }, []);
   
-  const baseTabBarStyle = {
-    position: 'absolute' as const,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 105,
-    width: 393,
-    backgroundColor: '#FFF',
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: -1.5, height: -4.5 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 5,
-    zIndex: 1000,
-    justifyContent: 'space-evenly' as const,
-    paddingHorizontal: 14,
-  };
+  // baseTabBarStyle은 이제 constants/navigation.ts에서 import
   return (
     <>
       <StatusBar style="auto" backgroundColor={COLORS.background.primary} />
@@ -46,7 +27,7 @@ export default function MainLayout() {
           <Tabs
           screenOptions={{
             headerShown: false,
-            tabBarStyle: baseTabBarStyle,
+            tabBarStyle: TAB_BAR_STYLE,
             tabBarActiveTintColor: '#FF805F',
             tabBarInactiveTintColor: '#636363',
             tabBarItemStyle: {

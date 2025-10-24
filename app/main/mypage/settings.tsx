@@ -3,39 +3,28 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { TAB_BAR_STYLE, HIDE_TAB_BAR_STYLE } from '@/constants/navigation';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   
-  // 하단바 스타일을 메인과 동일하게 설정
+  // 설정 화면에서 네비게이터 바 숨기기
   useFocusEffect(
     React.useCallback(() => {
       const parent = navigation.getParent?.();
-      parent?.setOptions({ 
-        tabBarStyle: {
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: 105,
-          width: 393,
-          backgroundColor: '#FFF',
-          borderTopLeftRadius: 25,
-          borderTopRightRadius: 25,
-          borderBottomLeftRadius: 0,
-          borderBottomRightRadius: 0,
-          shadowColor: '#000',
-          shadowOffset: { width: -1.5, height: -4.5 },
-          shadowOpacity: 0.03,
-          shadowRadius: 4,
-          elevation: 5,
-          justifyContent: 'space-evenly',
-          paddingHorizontal: 14,
-        }
-      });
+      if (parent) {
+        parent.setOptions({ 
+          tabBarStyle: HIDE_TAB_BAR_STYLE
+        });
+      }
       return () => {
-        parent?.setOptions({ tabBarStyle: undefined });
+        // 설정 화면에서 나갈 때 네비게이터 바 복원
+        if (parent) {
+          parent.setOptions({
+            tabBarStyle: TAB_BAR_STYLE
+          });
+        }
       };
     }, [navigation])
   );
@@ -50,7 +39,7 @@ export default function SettingsScreen() {
         <View style={{ width: 19, height: 19 }} />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
         {/* 알림 설정 카드 */}
         <View style={styles.card}>
           <Text style={[styles.sectionTitle, { marginBottom: 5 }]}>알림 설정</Text>

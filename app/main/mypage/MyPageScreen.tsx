@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Pressable } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -9,47 +9,84 @@ import { router } from 'expo-router';
 import BellIcon from '@/components/Icon/BellIcon';
 import ShopIcon from '@/components/Icon/ShopIcon';
 import SettingIcon from '@/components/Icon/SettingIcon';
+import { getMyProfile } from '@/api/mypage';
 
 export default function MyPageScreen() {
   const { width: screenWidth } = Dimensions.get('window');
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   
-  // 하단바 스타일을 메인과 동일하게 설정
-  useFocusEffect(
-    React.useCallback(() => {
-      const parent = navigation.getParent?.();
-      parent?.setOptions({ 
-        tabBarStyle: {
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: 105,
-          width: 393,
-          backgroundColor: '#FFF',
-          borderTopLeftRadius: 25,
-          borderTopRightRadius: 25,
-          borderBottomLeftRadius: 0,
-          borderBottomRightRadius: 0,
-          shadowColor: '#000',
-          shadowOffset: { width: -1.5, height: -4.5 },
-          shadowOpacity: 0.03,
-          shadowRadius: 4,
-          elevation: 5,
-          justifyContent: 'space-evenly',
-          paddingHorizontal: 14,
-        }
-      });
-      return () => {
-        parent?.setOptions({ tabBarStyle: undefined });
-      };
-    }, [navigation])
-  );
+  // 사용자 정보 타입 정의
+  interface UserProfile {
+    id: number | null;
+    email: string;
+    nickname: string;
+    university: string;
+    major: string;
+    location: string;
+    rewards: number;
+    isVerified: boolean;
+    verifiedBuildingName: string;
+    introduction: string;
+  }
+
+  // 사용자 정보 상태
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // 하드코딩된 프로필 데이터
-  const name = '방미오';
-  const intro = '이번에 이사온 미오라고해요!! ^~^';
+  // 기본값 상수
+  const DEFAULT_PROFILE: UserProfile = {
+    id: null,
+    email: '',
+    nickname: '사용자',
+    university: '대학교',
+    major: '전공',
+    location: '위치',
+    rewards: 0,
+    isVerified: false,
+    verifiedBuildingName: '',
+    introduction: '안녕하세요!'
+  };
+  
+  // 사용자 프로필 로드
+  const loadUserProfile = async () => {
+    try {
+      console.log('사용자 프로필 로드 시작');
+      const profile = await getMyProfile();
+      console.log('사용자 프로필 로드 성공:', profile);
+      
+      setUserProfile({
+        id: profile.id || DEFAULT_PROFILE.id,
+        email: profile.email || DEFAULT_PROFILE.email,
+        nickname: profile.nickname || DEFAULT_PROFILE.nickname,
+        university: profile.university || DEFAULT_PROFILE.university,
+        major: profile.major || DEFAULT_PROFILE.major,
+        location: profile.location || DEFAULT_PROFILE.location,
+        rewards: profile.rewards || DEFAULT_PROFILE.rewards,
+        isVerified: profile.isVerified || DEFAULT_PROFILE.isVerified,
+        verifiedBuildingName: profile.verifiedBuildingName || DEFAULT_PROFILE.verifiedBuildingName,
+        introduction: profile.introduction || DEFAULT_PROFILE.introduction
+      });
+    } catch (error) {
+      console.error('사용자 프로필 로드 실패:', error);
+      console.log('기본값 사용');
+      setUserProfile(DEFAULT_PROFILE);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // 컴포넌트 마운트 시 프로필 로드
+  useEffect(() => {
+    loadUserProfile();
+  }, []);
+  
+  // 마이페이지에서는 메인 네비게이터 바를 그대로 사용
+  // 별도 스타일 조작 없음
+  
+  // 동적 프로필 데이터
+  const name = userProfile?.nickname || '사용자';
+  const intro = userProfile?.introduction || '안녕하세요!';
   
   // 알림 상태 (true면 주황색 점 표시)
   const [hasNotification, setHasNotification] = React.useState(true);
@@ -63,13 +100,13 @@ export default function MyPageScreen() {
         <View style={styles.rightTopBackground}><Vector123 /></View>
       </View>
       <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 60, paddingBottom: 120 }}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 60, paddingBottom: 40 }}>
         {/* 상단 헤더 영역 */}
         <View style={styles.headerSection}>
           {/* 주소 정보 */}
           <View style={styles.addressContainer}>
-            <Text style={styles.addressTitle} numberOfLines={1} ellipsizeMode="clip">아이파크 803호</Text>
-            <Text style={styles.addressSubtitle}>영통구 효원로 407</Text>
+            <Text style={styles.addressTitle} numberOfLines={1} ellipsizeMode="clip">{userProfile?.verifiedBuildingName || '아이파크 803호'}</Text>
+            <Text style={styles.addressSubtitle}>{userProfile?.location || '영통구 효원로 407'}</Text>
           </View>
           
           {/* 우측 아이콘들 */}
@@ -135,7 +172,7 @@ export default function MyPageScreen() {
             </View>
             <View style={styles.rewardTextContainer}>
                 <Text style={[styles.rewardLabel, { marginLeft: -34 }]}>보유 하트</Text>
-                <Text style={styles.rewardValue}>60개</Text>
+                <Text style={styles.rewardValue}>0개</Text>
             </View>
             </View>
           </View>
@@ -163,7 +200,7 @@ export default function MyPageScreen() {
             <View style={[styles.profileCard, { pointerEvents: 'box-none' }]}>
             <View style={styles.profileInfo}>
               <Text style={styles.profileName}>{name}</Text>
-              <Text style={styles.profileHandle}>@bangmioo_1</Text>
+              <Text style={styles.profileHandle}>@{userProfile?.email || 'bangmioo_1'}</Text>
               <Text style={styles.profileDescription}>{intro}</Text>
             </View>
             {/* 프로필 편집 - 카드 우측의 회색 pill 버튼 (터치 가능) */}
@@ -572,7 +609,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     width: 336,
-    height: 46,
+    height: 48,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,

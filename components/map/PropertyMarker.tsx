@@ -14,37 +14,39 @@ export const PropertyMarker: React.FC<PropertyMarkerProps> = ({ property, onPres
     const deposit = property?.price?.deposit ?? 0;
     const monthly = property?.price?.monthly ?? 0;
     
-    // 보증금 포맷팅
+    // 보증금 포맷팅 (원 단위 → 만원 단위)
     const formatDeposit = (amount: number) => {
-      if (amount >= 10000) {
-        const eok = Math.floor(amount / 10000);
-        const cheon = Math.floor((amount % 10000) / 1000);
+      const manwon = Math.floor(amount / 10000); // 만원 단위로 변환
+      if (manwon >= 10000) {
+        const eok = Math.floor(manwon / 10000);
+        const cheon = Math.floor((manwon % 10000) / 1000);
         if (cheon > 0) {
           return `${eok}억 ${cheon}천`;
         }
         return `${eok}억`;
-      } else if (amount >= 1000) {
-        const cheon = Math.floor(amount / 1000);
+      } else if (manwon >= 1000) {
+        const cheon = Math.floor(manwon / 1000);
         return `${cheon}천`;
       } else {
-        return `${amount}`;
+        return `${manwon}`;
       }
     };
     
-    // 월세 포맷팅
+    // 월세 포맷팅 (원 단위 → 만원 단위)
     const formatMonthly = (amount: number) => {
-      if (amount >= 10000) {
-        const eok = Math.floor(amount / 10000);
-        const cheon = Math.floor((amount % 10000) / 1000);
+      const manwon = Math.floor(amount / 10000); // 만원 단위로 변환
+      if (manwon >= 10000) {
+        const eok = Math.floor(manwon / 10000);
+        const cheon = Math.floor((manwon % 10000) / 1000);
         if (cheon > 0) {
           return `${eok}억 ${cheon}천`;
         }
         return `${eok}억`;
-      } else if (amount >= 1000) {
-        const cheon = Math.floor(amount / 1000);
+      } else if (manwon >= 1000) {
+        const cheon = Math.floor(manwon / 1000);
         return `${cheon}천`;
       } else {
-        return `${amount}`;
+        return `${manwon}`;
       }
     };
     
@@ -53,7 +55,7 @@ export const PropertyMarker: React.FC<PropertyMarkerProps> = ({ property, onPres
 
   return (
     <NaverMapMarkerOverlay
-      latitude={property.latitude + 0.000015}
+      latitude={property.latitude}
       longitude={property.longitude}
       onTap={() => onPress?.(property)}
       width={131}

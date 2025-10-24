@@ -20,7 +20,10 @@ export const register = async (userData) => {
 export const login = async (credentials) => {
   const response = await apiRequest('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify(credentials),
+    body: JSON.stringify({
+      username: credentials.username,
+      password: credentials.password
+    }),
   });
   
   // 토큰 저장

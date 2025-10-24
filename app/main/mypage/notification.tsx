@@ -11,34 +11,43 @@ export default function NotificationSettingsScreen() {
   const [transferOn, setTransferOn] = useState(false);
   const [snsOn, setSnsOn] = useState(true);
   
-  // 하단바 스타일을 메인과 동일하게 설정
+  // 하단바 완전히 제거 (독립적인 화면)
   useFocusEffect(
     React.useCallback(() => {
       const parent = navigation.getParent?.();
-      parent?.setOptions({ 
-        tabBarStyle: {
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: 105,
-          width: 393,
-          backgroundColor: '#FFF',
-          borderTopLeftRadius: 25,
-          borderTopRightRadius: 25,
-          borderBottomLeftRadius: 0,
-          borderBottomRightRadius: 0,
-          shadowColor: '#000',
-          shadowOffset: { width: -1.5, height: -4.5 },
-          shadowOpacity: 0.03,
-          shadowRadius: 4,
-          elevation: 5,
-          justifyContent: 'space-evenly',
-          paddingHorizontal: 14,
-        }
-      });
+      if (parent) {
+        parent.setOptions({
+          tabBarStyle: {
+            display: 'none'
+          }
+        });
+      }
       return () => {
-        parent?.setOptions({ tabBarStyle: undefined });
+        // 알림 설정 화면에서 나갈 때 네비게이터 바 복원
+        if (parent) {
+          parent.setOptions({
+            tabBarStyle: {
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 105,
+              width: 393,
+              backgroundColor: '#FFF',
+              borderTopLeftRadius: 25,
+              borderTopRightRadius: 25,
+              borderBottomLeftRadius: 0,
+              borderBottomRightRadius: 0,
+              shadowColor: '#000',
+              shadowOffset: { width: -1.5, height: -4.5 },
+              shadowOpacity: 0.03,
+              shadowRadius: 4,
+              elevation: 5,
+              justifyContent: 'space-evenly',
+              paddingHorizontal: 14,
+            }
+          });
+        }
       };
     }, [navigation])
   );

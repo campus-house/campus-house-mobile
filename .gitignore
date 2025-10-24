@@ -84,6 +84,7 @@ expo-env.d.ts
 # Expo Prebuild (네이티브 폴더는 prebuild로 생성)
 # ios/  # 주석 처리 - 팀원이 바로 실행할 수 있도록 포함
 android/
+ios/
 
 # Metro
 .metro-health-check*
