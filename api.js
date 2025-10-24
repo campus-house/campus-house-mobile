@@ -1,4 +1,4 @@
-const BASE_URL = "http://172.30.1.54:8080";
+const BASE_URL = "http://172.21.14.239:8080";
 
 // 간단한 연결 테스트용
 export const simpleTest = async () => {

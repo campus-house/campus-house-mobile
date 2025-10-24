@@ -1,6 +1,6 @@
 // API 기본 설정
 export const API_CONFIG = {
-  BASE_URL: "http://172.30.1.54:8080",
+  BASE_URL: "http://172.21.14.239:8080",
   TIMEOUT: 10000, // 10초
   HEADERS: {
     'Content-Type': 'application/json',

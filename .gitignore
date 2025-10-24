@@ -82,7 +82,7 @@ expo-env.d.ts
 *.mobileprovision
 
 # Expo Prebuild (네이티브 폴더는 prebuild로 생성)
-ios/
+# ios/  # 주석 처리 - 팀원이 바로 실행할 수 있도록 포함
 android/
 
 # Metro

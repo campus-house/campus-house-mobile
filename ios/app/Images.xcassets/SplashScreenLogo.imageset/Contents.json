@@ -1,0 +1,13 @@
+{
+  "images" : [
+    {
+      "filename" : "splash_image@4x.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

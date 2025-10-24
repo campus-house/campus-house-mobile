@@ -13,8 +13,42 @@ export const PropertyMarker: React.FC<PropertyMarkerProps> = ({ property, onPres
   const formatPriceText = () => {
     const deposit = property?.price?.deposit ?? 0;
     const monthly = property?.price?.monthly ?? 0;
-    const depositK = deposit / 1000;
-    return `${depositK}천 / ${monthly}만원`;
+    
+    // 보증금 포맷팅
+    const formatDeposit = (amount: number) => {
+      if (amount >= 10000) {
+        const eok = Math.floor(amount / 10000);
+        const cheon = Math.floor((amount % 10000) / 1000);
+        if (cheon > 0) {
+          return `${eok}억 ${cheon}천`;
+        }
+        return `${eok}억`;
+      } else if (amount >= 1000) {
+        const cheon = Math.floor(amount / 1000);
+        return `${cheon}천`;
+      } else {
+        return `${amount}`;
+      }
+    };
+    
+    // 월세 포맷팅
+    const formatMonthly = (amount: number) => {
+      if (amount >= 10000) {
+        const eok = Math.floor(amount / 10000);
+        const cheon = Math.floor((amount % 10000) / 1000);
+        if (cheon > 0) {
+          return `${eok}억 ${cheon}천`;
+        }
+        return `${eok}억`;
+      } else if (amount >= 1000) {
+        const cheon = Math.floor(amount / 1000);
+        return `${cheon}천`;
+      } else {
+        return `${amount}`;
+      }
+    };
+    
+    return `${formatDeposit(deposit)} / ${formatMonthly(monthly)}만원`;
   };
 
   return (
