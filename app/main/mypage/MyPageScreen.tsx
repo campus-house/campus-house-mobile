@@ -38,14 +38,14 @@ export default function MyPageScreen() {
   const DEFAULT_PROFILE: UserProfile = {
     id: null,
     email: '',
-    nickname: '사용자',
+    nickname: '방미오',
     university: '대학교',
     major: '전공',
-    location: '위치',
+    location: '영통구 효원로 407',
     rewards: 0,
     isVerified: false,
     verifiedBuildingName: '',
-    introduction: '안녕하세요!'
+    introduction: '이번에 이사온 미오라고해요!! ^~^'
   };
   
   // 사용자 프로필 로드
@@ -85,8 +85,8 @@ export default function MyPageScreen() {
   // 별도 스타일 조작 없음
   
   // 동적 프로필 데이터
-  const name = userProfile?.nickname || '사용자';
-  const intro = userProfile?.introduction || '안녕하세요!';
+  const name = userProfile?.nickname || '방미오';
+  const intro = userProfile?.introduction || '이번에 이사온 미오라고해요!! ^~^';
   
   // 알림 상태 (true면 주황색 점 표시)
   const [hasNotification, setHasNotification] = React.useState(true);
@@ -206,7 +206,7 @@ export default function MyPageScreen() {
             {/* 프로필 편집 - 카드 우측의 회색 pill 버튼 (터치 가능) */}
             <View style={{ pointerEvents: 'auto' }}>
               <TouchableOpacity
-                style={styles.editPill}
+                style={[styles.editPill, { position: 'absolute', top: -10, right: -10 }]}
                 activeOpacity={0.85}
                 hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 onPress={() => router.push('/main/mypage/profile_edit')}
@@ -231,8 +231,14 @@ export default function MyPageScreen() {
             
             <View style={styles.badgeList}>
               {/* 초록 라쿤 뱃지 */}
-              <View style={styles.badgeItem}>
-                <View style={[styles.badgeCircle, styles.badgeClip] }>
+              <View style={[styles.badgeItem, { marginLeft: 10 }]}>
+                <View style={[styles.badgeCircle, styles.badgeClip, {
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }]}>
                   {/* clip exactly to dashed circle bounds */}
                   <View style={styles.badgeInnerClip}>
                     <Image source={require('@/assets/images/racoon-real.png')} style={[styles.badgeCharacter, { width: 215, height: 215, transform: [{ translateX: 27 }, { translateY: 13 }] }]} resizeMode="contain" />
@@ -243,8 +249,15 @@ export default function MyPageScreen() {
               </View>
               
               {/* 노랑 다람쥐 뱃지 */}
-              <View style={styles.badgeItem}>
-                <View style={[styles.badgeCircle, styles.badgeClip, { backgroundColor: '#ffd429' }]}> 
+              <View style={[styles.badgeItem, { marginLeft: -15 }]}>
+                <View style={[styles.badgeCircle, styles.badgeClip, { 
+                  backgroundColor: '#ffd429',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }]}> 
                   {/* clip exactly to dashed circle bounds */}
                   <View style={styles.badgeInnerClip}>
                     <Image source={require('@/assets/images/squirrielfull.png')} style={[styles.badgeCharacter, { width: 50, height: 50, transform: [{ translateX: 5 }, { translateY: 10 }] }]} resizeMode="contain" />
@@ -254,7 +267,7 @@ export default function MyPageScreen() {
               </View>
               
               {/* 회색 잠금 뱃지 */}
-              <View style={styles.badgeItem}>
+              <View style={[styles.badgeItem, { marginLeft: -20 }]}>
                 <View style={[styles.badgeCircle, { backgroundColor: '#d9d9d9' }]}>
                   <Image source={require('@/assets/images/small_lock.png')} style={[styles.badgeLock, { width: 64, height: 64 }]} resizeMode="contain" />
                 </View>
@@ -534,6 +547,8 @@ const styles = StyleSheet.create({
     gap: 16,
     marginBottom: 20,
     marginTop: -120,
+    width: 336,
+    alignSelf: 'center',
   },
   rewardCard: {
     flex: 1,
@@ -642,13 +657,13 @@ const styles = StyleSheet.create({
   },
   tooltip: {
     position: 'absolute',
-    top: -15,
+    top: -20,
     left: '50%',
-    transform: [{ translateX: -25 }],
+    transform: [{ translateX: -40 }],
     backgroundColor: '#ff805f',
     paddingHorizontal: 13,
     paddingVertical: 7,
-    borderRadius: 10,
+    borderRadius: 15,
     // 말풍선 꼬리
     shadowColor: 'transparent',
   },
@@ -685,7 +700,7 @@ const styles = StyleSheet.create({
   },
   // 초록색 배경과 회색 배경의 경계 라운드 처리용 전환 뷰
   roundedTransition: {
-    height: 118,
+    height: 130,
     backgroundColor: '#f9f9f9',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
@@ -707,9 +722,10 @@ const styles = StyleSheet.create({
     width: 344,
     height: 122,
     padding: 16,
-    paddingLeft: 11, // left -5px
+    paddingLeft: 11, // left -5px (original)
     paddingTop: 11,  // up -5px
     marginHorizontal: 26, // keep card bounds; edges controlled by section padding
+    position: 'relative', // 자식 요소의 absolute 위치 지정을 위한 기준점
   },
   profileInfo: {
     flex: 1,
@@ -724,6 +740,7 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     height: 27,
     marginTop: -5,
+    marginLeft: -5,
   },
   profileHandle: {
     width: 86,
@@ -744,6 +761,7 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     height: 24,
     marginTop: 3,
+    marginLeft: -5,
   },
   editButton: {
     backgroundColor: '#f2f2f2',
@@ -781,7 +799,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 28,
     padding: 20,
-    paddingLeft: 15, // left -5px
+    paddingLeft: 5, // left -15px (15 - 10 = 5)
     paddingTop: 23,  // top space larger like profile
     height: 180,
     marginHorizontal: 26,
@@ -801,14 +819,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Pretendard',
     color: '#323232',
     textAlign: 'left',
+    marginLeft: 20,
   },
   badgeArrow: {
     width: 13,
     height: 13,
   },
   arrowIcon: {
-    width: 13,
-    height: 13,
+    width: 18,
+    height: 18,
   },
   badgeSubtitle: {
     width: 104,
@@ -819,6 +838,7 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     marginBottom: 20,
     marginTop: 0,
+    marginLeft: 20,
   },
   badgeList: {
     flexDirection: 'row',
@@ -837,6 +857,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
     overflow: 'visible',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   badgeClip: {},
   badgeDashed: {
@@ -904,6 +929,7 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     marginBottom: 20,
     marginTop: 0,
+    marginLeft: 10,
   },
   activityList: {
     gap: 16,
@@ -920,6 +946,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    marginLeft: 5,
   },
   activityIconBox: {
     width: 29,
@@ -935,15 +962,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Pretendard',
     color: '#323232',
     textAlign: 'left',
-    marginLeft: -130,
-    marginTop: -5, // texts +5px up additionally
+    marginLeft: -125,
+    marginTop: -2, // texts +5px up additionally, then +3px down
   },
   activityIcon: {
     width: 24,
     height: 24,
   },
   activityArrow: {
-    width: 13,
-    height: 13,
+    width: 18,
+    height: 18,
   },
 });

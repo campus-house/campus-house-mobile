@@ -30,16 +30,27 @@ type Post = {
   comments: number;
   likes: number;
   shares: number;
+  rating?: string;
 };
 
 type Props = {
   showBackButton: boolean;
   posts: Post[];
+  cardPosition: number;
+  pan: any;
+  panResponder: any;
+  onScroll: (event: any) => void;
+  isVillageBoard?: boolean;
 };
 
-export default function ScrollModal({
+export default function VillageScrollModal({
   showBackButton,
   posts,
+  cardPosition,
+  pan,
+  panResponder,
+  onScroll,
+  isVillageBoard = false,
 }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
   const modalHeightAnim = useRef(new Animated.Value(screenHeight * 0.18)).current;
@@ -56,7 +67,7 @@ export default function ScrollModal({
   }, []);
   
   // PanResponder 설정 - 드래그로 모달 높이 조절
-  const panResponder = useRef(
+  const modalPanResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (evt, gestureState) => {
         return Math.abs(gestureState.dy) > 5;
@@ -116,11 +127,7 @@ export default function ScrollModal({
       <View style={styles.postHeader}>
         <View style={styles.authorInfo}>
           <View style={styles.profileImage}>
-            <Image
-              source={require('@/assets/images/ramjui.png')}
-              style={styles.profileImageInner}
-              resizeMode="cover"
-            />
+            <Text style={styles.profileImageText}>{post.profileImage}</Text>
           </View>
           <View style={styles.authorDetails}>
             <View style={styles.nameTimeRow}>
@@ -136,22 +143,21 @@ export default function ScrollModal({
         <View style={styles.contentLeft}>
           <Text style={styles.postTitle}>{post.title}</Text>
           <Text style={styles.postDescription}>{post.content}</Text>
+          {post.rating && (
+            <Text style={styles.postRating}>{post.rating}</Text>
+          )}
         </View>
         <View style={styles.contentImage}>
-          <Image
-            source={require('@/assets/images/cuffie.png')}
-            style={styles.coffeeImage}
-            resizeMode="cover"
-          />
+          <Text style={styles.postImageText}>{post.image}</Text>
         </View>
       </View>
 
-      <View style={styles.divider} />
+      <View style={styles.postDivider} />
 
       <View style={styles.postActions}>
         <View style={styles.actionItem}>
-          <View style={styles.speechBubbleContainer}>
-            <Svg width="22" height="18" viewBox="0 0 22 18" style={styles.speechBubble}>
+          <View style={styles.actionIcon}>
+            <Svg width="22" height="18" viewBox="0 0 22 18">
               <Path
                 d="M15.9326 0.478516C19.0464 0.4787 21.5703 3.00334 21.5703 6.11719V8.43457C21.5703 11.5484 19.0464 14.0731 15.9326 14.0732H13.4951L11.624 17.1582C11.372 17.5738 10.7686 17.5738 10.5166 17.1582L8.64648 14.0732H6.20898C3.09503 14.0732 0.570327 11.5485 0.570312 8.43457V6.11719C0.570312 3.00323 3.09503 0.478516 6.20898 0.478516H15.9326Z"
                 stroke="#AAAAAA"
@@ -165,7 +171,7 @@ export default function ScrollModal({
               <View style={styles.dot} />
             </View>
           </View>
-          <Text style={styles.actionText}>4</Text>
+          <Text style={styles.actionText}>{post.comments}</Text>
         </View>
         <View style={styles.actionItem}>
           <Svg width="19" height="16" viewBox="0 0 19 16" style={styles.actionIcon}>
@@ -176,7 +182,7 @@ export default function ScrollModal({
               fill="none"
             />
           </Svg>
-          <Text style={styles.actionText}>5</Text>
+          <Text style={styles.actionText}>{post.likes}</Text>
         </View>
         <View style={styles.actionItem}>
           <Svg width="14" height="16" viewBox="0 0 14 16" style={styles.actionIcon}>
@@ -187,7 +193,7 @@ export default function ScrollModal({
               fill="none"
             />
           </Svg>
-          <Text style={styles.actionText}>0</Text>
+          <Text style={styles.actionText}>{post.shares}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -214,7 +220,7 @@ export default function ScrollModal({
                   left: 20
                 }
               ]} 
-              onPress={() => router.push('/main/community')}
+              onPress={() => router.back()}
             >
               <BackIcon />
             </TouchableOpacity>
@@ -223,17 +229,19 @@ export default function ScrollModal({
 
         <View
           style={[styles.header, isExpanded && { marginTop: 80 }]}
-          {...panResponder.panHandlers}
+          {...modalPanResponder.panHandlers}
         >
           {!isExpanded && <View style={styles.dragHandle} />}
           <Text style={[styles.headerTitle, isExpanded && styles.headerTitleFullScreen]}>
-            질문 게시판
+            경희 마을 게시판
           </Text>
         </View>
 
         <TouchableOpacity
           style={styles.notificationCardContainer}
-          onPress={() => router.push('/main/community/questions')}
+          onPress={() => {
+            // 알림 카드 클릭 시 처리
+          }}
         >
           <Svg width="356" height="80" viewBox="0 0 356 80" style={styles.notificationCardSvg}>
             <Path
@@ -266,25 +274,24 @@ export default function ScrollModal({
                 fill="#FF805F"
               />
             </Svg>
-            <Text style={styles.notificationText}>똑똑! 새로운 질문이 들어왔어요!</Text>
+            <Text style={styles.notificationText}>새로운 양도 글이 올라왔어요!</Text>
           </View>
         </TouchableOpacity>
 
         <View style={styles.grayLine} />
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>아파트소식</Text>
+          <Text style={styles.sectionTitle}>실거주 후기</Text>
         </View>
 
         <ScrollView
           style={styles.postsContainer}
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.communityPosts}
+          onScroll={onScroll}
           scrollEventThrottle={16}
-          bounces={true}
-          scrollEnabled={true}
-          nestedScrollEnabled={true}
         >
-          <View style={styles.communityPosts}>{posts.map(renderPost)}</View>
+          {posts.map(renderPost)}
         </ScrollView>
       </Animated.View>
     </View>
@@ -292,93 +299,58 @@ export default function ScrollModal({
 }
 
 const styles = StyleSheet.create({
-  topNavBar: {
-    width: screenWidth,
-    height: 113,
-    backgroundColor: '#FFF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 40,
-    zIndex: 10,
-    position: 'absolute',
-    top: 0,
-  },
-  backButton: {
-    position: 'absolute',
-    left: 31,
-    width: 44,
-    height: 60,
-    padding: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   modalOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 10000,
+    backgroundColor: 'transparent',
+    justifyContent: 'flex-end',
   },
   modalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  topNavBar: {
     position: 'absolute',
-    bottom: 0,
+    top: 0,
     left: 0,
     right: 0,
-    width: screenWidth,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 34.5,
-    borderTopRightRadius: 34.5,
-    zIndex: 10001,
-    shadowColor: 'rgba(194, 224, 242, 0.20)',
-    shadowOffset: { width: 0, height: -12 },
-    shadowOpacity: 1,
-    shadowRadius: 4,
-    elevation: 12,
+    height: 100,
+    zIndex: 1000,
+  },
+  backButton: {
+    position: 'absolute',
+    zIndex: 1001,
   },
   header: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
-    borderTopLeftRadius: 34.5,
-    borderTopRightRadius: 34.5,
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  dragHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 2,
+    marginBottom: 16,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#323232',
     fontFamily: 'Pretendard',
-    lineHeight: 18,
-    marginTop: 20,
   },
-  headerTitleFullScreen: { marginTop: 60 },
-  dragHandle: {
-    width: 102,
-    height: 4,
-    backgroundColor: '#CDCDCD',
-    borderRadius: 2,
-    marginBottom: 8,
-    marginTop: -8,
-    alignSelf: 'center',
+  headerTitleFullScreen: {
+    fontSize: 20,
   },
-  postsContainer: { flex: 1, paddingHorizontal: 20, paddingTop: 20, paddingBottom: 300 },
   notificationCardContainer: {
-    marginHorizontal: 20,
-    marginTop: 8,
-    marginBottom: 16,
     position: 'relative',
-    width: 347,
-    height: 72,
-    alignSelf: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 2,
+    marginBottom: 20,
   },
   notificationCardSvg: { position: 'absolute', top: 0, left: 0, width: 347, height: 72 },
   notificationContent: {
@@ -430,54 +402,91 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
-    overflow: 'hidden',
   },
-  profileImageInner: { width: 40, height: 40, borderRadius: 20 },
+  profileImageText: {
+    fontSize: 24,
+  },
   authorDetails: { flex: 1 },
-  nameTimeRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 1 },
+  nameTimeRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   authorName: {
-    fontSize: 15,
-    fontWeight: '600',
     color: '#323232',
     fontFamily: 'Pretendard',
-    lineHeight: 22,
-    marginRight: 8,
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 16,
   },
-  postTime: { fontSize: 12, color: '#AAA', fontFamily: 'Pretendard', lineHeight: 22 },
-  postDate: { fontSize: 12, color: '#636363', fontFamily: 'Pretendard', lineHeight: 22 },
-  postContent: { flexDirection: 'row', marginBottom: 20 },
+  postTime: {
+    color: '#AAAAAA',
+    fontFamily: 'Pretendard',
+    fontSize: 12,
+    fontWeight: '400',
+    lineHeight: 14,
+    marginLeft: 8,
+  },
+  postDate: {
+    color: '#AAAAAA',
+    fontFamily: 'Pretendard',
+    fontSize: 12,
+    fontWeight: '400',
+    lineHeight: 14,
+  },
+  postContent: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
   contentLeft: { flex: 1, marginRight: 12 },
   postTitle: {
-    fontSize: 15,
-    fontWeight: '600',
     color: '#323232',
     fontFamily: 'Pretendard',
-    lineHeight: 22,
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 19,
     marginBottom: 8,
   },
-  postDescription: { fontSize: 15, color: '#636363', fontFamily: 'Pretendard', lineHeight: 22 },
-  contentImage: { width: 70, height: 80, borderRadius: 8, overflow: 'hidden' },
-  coffeeImage: { width: 70, height: 80, borderRadius: 8 },
-  divider: {
-    width: 321,
-    height: 1.5,
-    backgroundColor: '#F2F2F2',
-    marginBottom: 12,
-    alignSelf: 'center',
+  postDescription: {
+    color: '#666666',
+    fontFamily: 'Pretendard',
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 8,
+  },
+  postRating: {
+    color: '#FF805F',
+    fontFamily: 'Pretendard',
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 8,
+  },
+  contentImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  postImageText: {
+    fontSize: 30,
+  },
+  postDivider: {
+    height: 1,
+    backgroundColor: '#F0F0F0',
+    marginVertical: 12,
   },
   postActions: {
     flexDirection: 'row',
+    justifyContent: 'space-around',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginTop: -8,
   },
-  actionItem: { flexDirection: 'row', alignItems: 'center', marginLeft: 16 },
-  actionIcon: { marginRight: 4 },
-  speechBubbleContainer: { position: 'relative', marginRight: 4 },
-  speechBubble: {},
+  actionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionIcon: {
+    marginRight: 4,
+  },
   dotsContainer: {
     position: 'absolute',
-    top: 7,
     left: 6,
     flexDirection: 'row',
     alignItems: 'center',

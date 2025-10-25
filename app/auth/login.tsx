@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import { COLORS } from '@/constants/colors';
 import { router } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
-import { login } from '@/api/auth';
 
 export default function NewScreen3() {
   const [id, setId] = useState('');
@@ -11,7 +10,6 @@ export default function NewScreen3() {
   const [idFocused, setIdFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
@@ -26,30 +24,6 @@ export default function NewScreen3() {
       keyboardDidHideListener?.remove();
     };
   }, []);
-
-  const handleLogin = async () => {
-    if (!id.trim() || !password.trim()) {
-      Alert.alert('오류', '아이디와 비밀번호를 입력해주세요.');
-      return;
-    }
-
-    setIsLoading(true);
-    
-    try {
-      const response = await login({
-        username: id.trim(),
-        password: password.trim()
-      });
-      
-      console.log('로그인 성공:', response);
-      router.push('/main');
-    } catch (error) {
-      console.error('로그인 실패:', error);
-      Alert.alert('오류', '아이디 또는 비밀번호가 올바르지 않습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <KeyboardAvoidingView 
@@ -98,7 +72,7 @@ export default function NewScreen3() {
         </View>
 
         {/* 비밀번호 입력 */}
-        <View style={styles.inputGroup}>
+        <View style={styles.passwordInputGroup}>
           <Text style={styles.inputLabel}>비밀번호</Text>
           <View style={styles.inputContainer}>
             <TextInput
@@ -141,14 +115,8 @@ export default function NewScreen3() {
 
       {/* 로그인 버튼 */}
       <View style={[styles.buttonContainer, keyboardVisible && styles.buttonContainerKeyboard]}>
-        <TouchableOpacity 
-          style={[styles.loginButton, isLoading && styles.loginButtonDisabled]} 
-          onPress={handleLogin}
-          disabled={isLoading}
-        >
-          <Text style={styles.loginButtonText}>
-            {isLoading ? '로그인 중...' : '로그인하기'}
-          </Text>
+        <TouchableOpacity style={styles.loginButton} onPress={() => router.push('/main')}>
+          <Text style={styles.loginButtonText}>로그인하기</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -161,11 +129,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
   header: {
-    paddingTop: 100, // 아래로 내림
+    paddingTop: 87, // 위로 5px 이동 (100 -> 95)
     paddingHorizontal: 20,
     paddingBottom: 20,
     alignItems: 'flex-start', // 왼쪽 정렬
-    paddingLeft: 32, // 왼쪽 32px
+    paddingLeft: 34, // 오른쪽으로 2px 더 이동 (35 -> 37)
   },
   backButton: {
     width: 10,
@@ -176,10 +144,14 @@ const styles = StyleSheet.create({
   formContainer: {
     paddingHorizontal: 20,
     paddingLeft: 30, // 왼쪽 패딩 줄여서 조금 왼쪽으로
-    paddingTop: 60, // 아래로 내림
+    paddingTop: 71, // 아래로 10px 이동 (60 -> 70)
   },
   inputGroup: {
     marginBottom: 20, // 간격 줄임
+  },
+  passwordInputGroup: {
+    marginBottom: 20, // 간격 줄임
+    marginTop: 6, // 비밀번호 입력창 아래로 2px 이동
   },
   inputLabel: {
     color: '#AAA',
@@ -188,13 +160,15 @@ const styles = StyleSheet.create({
     fontStyle: 'normal',
     fontWeight: '500',
     lineHeight: 22,
-    marginBottom: 10,
+    marginBottom: 3, // 간격 줄임 (10 -> 4)
+    marginTop: 8, // 텍스트를 아래로 이동
   },
   inputContainer: {
-    width: 327,
+    width: 320, // 좌우 사이즈 줄임 (327 -> 320)
+    marginLeft: 2, // 입력창이 텍스트보다 2px 아래에서 시작
   },
   textInput: {
-    width: 300.934,
+    width: 295, // 좌우 사이즈 줄임 (300.934 -> 295)
     fontSize: 18.5,
     fontFamily: 'Pretendard',
     fontStyle: 'normal',
@@ -209,7 +183,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 8, // 위로 4px 이동 (20 -> 16)
     marginBottom: 50,
     paddingRight: 20, // 회원가입을 왼쪽으로 이동
   },
@@ -259,12 +233,12 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingBottom: 50,
+    paddingBottom: 36, // 아래로 3px 이동 (50 -> 47)
   },
   buttonContainerKeyboard: {
     position: 'relative',
     bottom: 'auto',
-    marginTop: 20,
+    marginTop: 0,
     paddingBottom: 20,
   },
   loginButton: {
@@ -286,8 +260,5 @@ const styles = StyleSheet.create({
     fontStyle: 'normal',
     fontWeight: '700',
     lineHeight: 16,
-  },
-  loginButtonDisabled: {
-    backgroundColor: '#CCCCCC',
   },
 });

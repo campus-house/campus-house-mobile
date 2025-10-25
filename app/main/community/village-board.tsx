@@ -10,117 +10,78 @@ import {
   Dimensions,
   PanResponder,
   Animated,
-  Pressable,
-  Modal,
-  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { BackIcon } from '@/components/Icon/BackIcon';
 import Step1_IntroScreen from './auth/Step1_IntroScreen';
-import ScrollModal from '@/components/ScrollModal';
+import VillageScrollModal from '@/components/VillageScrollModal';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-// 샘플 데이터
+// 실거주 후기 샘플 데이터
 const samplePosts = [
   {
     id: 1,
-    author: '배달요정',
-    profileImage: '🐕',
-    time: '1시간 전',
-    date: '2025.09.01',
-    title: '같이 배달 시켜 먹을 사람 구해요!',
-    content: '배민으로 배달하려고 하는데 같이 시킬 분 연락 주세요~!',
-    image: '☕',
-    comments: 12,
-    likes: 5,
-    shares: 0,
-  },
-  {
-    id: 2,
     author: '방미오',
     profileImage: '🦉',
     time: '1시간 전',
     date: '2025.09.01',
-    title: '도넛 나눔할게요',
-    content: '도넛을 너무 많이 구매해서 여섯 분께 드리려고 해요! 오늘까지 아이파크 앞으...',
-    image: '🍩',
+    title: '아이파크 후기',
+    content: '가격 빼고 다 좋은 아이파크입니다! 마음에 들어요! 보안도 괜찮고, 건물 밑에 다양한 음식점들과 편의점, 카페가 있어서 편리해요...',
+    image: '🏠',
     comments: 12,
     likes: 5,
     shares: 0,
+    rating: '오피스텔 ★5.0',
+  },
+  {
+    id: 2,
+    author: '감자떡',
+    profileImage: '🥔',
+    time: '2시간 전',
+    date: '2025.09.01',
+    title: '마크타워 후기',
+    content: '편의점이랑 3분 거리여서 접근성이 굉장히 좋아요. 급하게 구한 집이라 걱정을 많이 했는데 굿굿',
+    image: '🏢',
+    comments: 8,
+    likes: 12,
+    shares: 1,
+    rating: '마크타워 ★5.0',
   },
   {
     id: 3,
-    author: '말하는감자',
-    profileImage: '🥔',
-    time: '1시간 전',
+    author: '우주맛밤',
+    profileImage: '🚀',
+    time: '3시간 전',
     date: '2025.09.01',
-    title: '컵 공동구매 하실 분 있나요',
-    content: '요즘 분위기 좋은 카페에서 사용한다는 컵을 공동구매 한다는데 관심 있으신 분 계...',
-    image: '',
-    comments: 18,
-    likes: 0,
-    shares: 0,
+    title: '마이온 후기',
+    content: '이 근처에 주차 가능한 곳이 많이 없는데, 주차장도 있고 주차도 굉장히 편해서 좋았어요. 다만 학교까지 걸어가기에는 거리가 꽤 있는 편인듯',
+    image: '🏘️',
+    comments: 6,
+    likes: 8,
+    shares: 2,
+    rating: '오피스텔 ★5.0',
   },
   {
     id: 4,
-    author: '책벌레',
-    profileImage: '📚',
-    time: '2시간 전',
+    author: '후기요정',
+    profileImage: '🧚',
+    time: '4시간 전',
     date: '2025.09.01',
-    title: '독서모임 같이 하실 분?',
-    content: '매주 토요일 오후에 카페에서 독서모임을 하는데 함께 하실 분 있나요?',
-    image: '📖',
-    comments: 8,
-    likes: 12,
-    shares: 2,
-  },
-  {
-    id: 5,
-    author: '운동러',
-    profileImage: '💪',
-    time: '3시간 전',
-    date: '2025.09.01',
-    title: '헬스장 같이 가실 분',
-    content: '혼자 운동하기 심심해서 같이 가실 분 구해요! 초보자도 환영입니다.',
-    image: '🏋️',
-    comments: 15,
-    likes: 8,
-    shares: 1,
+    title: '하이파크 후기',
+    content: '하이파크에서 1년 살았는데 정말 만족해요. 관리사무소도 친절하고...',
+    image: '🏡',
+    comments: 4,
+    likes: 15,
+    shares: 3,
+    rating: '하이파크 ★4.5',
   },
 ];
 
-export default function MainScreen() {
-  const [composerVisible, setComposerVisible] = useState(false);
-  const [inputText, setInputText] = useState('');
-  const [bubbleText, setBubbleText] = useState('어떤 생각을 하고 있나요?');
 
-  const computeBubbleSize = (text: string) => {
-    const lines = (text || '').split('\n');
-    const maxChars = Math.max(1, ...lines.map((l) => l.length));
-    const width = Math.min(280, Math.max(140, maxChars * 11 + 40));
-    const height = Math.min(170, Math.max(80, lines.length * 22 + 30));
-    return { width, height };
-  };
-  const [bubbleSize, setBubbleSize] = useState(computeBubbleSize('어떤 생각을 하고 있나요?'));
-  const [bubbleOneSize, setBubbleOneSize] = useState({ width: 150, height: 80 });
-  const [bubbleOneTextWidth, setBubbleOneTextWidth] = useState(0);
-  const inputRef = useRef<TextInput | null>(null);
-
-  useEffect(() => {
-    setBubbleSize(computeBubbleSize(bubbleText));
-  }, [bubbleText]);
-
-  // Dynamic width for the raccoon-behind bubble (single line)
-  useEffect(() => {
-    const padding = 24; // 12 left + 12 right
-    const minWidth = 120;
-    const maxWidth = 260;
-    const width = Math.min(maxWidth, Math.max(minWidth, bubbleOneTextWidth + padding));
-    setBubbleOneSize({ width, height: 80 });
-  }, [bubbleOneTextWidth, bubbleText]);
+export default function VillageBoard() {
   const [showBackButton, setShowBackButton] = useState(false);
   const [scrollOffset, setScrollOffset] = useState(0);
   const [cardPosition, setCardPosition] = useState(screenHeight * 0.6);
@@ -194,19 +155,13 @@ export default function MainScreen() {
       key={post.id}
       style={styles.postCard}
       onPress={() => {
-        if (post.title === '도넛 나눔할게요') {
-          router.push('/chat');
-        }
+        // 아무 동작도 하지 않음
       }}
     >
       <View style={styles.postHeader}>
         <View style={styles.authorInfo}>
           <View style={styles.profileImage}>
-            <Image
-              source={require('@/assets/images/ramjui.png')}
-              style={styles.profileImageInner}
-              resizeMode="cover"
-            />
+            <Text style={styles.profileImageText}>{post.profileImage}</Text>
           </View>
           <View style={styles.authorDetails}>
             <View style={styles.nameTimeRow}>
@@ -223,12 +178,10 @@ export default function MainScreen() {
           <Text style={styles.postTitle}>{post.title}</Text>
           <Text style={styles.postDescription}>{post.content}</Text>
         </View>
-        <View style={styles.contentImage}>
-          <Image
-            source={require('@/assets/images/cuffie.png')}
-            style={styles.coffeeImage}
-            resizeMode="cover"
-          />
+        <View style={styles.ratingContainer}>
+          {post.rating && (
+            <Text style={styles.postRatingRight}>{post.rating}</Text>
+          )}
         </View>
       </View>
 
@@ -291,6 +244,27 @@ export default function MainScreen() {
           style={styles.grass}
           resizeMode="contain"
         />
+        
+        {/* 가운데 집 추가 */}
+        <Image
+          source={require('@/assets/images/houseleft.png')}
+          style={styles.houseCenter}
+          resizeMode="contain"
+        />
+        
+        {/* 집 위에 말풍선과 작은 원 */}
+        <View style={styles.speechBubbleWrap}>
+          <Image
+            source={require('@/assets/images/speechbubble.png')}
+            style={styles.speechBubbleImg}
+            resizeMode="stretch"
+          />
+          <Text style={styles.speechBubbleText} numberOfLines={2}>
+            집 후기가 하나{'\n'}올라왔어요!
+          </Text>
+          {/* 작은 원 */}
+          <View style={styles.smallCircle} />
+        </View>
 
         {/* clouds - 배경보다 앞에, 사진처럼 4개 배치 */}
         <Image
@@ -314,54 +288,6 @@ export default function MainScreen() {
           resizeMode="contain"
         />
 
-        {/* speech bubble behind raccoon (dynamic width to fit text) */}
-        <Pressable
-          onPress={() => {
-            setComposerVisible(true);
-            setTimeout(() => inputRef.current?.focus(), 10);
-          }}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <View
-            style={[
-              styles.speechBubbleOneWrap,
-              { width: bubbleOneSize.width, height: bubbleOneSize.height },
-            ]}
-            pointerEvents="none"
-          >
-            <Image
-              source={require('@/assets/images/speechbubble.png')}
-              style={styles.speechBubbleOneImg}
-              resizeMode="stretch"
-            />
-            <Text style={styles.speechBubbleOneText} numberOfLines={1}>
-              {bubbleText}
-            </Text>
-            {/* hidden measurer to compute text width */}
-            <Text
-              style={styles.measureText}
-              onLayout={(e) => setBubbleOneTextWidth(e.nativeEvent.layout.width)}
-            >
-              {bubbleText}
-            </Text>
-          </View>
-        </Pressable>
-
-        {/* keep only the latest speech bubble; older ones removed */}
-
-        {/* (이전 위치의 '생각' 버튼 제거) */}
-
-        {/* raccoons */}
-        <Image
-          source={require('@/assets/images/racoon-real.png')}
-          style={styles.raccoonOne}
-          resizeMode="contain"
-        />
-        <Image
-          source={require('@/assets/images/racoon-real.png')}
-          style={styles.raccoonTwo}
-          resizeMode="contain"
-        />
 
         {/* header row - 맨 앞 */}
         <View style={styles.heroHeader} pointerEvents="none">
@@ -372,73 +298,21 @@ export default function MainScreen() {
               resizeMode="contain"
             />
             <Text style={styles.apartmentTitle} numberOfLines={1}>
-              아이파크
+              경희마을
             </Text>
           </View>
         </View>
       </View>
 
-      {/* Overlay composer - show on bubble press. Keep original bubble visible underneath */}
-      <Modal transparent visible={composerVisible} animationType="fade">
-        <Pressable style={styles.overlayBackdrop} onPress={() => setComposerVisible(false)}>
-          <View style={styles.overlayCenter} pointerEvents="none">
-            <Image
-              source={require('@/assets/images/racoon-real.png')}
-              style={styles.overlayRaccoon}
-              resizeMode="contain"
-            />
-            <View
-              style={[
-                styles.overlayBubbleWrap,
-                { width: bubbleSize.width, height: bubbleSize.height },
-              ]}
-            >
-              <Image
-                source={require('@/assets/images/speechbubble.png')}
-                style={styles.overlayBubbleImg}
-                resizeMode="stretch"
-              />
-              <Text numberOfLines={2} style={styles.overlayBubbleText}>
-                {bubbleText}
-              </Text>
-            </View>
-          </View>
-        </Pressable>
-        <SafeAreaView style={styles.composerSafe}>
-          <View style={styles.composerBar}>
-            <View style={styles.greenCircle}>
-              <Image
-                source={require('@/assets/images/racoon-real.png')}
-                style={{
-                  width: 231,
-                  height: 231,
-                  transform: [{ translateX: 28 }, { translateY: 18 }],
-                }}
-                resizeMode="cover"
-              />
-            </View>
-            <TextInput
-              ref={inputRef}
-              style={styles.composerInputText}
-              value={inputText}
-              onChangeText={(t) => {
-                setInputText(t);
-                setBubbleText(t.length ? t : '어떤 생각을 하고 있나요?');
-              }}
-              placeholder="어떤 생각을 하고 있나요?"
-              placeholderTextColor="#aaa"
-              multiline
-            />
-            <Pressable onPress={() => setComposerVisible(false)}>
-              <Text style={styles.composerDone}>완료</Text>
-            </Pressable>
-          </View>
-        </SafeAreaView>
-      </Modal>
 
-      <ScrollModal
+      <VillageScrollModal
         showBackButton={showBackButton}
         posts={samplePosts as any}
+        cardPosition={0}
+        pan={null}
+        panResponder={null}
+        onScroll={() => {}}
+        isVillageBoard={true}
       />
 
       {/* 독립적인 채팅/동네로 가기 버튼들 - 최상위 레이어에 배치 */}
@@ -460,7 +334,7 @@ export default function MainScreen() {
         <TouchableOpacity
           style={[styles.pill, { marginTop: 10 }]}
           onPress={() => {
-            router.push('/main/community/village-board');
+            router.back();
           }}
           activeOpacity={0.8}
         >
@@ -469,19 +343,8 @@ export default function MainScreen() {
             style={styles.pillIcon}
             resizeMode="contain"
           />
-          <Text style={styles.pillText}>동네로 가기</Text>
+          <Text style={styles.pillText}>마을로가기</Text>
         </TouchableOpacity>
-        {/* '생각' 버튼을 동네로 가기 버튼 바로 아래로 배치, pill과 동일한 좌우 간격 */}
-        <Pressable
-          style={[styles.pill, { marginTop: 10 }]}
-          onPress={() => {
-            setComposerVisible(true);
-            setTimeout(() => inputRef.current?.focus(), 10);
-          }}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Text style={styles.pillText}>생각</Text>
-        </Pressable>
       </View>
 
       {/* Floating Action Button */}
@@ -580,22 +443,38 @@ const styles = StyleSheet.create({
   cloud2: { position: 'absolute', top: 280, left: 30, width: 90, height: 35 },
   cloud3: { position: 'absolute', top: 290, right: 40, width: 60, height: 15 },
   cloud4: { position: 'absolute', top: 330, right: 140, width: 50, height: 15 },
-  speechBubbleOneWrap: {
+  grass: {
     position: 'absolute',
-    left: 130,
-    bottom: -390,
+    bottom: -870,
+    left: -200,
+    // 오른쪽 고정 해제: width 증가가 눈에 띄도록 left 기준으로만 배치
+    width: screenWidth + 390,
+    height: 1450,
+  },
+  houseCenter: {
+    position: 'absolute',
+    bottom: -200,
+    left: screenWidth / 2 - 100,
+    width: 200,
+    height: 200,
+  },
+  speechBubbleWrap: {
+    position: 'absolute',
+    left: screenWidth / 2 + 20,
+    bottom: -20,
+    width: 150,
     height: 80,
     zIndex: 3000,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  speechBubbleOneImg: {
+  speechBubbleImg: {
     position: 'absolute',
     inset: 0 as any,
     width: '100%',
     height: '100%',
   },
-  speechBubbleOneText: {
+  speechBubbleText: {
     fontSize: 13,
     lineHeight: 16,
     fontWeight: '500',
@@ -605,149 +484,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginTop: -8,
   },
-  measureText: {
+  smallCircle: {
     position: 'absolute',
-    opacity: 0,
-    fontSize: 13,
-    lineHeight: 16,
-    fontWeight: '500',
-    fontFamily: 'Pretendard',
-    paddingHorizontal: 12,
-  },
-  // removed old extra bubble styles
-  // '생각' 버튼 UI
-  thinkButton: {
-    position: 'absolute',
-    left: 280,
-    bottom: -190,
+    bottom: -10,
+    left: 20,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 0,
-    zIndex: 0,
-  },
-  thinkButtonText: {
-    fontSize: 13,
-    lineHeight: 16,
-    fontWeight: '600',
-    fontFamily: 'Pretendard',
-    color: '#323232',
-  },
-  overlayBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-  },
-  overlayCenter: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  overlayRaccoon: {
-    width: 500,
-    height: 500,
-    marginBottom: 40,
-    transform: [{ translateX: 50 }, { translateY: 10 }],
-  },
-  overlayBubble: {
-    position: 'absolute',
-    width: 170,
-    height: 100,
-    top: '30%',
-  },
-  overlayBubbleWrap: {
-    position: 'absolute',
-    top: '30%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  overlayBubbleImg: {
-    position: 'absolute',
-    inset: 0 as any,
-    width: '100%',
-    height: '100%',
-  },
-  overlayBubbleText: {
-    position: 'absolute',
-    top: 21,
-    left: 21,
-    right: 12,
-    height: 'auto',
-    fontSize: 15,
-    lineHeight: 20,
-    fontWeight: '500',
-    fontFamily: 'Pretendard',
-    color: '#636363',
-    textAlign: 'left',
-  },
-  composerSafe: {
-    justifyContent: 'flex-end',
-  },
-  composerBar: {
-    height: 65,
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    marginHorizontal: 15,
-    borderRadius: 24,
-    marginBottom: -550,
-  },
-  greenCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#86d382',
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  composerInputText: {
-    flex: 1,
-    fontSize: 15,
-    lineHeight: 21,
-    fontFamily: 'Pretendard',
-    color: '#aaa',
-    marginTop: -5,
-  },
-  composerDone: {
-    fontSize: 18,
-    lineHeight: 21,
-    fontWeight: '600',
-    fontFamily: 'Pretendard',
-    color: '#636363',
-    marginLeft: 10,
-  },
-  raccoonOne: {
-    position: 'absolute',
-    bottom: -210,
-    left: 40,
-    width: 370,
-    height: 370,
-  },
-  raccoonTwo: {
-    position: 'absolute',
-    bottom: -310,
-    left: 80,
-    width: 370,
-    height: 370,
-  },
-  grass: {
-    position: 'absolute',
-    bottom: -870,
-    left: -200,
-    // 오른쪽 고정 해제: width 증가가 눈에 띄도록 left 기준으로만 배치
-    width: screenWidth + 390,
-    height: 1450,
   },
   leftHouse: { position: 'absolute', bottom: -55, left: 21, width: 110, height: 80 },
   rightHouse: { position: 'absolute', bottom: -60, right: 223, width: 155, height: 115 },
@@ -913,10 +657,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
     overflow: 'hidden',
   },
-  profileImageInner: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  profileImageText: {
+    fontSize: 24,
   },
   authorDetails: {
     flex: 1,
@@ -948,11 +690,17 @@ const styles = StyleSheet.create({
   },
   postContent: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 20,
   },
   contentLeft: {
     flex: 1,
     marginRight: 12,
+  },
+  ratingContainer: {
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
   },
   postTitle: {
     fontSize: 15,
@@ -968,16 +716,29 @@ const styles = StyleSheet.create({
     fontFamily: 'Pretendard',
     lineHeight: 22,
   },
+  postRating: {
+    color: '#FF805F',
+    fontFamily: 'Pretendard',
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 8,
+  },
+  postRatingRight: {
+    color: '#FF805F',
+    fontFamily: 'Pretendard',
+    fontSize: 12,
+    fontWeight: '500',
+  },
   contentImage: {
     width: 70,
     height: 80,
     borderRadius: 8,
     overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  coffeeImage: {
-    width: 70,
-    height: 80,
-    borderRadius: 8,
+  postImageText: {
+    fontSize: 30,
   },
   divider: {
     width: 321,

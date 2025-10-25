@@ -66,4 +66,10 @@ export interface PropertyMarker {
   scrapCount?: number;
   /** 건물 용도 (서버 연동용) */
   buildingUsage?: string;
+  /** 평균 평점 (후기 관련) */
+  averageRating?: number;
+  /** 총 후기 수 (후기 관련) */
+  totalReviews?: number;
+  /** 후기 목록 (후기 관련) */
+  reviews?: any[];
 }

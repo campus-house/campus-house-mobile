@@ -1,5 +1,5 @@
 // API 기본 설정
-export const API_BASE_URL = "http://172.21.59.114:8080";
+export const API_BASE_URL = "http://192.168.253.24:8080";
 
 export const API_CONFIG = {
   BASE_URL: API_BASE_URL,
@@ -66,8 +66,24 @@ export const apiRequest = async (endpoint, options = {}) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    const data = await response.json();
-    return data;
+    // 응답이 비어있는지 확인
+    const responseText = await response.text();
+    console.log('Response text:', responseText);
+    
+    // 빈 응답인 경우 빈 객체 반환
+    if (!responseText || responseText.trim() === '') {
+      return {};
+    }
+    
+    // JSON 파싱 시도
+    try {
+      const data = JSON.parse(responseText);
+      return data;
+    } catch (parseError) {
+      console.error('JSON Parse Error:', parseError);
+      console.error('Response text:', responseText);
+      throw new Error(`JSON Parse error: ${parseError.message}`);
+    }
   } catch (error) {
     console.error('API Request Error:', error);
     throw error;

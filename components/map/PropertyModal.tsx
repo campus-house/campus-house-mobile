@@ -17,7 +17,7 @@ import { COLORS } from '@/constants/colors';
 import { router } from 'expo-router';
 import { PropertyMarker as PropertyMarkerType } from '@/src/types/property';
 import { Portal } from 'react-native-portalize';
-import { addScrap } from '@/api/scrap';
+import { addScrap, deleteScrap } from '@/api/scrap';
 
 const { width, height } = Dimensions.get('window');
 
@@ -28,12 +28,14 @@ interface BuildingDetailModalProps {
   onClose: () => void;
   property?: PropertyMarkerType | null;
   onHeightChange?: (heightRatio: number) => void;
+  initialScrapStatus?: boolean;
 }
 
-export default function BuildingDetailModal({ isVisible, onClose, property, onHeightChange }: BuildingDetailModalProps) {
+export default function BuildingDetailModal({ isVisible, onClose, property, onHeightChange, initialScrapStatus }: BuildingDetailModalProps) {
   const [selectedTab, setSelectedTab] = useState<TabType>('실거주자 후기');
   const [isExpanded, setIsExpanded] = useState(false);
   const [isScraped, setIsScraped] = useState(false);
+  const [scrapId, setScrapId] = useState<number | null>(null);
   const modalHeightAnim = useRef(new Animated.Value(height * 0.46)).current;
   
   // 모달 높이 상수
@@ -45,6 +47,8 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
       // 상태 초기화
       setIsExpanded(false);
       setSelectedTab('실거주자 후기');
+      // 스크랩 상태 확인
+      checkBuildingScrapStatus();
       // 아래에서 슬라이드 업 애니메이션
       modalHeightAnim.setValue(0);
       Animated.timing(modalHeightAnim, {
@@ -56,7 +60,7 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
       // 모달이 닫힐 때는 즉시 0으로
       modalHeightAnim.setValue(0);
     }
-  }, [isVisible]);
+  }, [isVisible, property?.buildingId]);
 
   // 모달 높이 변경 리스너
   useEffect(() => {
@@ -126,6 +130,33 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
     onClose();
   };
 
+  // 건물 스크랩 상태 확인
+  const checkBuildingScrapStatus = async () => {
+    if (!property?.buildingId) return;
+    
+    try {
+      console.log('스크랩 상태 확인 중...', property.buildingId);
+      
+      // 스크랩에서 전달된 상태가 있으면 사용
+      if (initialScrapStatus !== undefined) {
+        console.log('스크랩에서 전달된 상태 사용:', initialScrapStatus);
+        setIsScraped(initialScrapStatus);
+        setScrapId(initialScrapStatus ? property.buildingId : null);
+        return;
+      }
+      
+      // TODO: 스크랩 상태 확인 API 구현 필요
+      // 현재는 기본값으로 설정
+      setIsScraped(false);
+      setScrapId(null);
+      console.log('스크랩 상태: 기본값 (스크랩 안됨)');
+    } catch (error) {
+      console.error('스크랩 상태 확인 실패:', error);
+      setIsScraped(false);
+      setScrapId(null);
+    }
+  };
+
   const handleScrapPress = async () => {
     if (!property?.buildingId) {
       Alert.alert('오류', '건물 정보를 찾을 수 없습니다.');
@@ -133,16 +164,30 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
     }
 
     try {
-      await addScrap(property.buildingId);
-      setIsScraped(true);
-      Alert.alert('성공', '스크랩에 추가되었습니다!');
-    } catch (error) {
-      console.error('스크랩 추가 실패:', error);
-      if (error.message.includes('이미 스크랩한 건물')) {
+      if (isScraped) {
+        // 이미 스크랩된 경우 - 스크랩 삭제
+        await deleteScrap(property.buildingId);
+        setIsScraped(false);
+        setScrapId(null);
+      } else {
+        // 스크랩되지 않은 경우 - 스크랩 추가
+        const response = await addScrap(property.buildingId);
+        setIsScraped(true);
+        setScrapId(response.id);
+      }
+    } catch (error: any) {
+      console.error('스크랩 처리 실패:', error);
+      if (error.message?.includes('이미 스크랩한 건물')) {
         Alert.alert('알림', '이미 스크랩한 건물입니다.');
         setIsScraped(true);
+      } else if (error.message?.includes('403')) {
+        Alert.alert('권한 오류', '스크랩 삭제 권한이 없습니다. 다시 로그인해주세요.');
+      } else if (error.message?.includes('404')) {
+        Alert.alert('알림', '스크랩을 찾을 수 없습니다.');
+        setIsScraped(false);
+        setScrapId(null);
       } else {
-        Alert.alert('오류', '스크랩 추가에 실패했습니다.');
+        Alert.alert('오류', `스크랩 처리에 실패했습니다: ${error.message}`);
       }
     }
   };
@@ -436,11 +481,11 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
             
             {/* 건물 이름, 평점, 별점 등 */}
             <Text style={styles.buildingName}>{property?.buildingName || '아이파크'}</Text>
-            <Text style={styles.rating}>{property?.averageRating ? property.averageRating.toFixed(1) : '0.0'}</Text>
+            <Text style={styles.rating}>{property?.averageRating ? (property as any).averageRating.toFixed(1) : '0.0'}</Text>
             <View style={styles.starsContainer}>
               {/* 동적 별점 표시 */}
               {[1, 2, 3, 4, 5].map((star) => {
-                const rating = property?.averageRating || 0;
+                const rating = (property as any)?.averageRating || 0;
                 const isFilled = star <= rating;
                 const isHalfFilled = star - 0.5 <= rating && rating < star;
                 
@@ -454,14 +499,14 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
                 );
               })}
             </View>
-            <Text style={styles.reviewCount}>{property?.totalReviews || 0}개의 후기</Text>
+            <Text style={styles.reviewCount}>{(property as any)?.totalReviews || 0}개의 후기</Text>
 
             {/* 평가 항목들 */}
             <View style={styles.ratingsSection}>
               {/* 소음, 편의시설, 주차장, 벌레 항목 복붙 */}
               <View style={styles.ratingItem}>
                 <Text style={styles.ratingLabel}>소음</Text>
-                <Text style={styles.ratingText}>{property?.totalReviews > 0 ? '조용해요' : '후기 없음'}</Text>
+                <Text style={styles.ratingText}>{(property as any)?.totalReviews > 0 ? '조용해요' : '후기 없음'}</Text>
                 <View style={styles.ratingBarContainer}>
                   <Svg width="170" height="9" viewBox="0 0 170 9" fill="none">
                     <Rect
@@ -475,7 +520,7 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
                     <Rect
                       x="0.9375"
                       y="0.895996"
-                      width={property?.totalReviews > 0 ? 163.085 : 0}
+                      width={(property as any)?.totalReviews > 0 ? 163.085 : 0}
                       height="7.96677"
                       rx="3.98339"
                       fill="#FFD429"
@@ -485,7 +530,7 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
               </View>
               <View style={styles.ratingItem}>
                 <Text style={styles.ratingLabel}>편의시설</Text>
-                <Text style={styles.ratingText}>{property?.totalReviews > 0 ? '접근성 좋아요' : '후기 없음'}</Text>
+                <Text style={styles.ratingText}>{(property as any)?.totalReviews > 0 ? '접근성 좋아요' : '후기 없음'}</Text>
                 <View style={styles.ratingBarContainer}>
                   <Svg width="170" height="9" viewBox="0 0 170 9" fill="none">
                     <Rect
@@ -499,7 +544,7 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
                     <Rect
                       x="0.9375"
                       y="0.895996"
-                      width={property?.totalReviews > 0 ? 163.085 : 0}
+                      width={(property as any)?.totalReviews > 0 ? 163.085 : 0}
                       height="7.96677"
                       rx="3.98339"
                       fill="#FFD429"
@@ -509,7 +554,7 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
               </View>
               <View style={styles.ratingItem}>
                 <Text style={styles.ratingLabel}>주차장</Text>
-                <Text style={styles.ratingText}>{property?.totalReviews > 0 ? '넓어요' : '후기 없음'}</Text>
+                <Text style={styles.ratingText}>{(property as any)?.totalReviews > 0 ? '넓어요' : '후기 없음'}</Text>
                 <View style={styles.ratingBarContainer}>
                   <Svg width="170" height="9" viewBox="0 0 170 9" fill="none">
                     <Rect
@@ -523,7 +568,7 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
                     <Rect
                       x="0.9375"
                       y="0.895996"
-                      width={property?.totalReviews > 0 ? 113.3 : 0}
+                      width={(property as any)?.totalReviews > 0 ? 113.3 : 0}
                       height="7.96677"
                       rx="3.98339"
                       fill="#FFD429"
@@ -533,7 +578,7 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
               </View>
               <View style={styles.ratingItem}>
                 <Text style={styles.ratingLabel}>벌레</Text>
-                <Text style={styles.ratingText}>{property?.totalReviews > 0 ? '가끔 나와요' : '후기 없음'}</Text>
+                <Text style={styles.ratingText}>{(property as any)?.totalReviews > 0 ? '가끔 나와요' : '후기 없음'}</Text>
                 <View style={styles.ratingBarContainer}>
                   <Svg width="170" height="9" viewBox="0 0 170 9" fill="none">
                     <Rect
@@ -547,7 +592,7 @@ export default function BuildingDetailModal({ isVisible, onClose, property, onHe
                     <Rect
                       x="0.9375"
                       y="0.895996"
-                      width={property?.totalReviews > 0 ? 56.65 : 0}
+                      width={(property as any)?.totalReviews > 0 ? 56.65 : 0}
                       height="7.96677"
                       rx="3.98339"
                       fill="#FFD429"

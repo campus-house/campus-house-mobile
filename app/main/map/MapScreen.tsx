@@ -3,6 +3,7 @@ import { View, StyleSheet, Dimensions, ActivityIndicator, Text, TouchableOpacity
 import { NaverMapView, NaverMapMarkerOverlay, type Camera, type NaverMapViewRef } from '@mj-studio/react-native-naver-map';
 import { COLORS } from '@/constants/colors';
 import { PropertyMarker } from '@/components/map/PropertyMarker';
+import { ClusterMarker } from '@/components/map/ClusterMarker';
 import PropertyModal from '@/components/map/PropertyModal';
 import FilterModal from '@/components/map/FilterModal';
 import SearchModal from '@/components/map/SearchModal';
@@ -10,9 +11,9 @@ import { PropertyMarker as PropertyMarkerType } from '@/src/types/property';
 import { loadMockProperties } from '@/src/data/mockProperties';
 import { FilterIcon, SearchIcon } from '@/components/Icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getBuildings, searchBuildings, getNearbyBuildings } from '@/api/buildings';
-import { getBuildingReviews } from '@/api/building';
+import { getBuildings, getBuildingReviews } from '@/api/building';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLocalSearchParams } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
 
@@ -24,10 +25,18 @@ export default function MapScreen() {
   const mapRef = useRef<NaverMapViewRef>(null);
   const [isLoading, setIsLoading] = useState(true);
   const insets = useSafeAreaInsets();
+  
+  // URL 파라미터에서 건물 정보 받기
+  const { buildingId, buildingName, isScraped } = useLocalSearchParams();
 
   // 매물 데이터 state
   const [properties, setProperties] = useState<PropertyMarkerType[]>([]);
   const [isLoadingProperties, setIsLoadingProperties] = useState(false);
+  
+  // 클러스터링 관련 state
+  const [clusteredMarkers, setClusteredMarkers] = useState<any[]>([]);
+  const [currentZoomLevel, setCurrentZoomLevel] = useState(15);
+  const [showClusters, setShowClusters] = useState(true);
 
   // 모달 state
   const [modalVisible, setModalVisible] = useState(false);
@@ -96,6 +105,79 @@ export default function MapScreen() {
   };
 
   /**
+   * 마커 클러스터링 함수
+   */
+  const clusterMarkers = (markers: PropertyMarkerType[], zoomLevel: number) => {
+    const clusterDistance = zoomLevel < 14 ? 100 : zoomLevel < 16 ? 50 : 25; // 줌 레벨에 따른 클러스터 거리
+    const clusters: any[] = [];
+    const processed = new Set<number>();
+
+    markers.forEach((marker, index) => {
+      if (processed.has(index)) return;
+
+      const cluster = {
+        id: `cluster_${index}`,
+        latitude: marker.latitude,
+        longitude: marker.longitude,
+        markers: [marker],
+        count: 1,
+      };
+
+      // 주변 마커들을 찾아서 클러스터에 추가
+      markers.forEach((otherMarker, otherIndex) => {
+        if (index === otherIndex || processed.has(otherIndex)) return;
+
+        const distance = getDistance(
+          marker.latitude, marker.longitude,
+          otherMarker.latitude, otherMarker.longitude
+        );
+
+        if (distance <= clusterDistance) {
+          cluster.markers.push(otherMarker);
+          cluster.count++;
+          processed.add(otherIndex);
+        }
+      });
+
+      processed.add(index);
+      clusters.push(cluster);
+    });
+
+    return clusters;
+  };
+
+  /**
+   * 두 좌표 간의 거리 계산 (미터 단위)
+   */
+  const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371000; // 지구 반지름 (미터)
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  /**
+   * 지도 줌 레벨 변경 처리
+   */
+  const handleCameraChange = (camera: Camera) => {
+    const newZoomLevel = camera.zoom || 15;
+    setCurrentZoomLevel(newZoomLevel);
+    
+    // 줌 레벨에 따른 클러스터링 업데이트
+    if (properties.length > 0) {
+      const clusters = clusterMarkers(properties, newZoomLevel);
+      setClusteredMarkers(clusters);
+      
+      // 줌 레벨이 높으면 개별 마커 표시, 낮으면 클러스터 표시
+      setShowClusters(newZoomLevel < 16);
+    }
+  };
+
+  /**
    * 로그인 상태 확인
    */
   const checkLoginStatus = async () => {
@@ -107,8 +189,8 @@ export default function MapScreen() {
         setIsLoggedIn(true);
         setUserInfo(JSON.parse(userInfo));
         console.log('로그인 상태 복원:', JSON.parse(userInfo));
-      }
-    } catch (error) {
+          }
+        } catch (error) {
       console.error('로그인 상태 확인 에러:', error);
     }
   };
@@ -132,8 +214,8 @@ export default function MapScreen() {
           latitude: building.latitude,
           longitude: building.longitude,
           price: {
-            deposit: building.deposit || 0,
-            monthly: building.monthlyRent || 0,
+            deposit: (building.deposit || 0) * 10000, // 만원 단위를 원 단위로 변환
+            monthly: (building.monthlyRent || 0) * 10000, // 만원 단위를 원 단위로 변환
           },
           // 서버에서 받은 추가 정보들
           address: building.address,
@@ -144,6 +226,11 @@ export default function MapScreen() {
         }));
         
         setProperties(serverProperties);
+        
+        // 초기 클러스터링 설정
+        const initialClusters = clusterMarkers(serverProperties, currentZoomLevel);
+        setClusteredMarkers(initialClusters);
+        
         console.log(`서버에서 ${serverProperties.length}개 건물 로드 완료`);
       }
     } catch (error) {
@@ -174,6 +261,69 @@ export default function MapScreen() {
     checkLoginStatus(); // 로그인 상태 확인
     // 지도가 준비되면 자동으로 loadProperties() 호출됨
   }, []);
+
+  /**
+   * 스크랩에서 전달된 건물 정보로 건물 포커스 및 상세 정보 표시
+   */
+  useEffect(() => {
+    if ((buildingId || buildingName) && properties.length > 0) {
+      console.log('스크랩에서 전달된 정보:', { buildingId, buildingName });
+      console.log('현재 properties 개수:', properties.length);
+      
+      // 건물 이름으로 매칭 (로컬 properties에서 먼저 시도)
+      let targetProperty = null;
+      
+      if (buildingName) {
+        console.log('건물 이름으로 매칭 시도:', buildingName);
+        
+        // 1단계: 로컬 properties에서 매칭 시도
+        targetProperty = properties.find(property => {
+          const propName = (property as any).buildingName;
+          const match = propName === buildingName;
+          console.log('로컬 이름 비교:', { propName, buildingName, match });
+          return match;
+        });
+        
+        // 2단계: 로컬에서 찾지 못했으면 API 검색 시도 (비활성화)
+        if (!targetProperty) {
+          console.log('로컬에서 찾지 못함, API 검색은 현재 비활성화');
+          // TODO: API 검색 기능 구현 필요
+        }
+      }
+      
+      // ID 매칭은 비활성화 (스크랩 ID와 맵 buildingId가 다름)
+      if (!targetProperty && buildingId) {
+        console.log('ID 매칭 시도 (비활성화됨):', buildingId);
+        console.log('스크랩 ID와 맵 buildingId가 다르므로 이름으로만 매칭');
+      }
+      
+      if (targetProperty) {
+        console.log('해당 건물 찾음:', targetProperty);
+        
+        // 건물 위치로 카메라 이동
+        if (mapRef.current) {
+          const latitudeOffset = 0.001;
+          mapRef.current.animateCameraTo({
+            latitude: targetProperty.latitude - latitudeOffset,
+            longitude: targetProperty.longitude,
+            zoom: 16,
+          });
+        }
+        
+        // 건물 상세 정보 표시
+        setTimeout(() => {
+          handleMarkerPress(targetProperty);
+        }, 1000); // 카메라 이동 후 1초 뒤에 상세 정보 표시
+      } else {
+        console.log('해당 건물을 찾을 수 없습니다:', { buildingId, buildingName });
+        console.log('사용 가능한 건물들:', properties.map(p => ({
+          id: (p as any).id,
+          buildingId: (p as any).buildingId,
+          buildingName: (p as any).buildingName
+        })));
+      }
+    }
+  }, [buildingId, buildingName, properties]);
 
   /**
    * 매물 마커 클릭 시 호출 (서버 연동)
@@ -344,15 +494,42 @@ export default function MapScreen() {
         initialCamera={initialCamera}
         customStyleId="922c3502-bc54-427b-a1fa-f99887a68a64"
         onInitialized={handleMapReady}
+        onCameraChanged={handleCameraChange}
         isShowLocationButton={false}
         isShowScaleBar={false}
         isShowCompass={false}
         isShowZoomControls={true}
       >
-        {/* 매물 마커들 렌더링 */}
-        {properties.map((property) => (
-          <PropertyMarker key={property.id} property={property} onPress={handleMarkerPress} />
-        ))}
+        {/* 클러스터링된 마커들 또는 개별 마커들 렌더링 */}
+        {showClusters ? (
+          // 클러스터 표시 (줌 레벨이 낮을 때) - 클러스터만 표시
+          clusteredMarkers.map((cluster) => (
+            <ClusterMarker 
+              key={cluster.id} 
+              cluster={cluster} 
+              onPress={(cluster) => {
+                // 클러스터 클릭 시 줌 레벨을 높여서 개별 마커들이 보이도록 함
+                mapRef.current?.animateRegionTo({
+                  latitude: cluster.latitude,
+                  longitude: cluster.longitude,
+                  latitudeDelta: 0.005,
+                  longitudeDelta: 0.005,
+                });
+              }} 
+            />
+          ))
+        ) : (
+          // 개별 마커 표시 (줌 레벨이 높을 때) - 기존처럼 불투명하게
+          properties.map((property) => (
+            <PropertyMarker 
+              key={property.id} 
+              property={property} 
+              onPress={handleMarkerPress}
+              zoomLevel={currentZoomLevel}
+              isClustered={false}
+            />
+          ))
+        )}
       </NaverMapView>
 
       {/* 매물 상세 모달 */}
@@ -361,6 +538,7 @@ export default function MapScreen() {
         property={selectedProperty}
         onClose={handleModalClose}
         onHeightChange={handleModalHeightChange}
+        initialScrapStatus={isScraped === 'true'}
       />
       
       {/* 필터 모달 */}

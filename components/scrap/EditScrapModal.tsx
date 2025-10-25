@@ -8,8 +8,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 interface ScrapItem {
   id: string;
-  title: string;
-  address: string;
+  title?: string;
+  address?: string;
+  buildingName?: string;
+  buildingAddress?: string;
 }
 
 interface EditScrapModalProps {
@@ -17,9 +19,10 @@ interface EditScrapModalProps {
   onClose: () => void;
   scrapItems: ScrapItem[];
   onReorder?: (items: ScrapItem[]) => void;
+  onSaveOrder?: (items: ScrapItem[]) => void;
 }
 
-export default function EditScrapModal({ visible, onClose, scrapItems, onReorder }: EditScrapModalProps) {
+export default function EditScrapModal({ visible, onClose, scrapItems, onReorder, onSaveOrder }: EditScrapModalProps) {
   const [data, setData] = useState(scrapItems);
 
   React.useEffect(() => {
@@ -28,6 +31,7 @@ export default function EditScrapModal({ visible, onClose, scrapItems, onReorder
 
   const handleComplete = () => {
     onReorder?.(data);
+    onSaveOrder?.(data); // 순서 저장 API 호출
     onClose();
   };
 
@@ -51,8 +55,8 @@ export default function EditScrapModal({ visible, onClose, scrapItems, onReorder
           </Svg>
 
           <View style={styles.cardInfo}>
-            <Text style={styles.cardTitle}>{item.title}</Text>
-            <Text style={styles.cardAddress}>{item.address}</Text>
+            <Text style={styles.cardTitle}>{item.buildingName || item.title}</Text>
+            <Text style={styles.cardAddress}>{item.buildingAddress || item.address}</Text>
           </View>
         </View>
 

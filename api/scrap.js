@@ -1,6 +1,6 @@
 import { apiRequest } from './config';
 
-// 스크랩 목록 조회 API
+// 스크랩 목록 조회 API (기본 순서)
 export const getScrapList = async (page = 0, size = 20) => {
   try {
     const response = await apiRequest(`/api/scraps/buildings?page=${page}&size=${size}`, {
@@ -9,6 +9,19 @@ export const getScrapList = async (page = 0, size = 20) => {
     return response;
   } catch (error) {
     console.error('스크랩 목록 조회 실패:', error);
+    throw error;
+  }
+};
+
+// 순서가 저장된 스크랩 목록 조회 API
+export const getScrapListOrdered = async () => {
+  try {
+    const response = await apiRequest('/api/scraps/buildings/ordered', {
+      method: 'GET',
+    });
+    return response;
+  } catch (error) {
+    console.error('순서 저장된 스크랩 목록 조회 실패:', error);
     throw error;
   }
 };
@@ -26,10 +39,10 @@ export const addScrap = async (buildingId) => {
   }
 };
 
-// 스크랩 삭제 API
-export const deleteScrap = async (scrapId) => {
+// 스크랩 삭제 API (buildingId로 삭제)
+export const deleteScrap = async (buildingId) => {
   try {
-    const response = await apiRequest(`/api/scraps/${scrapId}`, {
+    const response = await apiRequest(`/api/scraps/buildings/${buildingId}`, {
       method: 'DELETE',
     });
     return response;
@@ -38,4 +51,21 @@ export const deleteScrap = async (scrapId) => {
     throw error;
   }
 };
+
+// 스크랩 순서 저장 API
+export const updateScrapOrder = async (buildingIds) => {
+  try {
+    const response = await apiRequest('/api/scraps/buildings/order', {
+      method: 'PUT',
+      body: JSON.stringify({ buildingIds }),
+    });
+    return response;
+  } catch (error) {
+    console.error('스크랩 순서 저장 실패:', error);
+    throw error;
+  }
+};
+
+
+
 

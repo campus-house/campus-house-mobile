@@ -24,11 +24,14 @@ export default function EmptyScrapScreen() {
           />
         </View>
 
-        {/* 메인 메시지 */}
-        <Text style={styles.mainMessage}>스크랩한 집이 없어요</Text>
-        
-        {/* 서브 메시지 */}
-        <Text style={styles.subMessage}>저장하신걸 바탕으로 집 추천도 해줘요!</Text>
+        {/* 텍스트 컨테이너 */}
+        <View style={styles.textContainer}>
+          {/* 메인 메시지 */}
+          <Text style={styles.mainMessage}>스크랩한 집이 없어요</Text>
+          
+          {/* 서브 메시지 */}
+          <Text style={styles.subMessage}>저장하신 걸 바탕으로 집 추천도 해줘요!</Text>
+        </View>
 
         {/* 집 둘러보기 버튼 */}
         <TouchableOpacity 
@@ -50,46 +53,73 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     paddingHorizontal: 20,
+    paddingTop: 100,
   },
   characterContainer: {
-    marginBottom: 40,
+    marginBottom: 20,
     alignItems: 'center',
+    marginLeft: 20,
+    marginTop: 64,
+    zIndex: 1,
+    elevation: 1,
   },
   characterImage: {
     width: 335,
     height: 225,
     flexShrink: 0,
     aspectRatio: 67/45,
+    zIndex: 1,
+  },
+  textContainer: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    borderRadius: 12,
+    marginBottom: -23,
+    marginTop: -38,
+    marginLeft: 0,
+    zIndex: 10,
+    elevation: 10,
+    minHeight: 100,
   },
   mainMessage: {
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: 'Pretendard',
     color: '#323232',
+    fontFamily: 'Pretendard',
+    fontSize: 24,
+    fontStyle: 'normal',
+    fontWeight: '600',
+    lineHeight: 32,
     textAlign: 'center',
-    marginBottom: 12,
-    lineHeight: 28,
+    marginBottom: 8,
+    zIndex: 10,
+    elevation: 10,
   },
   subMessage: {
-    fontSize: 16,
-    fontWeight: '400',
-    fontFamily: 'Pretendard',
     color: '#636363',
     textAlign: 'center',
-    marginBottom: 40,
+    fontFamily: 'Pretendard',
+    fontSize: 17,
+    fontStyle: 'normal',
+    fontWeight: '400',
     lineHeight: 24,
+    marginBottom: 40,
+    zIndex: 10,
+    elevation: 10,
   },
   browseButton: {
-    backgroundColor: '#FF805F',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    minWidth: 160,
-    alignItems: 'center',
+    display: 'flex',
+    width: 110,
+    padding: 7.34,
     justifyContent: 'center',
+    alignItems: 'center',
+    gap: 7.34,
+    backgroundColor: '#FF805F',
+    borderRadius: 73.4021,
+    borderWidth: 0,
+    marginTop: 2,
     shadowColor: '#FF805F',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -97,10 +127,12 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   browseButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'Pretendard',
-    color: '#fff',
+    color: '#FFF',
     textAlign: 'center',
+    fontFamily: 'Pretendard',
+    fontSize: 16,
+    fontStyle: 'normal',
+    fontWeight: '600',
+    lineHeight: 26.718,
   },
 });

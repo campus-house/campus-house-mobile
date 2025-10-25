@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   StatusBar,
   Image,
   Dimensions,
-  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -25,7 +24,7 @@ type Comment = {
   profileImage: any;
   time: string;
   content: string;
-  replies?: Comment[];
+  replies: Comment[];
 };
 
 // 샘플 데이터
@@ -62,6 +61,7 @@ const sampleQuestions = [
                 profileImage: require('@/assets/images/squirrel4x.png'),
                 time: '1분 전',
                 content: '넵넵 좋습니다 ㅎ.ㅎ 세 분 남았어요!',
+                replies: [],
               },
             ],
           },
@@ -80,6 +80,7 @@ const sampleQuestions = [
     comments: 18,
     likes: 12,
     bookmarks: 1,
+    commentList: [],
   },
   {
     id: 3,
@@ -92,6 +93,7 @@ const sampleQuestions = [
     comments: 4,
     likes: 0,
     bookmarks: 0,
+    commentList: [],
   },
   {
     id: 4,
@@ -104,30 +106,71 @@ const sampleQuestions = [
     comments: 4,
     likes: 0,
     bookmarks: 0,
+    commentList: [],
+  },
+  {
+    id: 5,
+    author: '달콤한도넛',
+    profileImage: require('@/assets/images/ramjui.png'),
+    time: '3시간 전',
+    date: '2025.09.01',
+    title: '주차비 얼마나 나와요?',
+    content: '월 주차비가 얼마나 나오는지 궁금해요. 지하주차장 있나요?',
+    comments: 7,
+    likes: 5,
+    bookmarks: 2,
+    commentList: [],
+  },
+  {
+    id: 6,
+    author: '초코칩쿠키',
+    profileImage: require('@/assets/images/ramjui.png'),
+    time: '4시간 전',
+    date: '2025.09.01',
+    title: '관리비는 어떻게 되나요?',
+    content: '관리비가 얼마나 나오는지, 어떤 것들이 포함되어 있는지 알려주세요!',
+    comments: 12,
+    likes: 8,
+    bookmarks: 1,
+    commentList: [],
+  },
+  {
+    id: 7,
+    author: '바닐라아이스크림',
+    profileImage: require('@/assets/images/ramjui.png'),
+    time: '5시간 전',
+    date: '2025.09.01',
+    title: '인터넷 속도는 어떤가요?',
+    content: '인터넷 속도가 빠른지 궁금해요. 게임이나 영상 시청할 때 끊김 없나요?',
+    comments: 9,
+    likes: 3,
+    bookmarks: 0,
+    commentList: [],
+  },
+  {
+    id: 8,
+    author: '딸기잼토스트',
+    profileImage: require('@/assets/images/ramjui.png'),
+    time: '6시간 전',
+    date: '2025.09.01',
+    title: '주변 대중교통 편리한가요?',
+    content: '지하철역이나 버스정류장이 가까운지, 교통이 편리한지 궁금해요.',
+    comments: 15,
+    likes: 6,
+    bookmarks: 3,
+    commentList: [],
   },
 ];
 
 export default function QuestionsScreen() {
-  const [showCommentInput, setShowCommentInput] = useState(false);
-  const [commentText, setCommentText] = useState('');
-  const [selectedQuestionId, setSelectedQuestionId] = useState<number | null>(null);
 
-  const handleCommentPress = (questionId: number) => {
-    setSelectedQuestionId(questionId);
-    setShowCommentInput(true);
-  };
-
-  const handleCommentSubmit = () => {
-    if (commentText.trim()) {
-      // 댓글 추가 로직
-      setCommentText('');
-      setShowCommentInput(false);
-      setSelectedQuestionId(null);
-    }
-  };
 
   const renderQuestion = (question: (typeof sampleQuestions)[0]) => (
-    <View key={question.id} style={styles.questionCard}>
+    <TouchableOpacity 
+      key={question.id} 
+      style={styles.questionCard}
+      onPress={() => router.push(`/main/community/question-detail/${question.id}`)}
+    >
       <View style={styles.questionHeader}>
         <View style={styles.authorInfo}>
           <View style={styles.profileImage}>
@@ -196,7 +239,8 @@ export default function QuestionsScreen() {
           <Text style={styles.actionText}>{question.bookmarks}</Text>
         </View>
       </View>
-    </View>
+
+    </TouchableOpacity>
   );
 
   return (
@@ -298,6 +342,7 @@ export default function QuestionsScreen() {
           {sampleQuestions.slice(1).map(renderQuestion)}
         </View>
       </ScrollView>
+
     </View>
   );
 }

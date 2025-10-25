@@ -1,5 +1,30 @@
 import { API_BASE_URL } from './config';
 
+// 건물 목록 조회 API
+export const getBuildings = async ({ page = 0, size = 20 } = {}) => {
+  try {
+    console.log('건물 목록 조회 API 호출 중...');
+    
+    const response = await fetch(`${API_BASE_URL}/api/buildings?page=${page}&size=${size}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('건물 목록 조회 API 응답:', data);
+    return data;
+  } catch (error) {
+    console.error('건물 목록 조회 실패:', error);
+    throw error;
+  }
+};
+
 // 건물 후기 조회 API
 export const getBuildingReviews = async (buildingId, page = 0, size = 20) => {
   try {
@@ -60,7 +85,6 @@ export const getBuildingInfo = async (buildingId) => {
     throw error;
   }
 };
-
 // 인증 토큰 가져오기 (AsyncStorage에서)
 const getAuthToken = async () => {
   try {
@@ -72,3 +96,4 @@ const getAuthToken = async () => {
     return null;
   }
 };
+
